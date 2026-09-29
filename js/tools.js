@@ -34,7 +34,8 @@ PROPORTION CHECK before answering: compare your result with the character refere
 const SAVED_CHARACTER = {
   key: 'sheet',
   type: 'saved',
-  label: 'Saved character (optional)',
+  label: 'Character sheet',
+  sendLabel: 'Character sheet',
   tag: 'CHARACTER SHEET',
   hint: 'Pick one of your characters. On its own it is used as the character. With a Character photo above, the photo gives the outfit and look, and the saved sheet keeps the face and body exact.',
 };
@@ -69,10 +70,10 @@ Each panel should be clearly separated with consistent lighting and the same neu
   {
     id: 'background',
     title: 'Background',
-    intro: 'Put your character into a new setting. Upload the background, upload the character (a photo or a character sheet), tap Run.',
+    intro: 'Put your character into a new setting. Add the background, pick or upload your character, tap Run.',
     inputs: [
       { key: 'background', label: 'Background', tag: 'BACKGROUND' },
-      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, hint: 'Not needed if you pick a saved character below.' },
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
       SAVED_CHARACTER,
     ],
     runLabel: 'Place in background',
@@ -99,9 +100,9 @@ ${SINGLE_OUTPUT}`,
   {
     id: 'outfit',
     title: 'Outfit',
-    intro: 'Dress your character in a new outfit. Upload the character (a photo or a character sheet), upload the outfit, tap Run.',
+    intro: 'Dress your character in a new outfit. Pick or upload your character, add the outfit, tap Run.',
     inputs: [
-      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, hint: 'Not needed if you pick a saved character below.' },
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
       SAVED_CHARACTER,
       { key: 'outfit', label: 'Outfit', tag: 'OUTFIT' },
     ],
@@ -127,9 +128,9 @@ ${SINGLE_OUTPUT}`,
   {
     id: 'pose',
     title: 'Pose',
-    intro: 'Put your character in the same pose as a reference. Upload the character (a photo or a character sheet), upload the pose, tap Run.',
+    intro: 'Put your character in the same pose as a reference. Pick or upload your character, add the pose, tap Run.',
     inputs: [
-      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, hint: 'Not needed if you pick a saved character below.' },
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
       SAVED_CHARACTER,
       { key: 'pose', label: 'Pose reference', tag: 'POSE REFERENCE' },
     ],
@@ -165,9 +166,9 @@ ${SINGLE_OUTPUT}`,
   {
     id: 'scene',
     title: 'Character Scene',
-    intro: 'Upload your character (a photo or a character sheet), describe what you want, and tap Run for a new image of that character.',
+    intro: 'Pick or upload your character, describe what you want, and tap Run for a new image of that character.',
     inputs: [
-      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, hint: 'Not needed if you pick a saved character below.' },
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
       SAVED_CHARACTER,
     ],
     request: { label: 'What do you want?', placeholder: 'e.g. sitting at a café table in Paris at golden hour, laughing, medium shot' },

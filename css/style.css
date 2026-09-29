@@ -227,3 +227,24 @@ button.danger { color: var(--danger); }
 .small-link { display: inline-block; margin-top: 10px; color: var(--muted); font-size: 14px; }
 .save-character { display: grid; gap: 8px; margin-top: 12px; }
 .save-character button { margin: 0; }
+
+/* ---------- Model box: quick settings row + gear ---------- */
+.quick-row { display: flex; gap: 8px; margin-top: 12px; align-items: flex-end; }
+.quick-item { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.quick-caption { font-size: 12px; color: var(--muted); padding-left: 4px; }
+.quick-row select.quick { width: 100%; padding: 10px 8px; font-size: 15px; }
+.gear-btn {
+  flex: 0 0 48px; height: 44px; margin: 0; padding: 0; font-size: 24px; line-height: 1;
+  border-radius: 12px; background: var(--field);
+}
+.gear-btn.open { background: var(--pill); border-color: var(--pill); }
+.options-grid { margin-top: 12px; }
+.options-grid[hidden] { display: none; }
+.options-title { grid-column: 1 / -1; font-weight: 600; font-size: 14px; color: var(--muted); }
+
+/* ---------- Character box: two uploads side by side ---------- */
+.upload-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.upload-col { min-width: 0; }
+.dropzone.mini { padding: 22px 8px; font-size: 14px; min-height: 96px; display: flex; align-items: center; justify-content: center; }
+.upload-col .thumbs img { height: 64px; }
+.upload-pair + .hint { margin-top: 12px; }
