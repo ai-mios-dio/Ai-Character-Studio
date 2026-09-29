@@ -40,6 +40,12 @@ const SAVED_CHARACTER = {
   hint: 'Pick one of your characters. On its own it is used as the character. With a Character photo above, the photo gives the outfit and look, and the saved sheet keeps the face and body exact.',
 };
 
+// Used in every prompt: characters never have tattoos.
+const NO_TATTOOS =
+  'NO TATTOOS: the character has no tattoos anywhere (face, neck, chest, back, arms, hands, legs or feet). ' +
+  'Do not add any. If a person in any other image (for example the person wearing the outfit, doing the pose, or used as inspiration) has tattoos, do not copy them: keep the character\'s skin plain. ' +
+  'If the character\'s own reference shows tattoos, remove them and show clear, natural skin.';
+
 // Shared ending: one image, one character, nothing extra.
 const SINGLE_OUTPUT =
   'Output one single image that shows this character EXACTLY ONCE. Never a grid, panels, collage, turnaround, split screen or multiple copies of the character. ' +
@@ -55,7 +61,9 @@ const BUILD_COHERENCE =
 - Consistent lighting over the whole figure.`;
 
 const BUILD_OUTPUT =
-`OUTPUT: one photorealistic full-body image (unless the extra details ask for another style). Front view, head to feet fully in frame, standing upright in a relaxed neutral pose with arms slightly away from the body, neutral expression, looking at the camera. Simple fitted plain clothing in neutral colours (a plain fitted top and fitted shorts or leggings) so the body shape is clearly visible, barefoot or simple plain shoes. Plain white background, even studio lighting. No tattoos, no jewelery. Only this one character. No text or labels.`;
+`OUTPUT: one photorealistic full-body image (unless the extra details ask for another style). Front view, head to feet fully in frame, standing upright in a relaxed neutral pose with arms slightly away from the body, neutral expression, looking at the camera. Simple fitted plain clothing in neutral colours (a plain fitted top and fitted shorts or leggings) so the body shape is clearly visible, barefoot or simple plain shoes. Plain white background, even studio lighting. No tattoos, no jewelery. Only this one character. No text or labels.
+
+${NO_TATTOOS}`;
 
 const TOOLS = [
   {
@@ -238,7 +246,9 @@ Right side profile
 Back view
 In every view: standing upright in a relaxed neutral pose, arms relaxed and held slightly away from the body so the body outline is clearly visible, neutral expression, whole body from head to feet in frame with nothing cropped.
 All four figures at exactly the same scale: feet on the same ground line and the top of the head at the same height, so body proportions can be compared between views.
-Each view should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.`,
+Each view should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.
+
+${NO_TATTOOS}`,
       },
       {
         key: 'face',
@@ -250,7 +260,9 @@ Layout as a grid of 12 equal square panels, 4 across and 3 down, each showing th
 Row 1: close-up of face, front angle (neutral expression); 3/4 view facing right; right side profile; back of the head (showing the hairstyle)
 Row 2: 3/4 view facing left; close-up of face, low angle (looking up at character); close-up of face, high angle (looking down at character); smiling
 Row 3: angry; crying; shocked; smug/smirking
-Each panel should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.`,
+Each panel should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.
+
+${NO_TATTOOS}`,
       },
     ],
   },
@@ -282,6 +294,8 @@ BACKGROUND: recreate the environment from the BACKGROUND image faithfully: same 
 
 INTEGRATION: match the background's lighting direction, colour temperature, shadows, reflections, perspective, camera height, scale and depth of field so the character looks naturally photographed in that place, with correct contact shadows where they touch the ground. Keep the visual style of the character reference (photo stays photo, illustration stays illustration).
 
+${NO_TATTOOS}
+
 ${SINGLE_OUTPUT}`,
   },
 
@@ -309,6 +323,8 @@ OUTFIT: reproduce the clothing from the OUTFIT image accurately: every garment, 
 POSE AND FRAMING:
 - If CASE A (character sheet): show the character full body, standing in a relaxed front or 3/4 view like the sheet's main full-body view, with a neutral expression, on the same plain background style as the sheet, so the whole outfit is visible.
 - If CASE B (single picture): keep the character's pose, facial expression, camera angle, framing, background and lighting from that picture, unless the outfit physically requires a tiny adjustment.
+
+${NO_TATTOOS}
 
 ${SINGLE_OUTPUT}`,
   },
@@ -350,6 +366,8 @@ BACKGROUND AND CAMERA:
 
 FINAL CHECK before answering: (1) the body pose AND the facial expression match the POSE REFERENCE; (2) the face is still clearly the character's own face; (3) the background comes from the CHARACTER image (or is plain for a sheet), never from the POSE REFERENCE.
 
+${NO_TATTOOS}
+
 ${SINGLE_OUTPUT}`,
   },
 
@@ -378,6 +396,8 @@ OUTPUT RULES:
 - Never copy a sheet's layout: no grid, panels, split screen, collage, turnaround, multiple views, multiple poses, or repeated copies of the character.
 - Do not add any other people unless the request below explicitly asks for them. Other people must look clearly different from the character.
 - No text, labels, captions, borders or watermark.
+
+${NO_TATTOOS}
 
 REQUEST:
 {request}`,
