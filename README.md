@@ -28,13 +28,15 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 | Tool | You upload | What you get |
 |---|---|---|
 | **Character Sheet** | A character reference | A turnaround + expression sheet |
-| **Background Swap** | A background + a character | The same character placed in that setting |
-| **Outfit Swap** | A character + an outfit | The same character wearing that outfit |
-| **Pose Match** | A character + a pose reference | The same character in that pose |
-| **Character Scene** | A character sheet + a text request | One new image of that single character |
+| **Background** | A background + a character (photo or sheet) | The same character placed in that setting |
+| **Outfit** | A character (photo or sheet) + an outfit | The same character wearing that outfit |
+| **Pose** | A character (photo or sheet) + a pose reference | The same character in that pose |
+| **Character Scene** | A character (photo or sheet) + a text request | One new image of that single character |
 | **Pose Cutter** | One or more character sheets | Each pose/expression as its own PNG (runs on your device, no API) |
 
 The home screen has one big button per tool, with **Settings** at the bottom. Each button opens that tool on its own page (use **← Back** or your phone's back button to return).
+
+Wherever a tool asks for a **Character**, you can upload either a single photo or a character sheet. The hidden prompt explains both cases to the model, so a sheet is always treated as one person.
 
 Every AI tool has:
 

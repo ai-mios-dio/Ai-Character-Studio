@@ -13,6 +13,19 @@ const IDENTITY_LOCK =
   'body type, height, build, weight, and body proportions (head-to-body ratio, shoulder width, limb length, hands). ' +
   'Do not beautify, slim, bulk up, de-age, age, restyle, or reinterpret the character in any way.';
 
+
+// Explains how to read the CHARACTER upload, which can be a single picture OR a character sheet.
+// Each tool adds its own "if sheet / if single picture" instructions after this.
+const CHARACTER_SOURCE =
+`ABOUT THE CHARACTER IMAGE(S): first decide which of these two cases applies.
+- CASE A, CHARACTER SHEET: the image is a turnaround / reference sheet with several panels, views, close-ups or expressions. Every panel shows the SAME ONE individual from different angles. It is NOT a group of different people, and its grid layout is NOT the output format. Combine all panels to understand this one character: full-body views for height, build, body proportions and outfit; close-ups for the face.
+- CASE B, SINGLE PICTURE: the image shows the character once. That picture is the reference for who they are.`;
+
+// Shared ending: one image, one character, nothing extra.
+const SINGLE_OUTPUT =
+  'Output one single image that shows this character EXACTLY ONCE. Never a grid, panels, collage, turnaround, split screen or multiple copies of the character. ' +
+  'No extra people, no text, no labels, no borders, no watermark.';
+
 const TOOLS = [
   {
     id: 'sheet',
@@ -36,84 +49,102 @@ Each panel should be clearly separated with consistent lighting and the same neu
 
   {
     id: 'background',
-    title: 'Background Swap',
-    intro: 'Put your character into a new setting. Upload the background, upload the character, tap Run.',
+    title: 'Background',
+    intro: 'Put your character into a new setting. Upload the background, upload the character (a photo or a character sheet), tap Run.',
     inputs: [
       { key: 'background', label: 'Background', tag: 'BACKGROUND' },
-      { key: 'character', label: 'Character', tag: 'CHARACTER' },
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
     ],
-    runLabel: 'Swap background',
+    runLabel: 'Place in background',
     prompt:
-`Place the character from the CHARACTER image(s) into the setting shown in the BACKGROUND image, completely replacing the character's original background.
+`Place the character from the CHARACTER image(s) into the setting shown in the BACKGROUND image.
 
-${IDENTITY_LOCK} Also keep the character's outfit, accessories, colours, pose, facial expression and camera angle exactly as in the CHARACTER image.
+${CHARACTER_SOURCE}
+
+${IDENTITY_LOCK} Keep the character's outfit, accessories, colours and visual style exactly as in the reference.
+
+POSE AND FRAMING:
+- If CASE A (character sheet): show the character full body, in a natural relaxed pose that suits the setting (standing, based on the sheet's front or 3/4 view), with a neutral or gentle expression.
+- If CASE B (single picture): keep the character's pose, facial expression and camera angle exactly as in that picture, and completely replace its original background.
 
 BACKGROUND: recreate the environment from the BACKGROUND image faithfully: same location, architecture, objects, colours, time of day and mood. Ignore any people who appear in the BACKGROUND image.
 
-INTEGRATION: match the background's lighting direction, colour temperature, shadows, reflections, perspective, camera height, scale and depth of field so the character looks naturally photographed in that place, with correct contact shadows where they touch the ground. Keep the visual style of the CHARACTER image (photo stays photo, illustration stays illustration).
+INTEGRATION: match the background's lighting direction, colour temperature, shadows, reflections, perspective, camera height, scale and depth of field so the character looks naturally photographed in that place, with correct contact shadows where they touch the ground. Keep the visual style of the character reference (photo stays photo, illustration stays illustration).
 
-Output one single image containing only this one character. No extra people, no duplicates, no text, no borders, no watermark.`,
+${SINGLE_OUTPUT}`,
   },
 
   {
     id: 'outfit',
-    title: 'Outfit Swap',
-    intro: 'Dress your character in a new outfit. Upload the character, upload the outfit, tap Run.',
+    title: 'Outfit',
+    intro: 'Dress your character in a new outfit. Upload the character (a photo or a character sheet), upload the outfit, tap Run.',
     inputs: [
-      { key: 'character', label: 'Character', tag: 'CHARACTER' },
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
       { key: 'outfit', label: 'Outfit', tag: 'OUTFIT' },
     ],
-    runLabel: 'Swap outfit',
+    runLabel: 'Change outfit',
     prompt:
 `Dress the character from the CHARACTER image(s) in the clothing shown in the OUTFIT image.
+
+${CHARACTER_SOURCE}
 
 ${IDENTITY_LOCK} The only thing that changes is the clothing.
 
 OUTFIT: reproduce the clothing from the OUTFIT image accurately: every garment, its cut, fit, length, fabric, texture, colours, patterns, prints, seams, logos and small details, plus footwear and accessories if shown. Use the OUTFIT image ONLY as a clothing reference; ignore the face, body, skin, hair, pose and background of anyone wearing it there. Tailor the clothes to fit the character's own body naturally, with realistic folds and drape. Never reshape the body to fit the outfit.
 
-Keep the character's pose, facial expression, camera angle, framing, background and lighting from the CHARACTER image unless the outfit physically requires a tiny adjustment.
+POSE AND FRAMING:
+- If CASE A (character sheet): show the character full body, standing in a relaxed front or 3/4 view like the sheet's main full-body view, with a neutral expression, on the same plain background style as the sheet, so the whole outfit is visible.
+- If CASE B (single picture): keep the character's pose, facial expression, camera angle, framing, background and lighting from that picture, unless the outfit physically requires a tiny adjustment.
 
-Output one single image containing only this one character. No extra people, no duplicates, no text, no borders, no watermark.`,
+${SINGLE_OUTPUT}`,
   },
 
   {
     id: 'pose',
-    title: 'Pose Match',
-    intro: 'Put your character in the same pose as a reference. Upload the character, upload the pose, tap Run.',
+    title: 'Pose',
+    intro: 'Put your character in the same pose as a reference. Upload the character (a photo or a character sheet), upload the pose, tap Run.',
     inputs: [
-      { key: 'character', label: 'Character', tag: 'CHARACTER' },
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
       { key: 'pose', label: 'Pose reference', tag: 'POSE REFERENCE' },
     ],
     runLabel: 'Match pose',
     prompt:
 `Show the character from the CHARACTER image(s) in the exact body pose shown in the POSE REFERENCE image.
 
-${IDENTITY_LOCK} Also keep the character's outfit, accessories, colours and visual style exactly as in the CHARACTER image.
+${CHARACTER_SOURCE}
+In CASE A, ignore the different poses and expressions on the sheet; they only show what the character looks like. The ONLY pose to use is the one in the POSE REFERENCE.
+
+${IDENTITY_LOCK} Also keep the character's outfit, accessories, colours and visual style exactly as in the reference.
 
 POSE: copy the body position from the POSE REFERENCE image precisely: head tilt and turn, gaze direction, torso angle and lean, shoulder and hip angles, the position and bend of each arm, elbow, wrist, hand and finger, the position and bend of each leg, knee and foot, weight distribution, and which way the body faces. Match left and right exactly as shown (do not mirror). Also match the camera angle, distance and framing of the POSE REFERENCE.
 
 Use the POSE REFERENCE ONLY for the pose. Ignore the face, body shape, proportions, skin, hair, clothing, and identity of whoever is in it. Never change the character's body proportions or limb lengths to match the reference person; move the character's own body into the pose instead.
 
-Keep the background from the CHARACTER image (extended naturally if the new framing needs more of it), with lighting consistent with the character.
+BACKGROUND:
+- If CASE A (character sheet): use a plain, clean background in the same style as the sheet.
+- If CASE B (single picture): keep the background from that picture, extended naturally if the new framing needs more of it, with lighting consistent with the character.
 
-Output one single image containing only this one character. No extra people, no duplicates, no text, no borders, no watermark.`,
+${SINGLE_OUTPUT}`,
   },
 
   {
     id: 'scene',
     title: 'Character Scene',
-    intro: 'Upload a character sheet, describe what you want, and tap Run for a single new image of that character.',
-    inputs: [{ key: 'sheet', label: 'Character sheet', tag: 'CHARACTER SHEET' }],
+    intro: 'Upload your character (a photo or a character sheet), describe what you want, and tap Run for a new image of that character.',
+    inputs: [{ key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' }],
     request: { label: 'What do you want?', placeholder: 'e.g. sitting at a café table in Paris at golden hour, laughing, medium shot' },
     runLabel: 'Create image',
     prompt:
-`The CHARACTER SHEET image is a reference sheet of ONE single character. Every panel, view, close-up and expression in it shows the SAME individual from different angles. It is NOT a group of different people, and its grid layout is NOT the desired output format.
+`Create a NEW image of the character from the CHARACTER image(s), following the request below.
 
-Use the sheet only to learn this one character's identity. ${IDENTITY_LOCK} Keep their outfit too, unless the request below says to change it.
+${CHARACTER_SOURCE}
+In both cases, use the reference only to learn who the character is. The pose, expression, setting and framing come from the request below.
+
+${IDENTITY_LOCK} Keep their outfit too, unless the request below says to change it.
 
 OUTPUT RULES:
-- Generate ONE new, single, full-frame image that shows this character EXACTLY ONCE.
-- Never copy the sheet's layout: no grid, panels, split screen, collage, turnaround, multiple views, multiple poses, or repeated copies of the character.
+- Generate ONE new, full-frame image that shows this character EXACTLY ONCE.
+- Never copy a sheet's layout: no grid, panels, split screen, collage, turnaround, multiple views, multiple poses, or repeated copies of the character.
 - Do not add any other people unless the request below explicitly asks for them. Other people must look clearly different from the character.
 - No text, labels, captions, borders or watermark.
 
