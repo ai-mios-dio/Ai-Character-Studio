@@ -29,6 +29,7 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 |---|---|---|
 | **Character Builder → Build from Parts** | Inspiration pictures for face, upper body, lower body and/or hair, each with its own Loose / Balanced / Close setting | One new, original full-body character that blends them naturally |
 | **Character Builder → Build from People** | Several pictures of people with the look you want, plus Face and Body proportions similarity (Loose / Balanced / Close) | One new character with the features and proportions they have in common |
+| **Character Builder → Build from Description** | No pictures: pick gender, age, body type, height, ethnicity and skin tone (or leave on Any), plus optional extra details | One new character matching your choices |
 | **Character Sheet** | A character reference | Two sheets: a **body sheet** (front, 3/4, side, back at 16:9) and a **face sheet** (12 close-ups and expressions at 4:3) |
 | **Background** | A background + a character (photo or sheet) | The same character placed in that setting |
 | **Outfit** | A character (photo or sheet) + an outfit | The same character wearing that outfit |
@@ -60,7 +61,7 @@ Every AI tool has:
 
 ## Making a new character
 
-1. **Character Builder**: choose **Build from Parts** (a different picture for face, upper body, lower body, hair) or **Build from People** (several people with the look you want; the character gets what they have in common). In Build from Parts, choose how closely to follow each part. Loose takes only the general idea, Balanced keeps the main traits, Close follows the picture closely. Tip: set **Images per run** to 2–4 under ⚙ to get several versions to pick from.
+1. **Character Builder**: choose **Build from Parts** (a different picture for face, upper body, lower body, hair) **Build from People** (several people with the look you want; the character gets what they have in common), or **Build from Description** (no pictures; pick from dropdowns). In Build from Parts, choose how closely to follow each part. Loose takes only the general idea, Balanced keeps the main traits, Close follows the picture closely. Tip: set **Images per run** to 2–4 under ⚙ to get several versions to pick from.
 2. **Send to… → Character Sheet › Character reference**, then create the body and face sheets.
 3. **Save both as a character**, and pick them in any tool from then on.
 

@@ -23,11 +23,12 @@ const ToolUI = {
       prompt: saved.prompt || null,     // null = use the default prompt
       prompts: saved.prompts || {},     // tools with several outputs: one edited prompt per output
       closeness: saved.closeness || {}, // Character Builder: how closely to follow each part
+      fields: saved.fields || {},       // Build from Description: the chosen dropdown values
       inputs: Object.fromEntries(def.inputs.map((i) => [i.key, []])),
       savedCharacter: '',               // id of the picked saved character, '' = none
     };
     const refs = {};
-    const save = () => Store.setTool(def.id, { model: state.model, options: state.options, prompt: state.prompt, prompts: state.prompts, closeness: state.closeness });
+    const save = () => Store.setTool(def.id, { model: state.model, options: state.options, prompt: state.prompt, prompts: state.prompts, closeness: state.closeness, fields: state.fields });
 
     // ----- Model picker -----
     refs.model = el('select', { id: `${def.id}-model` });
@@ -72,6 +73,28 @@ const ToolUI = {
         ...def.closenessControls.map((c) => this.closenessSwitch(def.id, c, state, c.label)));
     }
 
+    // ----- Dropdown choices (Build from Description) -----
+    let fieldsCard = null;
+    if (def.fields) {
+      refs.fields = {};
+      const rows = def.fields.map((f) => {
+        const sel = el('select', { id: `${def.id}-field-${f.key}` });
+        sel.add(new Option('Any', ''));
+        for (const o of f.options) sel.add(new Option(o, o));
+        sel.value = state.fields[f.key] || '';
+        sel.addEventListener('change', () => {
+          if (sel.value) state.fields[f.key] = sel.value; else delete state.fields[f.key];
+          this.tools[def.id].save();
+        });
+        refs.fields[f.key] = sel;
+        return el('label', { className: 'field' }, el('span', { className: 'quick-caption' }, f.label), sel);
+      });
+      fieldsCard = el('div', { className: 'card' },
+        el('div', { className: 'label' }, 'Your character'),
+        el('p', { className: 'hint small input-hint' }, 'Leave any choice on "Any" to let the AI decide.'),
+        el('div', { className: 'fields-grid' }, ...rows));
+    }
+
     // ----- Optional request box -----
     let requestCard = null;
     if (def.request) {
@@ -94,6 +117,7 @@ const ToolUI = {
       el('p', { className: 'hint' }, def.intro),
       modelCard,
       ...inputCards,
+      fieldsCard,
       controlsCard,
       requestCard,
       el('div', { className: 'run-row' }, refs.run, clearBtn, refs.status),
@@ -369,6 +393,11 @@ const ToolUI = {
       this.renderThumbs(id, inp.key);
     }
     if (refs.request) refs.request.value = '';
+    if (refs.fields) {
+      state.fields = {};
+      Object.values(refs.fields).forEach((sel) => { sel.value = ''; });
+      this.tools[id].save();
+    }
     if (refs.saved) refs.saved.value = '';
     state.savedCharacter = '';
     state.sheetFromSaved = false;
@@ -383,7 +412,7 @@ const ToolUI = {
     // Tool-specific sections written fresh for each Run, e.g. {parts} in the Character Builder.
     if (def.fill) {
       const has = Object.fromEntries(def.inputs.map((i) => [i.key, state.inputs[i.key].length > 0]));
-      for (const [key, value] of Object.entries(def.fill({ has, closeness: state.closeness }))) text = text.replaceAll(`{${key}}`, value);
+      for (const [key, value] of Object.entries(def.fill({ has, closeness: state.closeness, fields: state.fields }))) text = text.replaceAll(`{${key}}`, value);
     }
     if (!def.request) return text;
     const request = refs.request.value.trim() || (def.request.optional ? 'None.' : '');

@@ -157,6 +157,66 @@ ${BUILD_OUTPUT}`,
   },
 
   {
+    id: 'describe',
+    title: 'Build from Description',
+    group: 'builder',
+    menuText: 'No pictures: pick gender, age, body type, height and more',
+    intro: 'Design a new character without any pictures. Pick what you want below, add any extra details, and tap Run.',
+    inputs: [],
+    fields: [
+      { key: 'gender', label: 'Gender', options: ['Man', 'Woman', 'Androgynous'] },
+      { key: 'age', label: 'Age', options: ['18–24', '25–34', '35–44', '45–54', '55–64', '65+'] },
+      { key: 'body', label: 'Body type', options: ['Slim', 'Athletic', 'Average', 'Muscular', 'Curvy', 'Stocky', 'Plus-size'] },
+      { key: 'height', label: 'Height', options: ['Short', 'Average', 'Tall', 'Very tall'] },
+      { key: 'ethnicity', label: 'Ethnicity', options: ['Black / African', 'East Asian', 'South Asian', 'Southeast Asian', 'Hispanic / Latino', 'Middle Eastern / North African', 'Pacific Islander', 'Indigenous American', 'White / European', 'Mixed'] },
+      { key: 'skin', label: 'Skin tone', options: ['Very fair', 'Fair', 'Light', 'Medium / olive', 'Tan', 'Brown', 'Dark brown', 'Deep'] },
+    ],
+    request: { label: 'Extra details', optional: true, placeholder: 'e.g. long curly red hair, green eyes, freckles, confident look' },
+    runLabel: 'Build character',
+    defaultOptions: { aspectRatio: '2:3' },
+    // Writes the {description} section from your choices. "Any" lets the AI decide.
+    fill: ({ fields }) => {
+      const pick = (k) => fields[k];
+      const body = {
+        Slim: 'slim, lean build with a narrow frame',
+        Athletic: 'athletic, toned build with visible fitness',
+        Average: 'average, everyday build',
+        Muscular: 'muscular build with clearly developed muscles',
+        Curvy: 'curvy build with a defined waist and fuller hips and chest',
+        Stocky: 'stocky, solid, broad build',
+        'Plus-size': 'plus-size, full-figured build',
+      };
+      const height = {
+        Short: 'short for their gender: noticeably shorter legs and torso relative to an average adult',
+        Average: 'average height for their gender, with typical adult proportions',
+        Tall: 'tall for their gender: long legs and a long torso',
+        'Very tall': 'very tall for their gender: notably long legs and a long, lengthy frame',
+      };
+      const line = (label, value, fallback) => `- ${label}: ${value || fallback}`;
+      const description = [
+        line('Gender', pick('gender') && pick('gender').toLowerCase(), 'your choice'),
+        line('Age', pick('age') && `${pick('age')} years old`, 'an adult age of your choice'),
+        line('Body type', body[pick('body')], 'your choice, natural and believable'),
+        line('Height', height[pick('height')], 'your choice'),
+        line('Ethnicity', pick('ethnicity'), 'your choice'),
+        line('Skin tone', pick('skin') && pick('skin').toLowerCase(), 'your choice, consistent with the ethnicity'),
+      ].join('\n');
+      return { description };
+    },
+    prompt:
+`Design ONE new, original adult character from the description below and show them in a single full-body image. No reference images are provided: where the description says "your choice", decide it yourself so everything fits together naturally.
+
+CHARACTER:
+{description}
+
+Give them a specific, distinctive face with its own individual features (face shape, eyes, eyebrows, nose, lips, jaw), not a generic stock face. Choose a hairstyle and hair colour that suit them unless the extra details say otherwise. Show the body type and height through believable, natural anatomy and proportions (head-to-body ratio, leg length, build), with the same skin tone across the whole body.
+
+EXTRA DETAILS (follow these if given): {request}
+
+${BUILD_OUTPUT}`,
+  },
+
+  {
     id: 'sheet',
     title: 'Character Sheet',
     intro: 'Upload a character reference and tap Run. You get two sheets: a full-body sheet and a face sheet.',

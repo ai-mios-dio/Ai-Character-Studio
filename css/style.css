@@ -263,3 +263,9 @@ button.danger { color: var(--danger); }
 .menu-btn { flex-direction: column; gap: 4px; min-height: 104px; border-radius: 40px; }
 .menu-title { font-size: 20px; }
 .menu-sub { font-size: 14px; font-weight: 400; opacity: .85; }
+
+/* ---------- Build from Description: dropdown grid ---------- */
+.fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.back-btn { white-space: nowrap; flex-shrink: 0; }
+.page-head h2 { min-width: 0; text-wrap: balance; }
