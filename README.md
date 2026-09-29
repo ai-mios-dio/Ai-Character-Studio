@@ -30,6 +30,7 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 | **Character Sheet** | A character reference | A turnaround + expression sheet |
 | **Background Swap** | A background + a character | The same character placed in that setting |
 | **Outfit Swap** | A character + an outfit | The same character wearing that outfit |
+| **Pose Match** | A character + a pose reference | The same character in that pose |
 | **Character Scene** | A character sheet + a text request | One new image of that single character |
 | **Pose Cutter** | One or more character sheets | Each pose/expression as its own PNG (runs on your device, no API) |
 

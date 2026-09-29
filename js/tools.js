@@ -77,6 +77,29 @@ Output one single image containing only this one character. No extra people, no 
   },
 
   {
+    id: 'pose',
+    title: 'Pose Match',
+    intro: 'Put your character in the same pose as a reference. Upload the character, upload the pose, tap Run.',
+    inputs: [
+      { key: 'character', label: 'Character', tag: 'CHARACTER' },
+      { key: 'pose', label: 'Pose reference', tag: 'POSE REFERENCE' },
+    ],
+    runLabel: 'Match pose',
+    prompt:
+`Show the character from the CHARACTER image(s) in the exact body pose shown in the POSE REFERENCE image.
+
+${IDENTITY_LOCK} Also keep the character's outfit, accessories, colours and visual style exactly as in the CHARACTER image.
+
+POSE: copy the body position from the POSE REFERENCE image precisely: head tilt and turn, gaze direction, torso angle and lean, shoulder and hip angles, the position and bend of each arm, elbow, wrist, hand and finger, the position and bend of each leg, knee and foot, weight distribution, and which way the body faces. Match left and right exactly as shown (do not mirror). Also match the camera angle, distance and framing of the POSE REFERENCE.
+
+Use the POSE REFERENCE ONLY for the pose. Ignore the face, body shape, proportions, skin, hair, clothing, and identity of whoever is in it. Never change the character's body proportions or limb lengths to match the reference person; move the character's own body into the pose instead.
+
+Keep the background from the CHARACTER image (extended naturally if the new framing needs more of it), with lighting consistent with the character.
+
+Output one single image containing only this one character. No extra people, no duplicates, no text, no borders, no watermark.`,
+  },
+
+  {
     id: 'scene',
     title: 'Character Scene',
     intro: 'Upload a character sheet, describe what you want, and tap Run for a single new image of that character.',
