@@ -123,20 +123,27 @@ ${SINGLE_OUTPUT}`,
     ],
     runLabel: 'Match pose',
     prompt:
-`Show the character from the CHARACTER image(s) in the exact body pose shown in the POSE REFERENCE image.
+`This is an EDIT of the CHARACTER image: change ONLY the character's body position so it matches the pose in the POSE REFERENCE image. Everything else about the CHARACTER image stays: the same person, outfit, background, setting, lighting and style.
 
 ${CHARACTER_SOURCE}
 In CASE A, ignore the different poses and expressions on the sheet; they only show what the character looks like. The ONLY pose to use is the one in the POSE REFERENCE.
 
-${IDENTITY_LOCK} Also keep the character's outfit, accessories, colours and visual style exactly as in the reference.
+${IDENTITY_LOCK} Also keep the character's outfit, accessories, colours and visual style exactly as in the CHARACTER image.
 
-POSE: copy the body position from the POSE REFERENCE image precisely: head tilt and turn, gaze direction, torso angle and lean, shoulder and hip angles, the position and bend of each arm, elbow, wrist, hand and finger, the position and bend of each leg, knee and foot, weight distribution, and which way the body faces. Match left and right exactly as shown (do not mirror). Also match the camera angle, distance and framing of the POSE REFERENCE.
+POSE: copy the body position from the POSE REFERENCE image precisely: head tilt and turn, gaze direction, torso angle and lean, shoulder and hip angles, the position and bend of each arm, elbow, wrist, hand and finger, the position and bend of each leg, knee and foot, weight distribution, and which way the body faces. Match left and right exactly as shown (do not mirror). Move the character's own body into this pose; never change their body proportions or limb lengths to match the reference person.
 
-Use the POSE REFERENCE ONLY for the pose. Ignore the face, body shape, proportions, skin, hair, clothing, and identity of whoever is in it. Never change the character's body proportions or limb lengths to match the reference person; move the character's own body into the pose instead.
+TAKE ONLY THE POSE FROM THE POSE REFERENCE. Do NOT copy anything else from it:
+- not its background, location, environment, scenery, floor, walls or sky
+- not its props, furniture or objects (unless the pose physically needs something to sit on or lean on; then use a matching item from the character's own setting)
+- not its lighting, colours, time of day, weather or mood
+- not its camera angle, lens, crop or image style
+- not the face, body shape, skin, hair, clothing or identity of the person in it
 
-BACKGROUND:
-- If CASE A (character sheet): use a plain, clean background in the same style as the sheet.
-- If CASE B (single picture): keep the background from that picture, extended naturally if the new framing needs more of it, with lighting consistent with the character.
+BACKGROUND AND CAMERA:
+- If CASE B (single picture): keep the EXACT background and setting of the CHARACTER image, with its lighting and camera viewpoint. If the new pose takes up a different amount of space, widen or adjust the framing just enough to fit the whole pose, and extend the character's original background naturally to fill it.
+- If CASE A (character sheet only): use a plain, clean background in the same style as the sheet.
+
+FINAL CHECK before answering: the background must come from the CHARACTER image (or be plain for a sheet), never from the POSE REFERENCE.
 
 ${SINGLE_OUTPUT}`,
   },
