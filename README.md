@@ -108,3 +108,7 @@ Works best when figures sit on a plain background with a little space between th
 - `js/cutter.js`: detects and cuts out figures
 - `js/storage.js`: saves your key, choices, and edited prompts in the browser
 - `js/app.js`: menu, Settings, Pose Cutter, start-up
+
+## Also in this repository
+
+**[Video Downloader](video-downloader/)** is a separate little app that downloads videos or MP3s from YouTube, Instagram, TikTok and more. Unlike Character Studio, it runs on your own computer. See its [README](video-downloader/README.md) for setup.
