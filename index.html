@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Character Studio</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
   <div class="app">
@@ -91,14 +91,25 @@
     </main>
   </div>
 
+  <!-- If something breaks while the app starts, show a message instead of a blank page. -->
+  <div id="loadError" class="load-error" hidden>
+    Character Studio didn't load properly. Pull down to refresh, or close the tab and open it again.
+  </div>
+  <script>
+    window.addEventListener('error', function () {
+      if (!document.querySelector('.section.active')) document.getElementById('loadError').hidden = false;
+    });
+  </script>
+
+  <!-- The ?v= number makes phones download fresh files after each update. Bump it when you change CSS/JS. -->
   <!-- JSZip builds the "download all" zip file. Loaded from a public CDN. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/models.js"></script>
-  <script src="js/gemini.js"></script>
-  <script src="js/cutter.js"></script>
-  <script src="js/tools.js"></script>
-  <script src="js/tool-ui.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/storage.js?v=6"></script>
+  <script src="js/models.js?v=6"></script>
+  <script src="js/gemini.js?v=6"></script>
+  <script src="js/cutter.js?v=6"></script>
+  <script src="js/tools.js?v=6"></script>
+  <script src="js/tool-ui.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 </html>
