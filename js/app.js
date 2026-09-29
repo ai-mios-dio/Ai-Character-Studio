@@ -68,12 +68,20 @@ let currentPage = null, lastPage = null;
 function route() {
   let id = location.hash.slice(1) || 'home';
   if (!document.getElementById(id)?.classList.contains('section')) id = 'home';
+  if (currentPage && currentPage !== id) leavePage(currentPage);
   document.querySelectorAll('.section').forEach((s) => s.classList.toggle('active', s.id === id));
   lastPage = currentPage;
   currentPage = id;
   window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', route);
+
+// Leaving a page clears its uploads, typed text and results so nothing piles up.
+// Choices like model, settings, dropdowns and the chosen outfit tile are kept.
+function leavePage(id) {
+  if (ToolUI.tools[id]) ToolUI.clear(id, { quiet: true, keepChoices: true });
+  if (id === 'cutter') clearCutter(true);
+}
 
 // Back button at the top of each page goes to the page above it (Home, or a menu page).
 // If we just came from there, step back in history so the phone's own back button stays in sync.
@@ -233,14 +241,15 @@ function renderCutSources() {
   });
   setStatus($('cutStatus'), cutSources.length ? `${cutSources.length} sheet(s) ready.` : '');
 }
-$('cutClear').addEventListener('click', () => {
+function clearCutter(quiet = false) {
   cutSources = [];
   cutOutputs = [];
   $('cutResults').innerHTML = '';
   $('cutZip').disabled = true;
   renderCutSources();
-  setStatus($('cutStatus'), 'Cleared.', 'ok');
-});
+  setStatus($('cutStatus'), quiet ? '' : 'Cleared.', quiet ? '' : 'ok');
+}
+$('cutClear').addEventListener('click', () => clearCutter());
 
 // Show the current slider values next to each slider.
 [['cutTol', 'tolOut'], ['cutMerge', 'mergeOut'], ['cutMin', 'minOut'], ['cutPad', 'padOut']].forEach(([inp, out]) => {

@@ -59,7 +59,8 @@ Every AI tool has:
 
 - **Model**: a dropdown of the image models your key can use, with quick settings underneath (Ratio, Size, Thinking; only the ones the model supports). The ⚙ gear opens the rest: images per run, temperature, seed, Google Search and more. Anything left on *Auto*/*Default* isn't sent, so the model uses its own default.
 - **Hidden prompt**: the prompt sent with your images. All of them are in **Settings → Hidden prompts**: tap one, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
-- **Clear & start fresh** empties the uploads, text and results (your model and options stay).
+- **Clear & start fresh** empties the uploads, text and results, and resets dropdowns and the chosen tile (your model and options stay).
+- **Leaving a page** clears its uploads, typed text and results automatically, so pages don't fill up. Your choices (model, settings, dropdowns, chosen outfit tile) are kept. Download or save anything you want to keep before leaving.
 - **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter).
 
 ## When a picture is blocked

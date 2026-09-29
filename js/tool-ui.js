@@ -508,28 +508,35 @@ const ToolUI = {
   },
 
   // Empties uploads, text box and results so the tool is fresh. Model and options stay.
-  clear(id) {
+  // quiet: no "Cleared." message (used when you leave the page).
+  // keepChoices: keep dropdowns and the chosen tile (used when you leave the page).
+  clear(id, { quiet = false, keepChoices = false } = {}) {
     const { def, state, refs } = this.tools[id];
+    state.runId = (state.runId || 0) + 1; // any run still in progress is ignored when it finishes
+    refs.run.disabled = false;
     for (const inp of def.inputs) {
       state.inputs[inp.key] = [];
       this.renderThumbs(id, inp.key);
     }
     if (refs.request) refs.request.value = '';
-    if (refs.tiles) {
-      Object.values(refs.tiles).forEach((t) => { t.classList.remove('on'); t.setAttribute('aria-pressed', 'false'); });
-      refs.tileChosen.textContent = '';
-    }
-    if (refs.fields || refs.tiles) {
-      state.fields = {};
-      Object.values(refs.fields || {}).forEach((sel) => { sel.value = ''; sel.dispatchEvent(new Event('change')); });
-      this.tools[id].save();
+    if (!keepChoices) {
+      if (refs.tiles) {
+        Object.values(refs.tiles).forEach((t) => { t.classList.remove('on'); t.setAttribute('aria-pressed', 'false'); });
+        refs.tileChosen.textContent = '';
+      }
+      if (refs.fields || refs.tiles) {
+        state.fields = {};
+        Object.values(refs.fields || {}).forEach((sel) => { sel.value = ''; sel.dispatchEvent(new Event('change')); });
+        this.tools[id].save();
+      }
     }
     if (refs.saved) refs.saved.value = '';
     state.savedCharacter = '';
     state.sheetFromSaved = false;
     refs.results.innerHTML = '';
-    setStatus(refs.status, 'Cleared.', 'ok');
+    setStatus(refs.status, quiet ? '' : 'Cleared.', quiet ? '' : 'ok');
   },
+
 
   // Builds the full prompt text.
   buildPrompt(id, outKey) {
@@ -611,7 +618,9 @@ const ToolUI = {
       parts: [...parts, { text: this.buildPrompt(id, out.key) }],
       options: { ...state.options, ...(out.aspectRatio ? { aspectRatio: out.aspectRatio } : {}), safety: Store.getSafety() },
     })));
+    const runId = state.runId = (state.runId || 0) + 1;
     const sets = await Promise.all(Array.from({ length: count }, makeSet));
+    if (runId !== state.runId) return; // the page was cleared (or left) while this was running
     refs.run.disabled = false;
 
     let made = 0;
