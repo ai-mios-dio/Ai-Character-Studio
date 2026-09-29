@@ -38,6 +38,8 @@ The home screen has one big button per tool, with **Settings** at the bottom. Ea
 
 Wherever a tool asks for a **Character**, you can upload either a single photo or a character sheet. The hidden prompt explains both cases to the model, so a sheet is always treated as one person.
 
+These tools also have an optional **Character sheet** box. Use it when your Character image is a photo with the look you want (outfit, hair) and you also have a sheet of the same character: the sheet is used only to get the face and body right, and the outfit/look comes from the photo.
+
 Every AI tool has:
 
 - **Model**: a dropdown of the image models your key can use. The options under **Model options** change to match the model you pick (aspect ratio, image size, thinking level, Google Search, temperature, seed, images per run). Anything left on *Default* isn't sent, so the model uses its own default.

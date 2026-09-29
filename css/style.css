@@ -212,3 +212,5 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
   font-weight: 600;
 }
 .load-error[hidden] { display: none; }
+
+.input-hint { margin: -2px 0 10px; }

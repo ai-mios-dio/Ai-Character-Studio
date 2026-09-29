@@ -19,7 +19,18 @@ const IDENTITY_LOCK =
 const CHARACTER_SOURCE =
 `ABOUT THE CHARACTER IMAGE(S): first decide which of these two cases applies.
 - CASE A, CHARACTER SHEET: the image is a turnaround / reference sheet with several panels, views, close-ups or expressions. Every panel shows the SAME ONE individual from different angles. It is NOT a group of different people, and its grid layout is NOT the output format. Combine all panels to understand this one character: full-body views for height, build, body proportions and outfit; close-ups for the face.
-- CASE B, SINGLE PICTURE: the image shows the character once. That picture is the reference for who they are.`;
+- CASE B, SINGLE PICTURE: the image shows the character once. That picture is the reference for who they are.
+
+EXTRA CHARACTER SHEET (only if an image labelled CHARACTER SHEET is also included): it is an additional reference of the SAME character shown in the CHARACTER image, not a different person. It shows one individual in several panels, not a group. Use it ONLY to get the identity exactly right: face, facial features, skin tone, eye colour, height, build and body proportions. The character's look (outfit, hair styling, makeup, accessories) comes from the CHARACTER image, NEVER from the sheet: ignore the sheet's clothing, poses, expressions, background and layout. If the two images disagree on outfit or styling, the CHARACTER image wins. Everything the instructions below say about the CHARACTER image still refers to the CHARACTER image, not the sheet.`;
+
+// Optional extra upload box: a character sheet used only for face/body accuracy.
+const SHEET_INPUT = {
+  key: 'sheet',
+  label: 'Character sheet (optional)',
+  tag: 'CHARACTER SHEET',
+  optional: true,
+  hint: 'Adds accuracy for the face and body. The outfit and look still come from the Character image above.',
+};
 
 // Shared ending: one image, one character, nothing extra.
 const SINGLE_OUTPUT =
@@ -54,6 +65,7 @@ Each panel should be clearly separated with consistent lighting and the same neu
     inputs: [
       { key: 'background', label: 'Background', tag: 'BACKGROUND' },
       { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
+      SHEET_INPUT,
     ],
     runLabel: 'Place in background',
     prompt:
@@ -80,6 +92,7 @@ ${SINGLE_OUTPUT}`,
     intro: 'Dress your character in a new outfit. Upload the character (a photo or a character sheet), upload the outfit, tap Run.',
     inputs: [
       { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
+      SHEET_INPUT,
       { key: 'outfit', label: 'Outfit', tag: 'OUTFIT' },
     ],
     runLabel: 'Change outfit',
@@ -105,6 +118,7 @@ ${SINGLE_OUTPUT}`,
     intro: 'Put your character in the same pose as a reference. Upload the character (a photo or a character sheet), upload the pose, tap Run.',
     inputs: [
       { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
+      SHEET_INPUT,
       { key: 'pose', label: 'Pose reference', tag: 'POSE REFERENCE' },
     ],
     runLabel: 'Match pose',
@@ -131,7 +145,10 @@ ${SINGLE_OUTPUT}`,
     id: 'scene',
     title: 'Character Scene',
     intro: 'Upload your character (a photo or a character sheet), describe what you want, and tap Run for a new image of that character.',
-    inputs: [{ key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' }],
+    inputs: [
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
+      SHEET_INPUT,
+    ],
     request: { label: 'What do you want?', placeholder: 'e.g. sitting at a café table in Paris at golden hour, laughing, medium shot' },
     runLabel: 'Create image',
     prompt:

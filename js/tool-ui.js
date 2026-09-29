@@ -47,9 +47,12 @@ const ToolUI = {
       const thumbs = el('div', { className: 'thumbs' });
       refs['thumbs-' + inp.key] = thumbs;
       const fileInput = el('input', { type: 'file', accept: 'image/*', multiple: true, id: `${def.id}-${inp.key}-files` });
-      const zone = el('div', { className: 'dropzone' }, fileInput, el('span', {}, `Tap to add ${inp.label.toLowerCase()} image(s)`));
+      const zone = el('div', { className: 'dropzone' }, fileInput, el('span', {}, 'Tap to add image(s)'));
       setupDropzone(zone, fileInput, (files) => this.addInputs(def.id, inp.key, files));
-      return el('div', { className: 'card' }, el('div', { className: 'label' }, inp.label), zone, thumbs);
+      return el('div', { className: 'card' },
+        el('div', { className: 'label' }, inp.label),
+        inp.hint ? el('p', { className: 'hint small input-hint' }, inp.hint) : '',
+        zone, thumbs);
     });
 
     // ----- Optional request box -----
@@ -232,7 +235,7 @@ const ToolUI = {
 
     if (!apiKey) return setStatus(refs.status, 'Add your Gemini API key in Settings first.', 'error');
     for (const inp of def.inputs) {
-      if (!state.inputs[inp.key].length) return setStatus(refs.status, `Add a ${inp.label.toLowerCase()} image first.`, 'error');
+      if (!inp.optional && !state.inputs[inp.key].length) return setStatus(refs.status, `Add a ${inp.label.replace(/\s*\(.*\)/, '').toLowerCase()} image first.`, 'error');
     }
     if (def.request && !refs.request.value.trim()) {
       return setStatus(refs.status, `Fill in "${def.request.label}" first.`, 'error');
@@ -246,6 +249,7 @@ const ToolUI = {
     const parts = [];
     for (const inp of def.inputs) {
       const imgs = state.inputs[inp.key];
+      if (!imgs.length) continue; // optional box left empty: send nothing for it
       parts.push({ text: `${inp.tag} image${imgs.length > 1 ? 's' : ''}:` });
       imgs.forEach((blob) => parts.push({ blob }));
     }
