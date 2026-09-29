@@ -22,11 +22,12 @@ const ToolUI = {
       options: saved.options || { ...(def.defaultOptions || {}) },
       prompt: saved.prompt || null,     // null = use the default prompt
       prompts: saved.prompts || {},     // tools with several outputs: one edited prompt per output
+      closeness: saved.closeness || {}, // Character Builder: how closely to follow each part
       inputs: Object.fromEntries(def.inputs.map((i) => [i.key, []])),
       savedCharacter: '',               // id of the picked saved character, '' = none
     };
     const refs = {};
-    const save = () => Store.setTool(def.id, { model: state.model, options: state.options, prompt: state.prompt, prompts: state.prompts });
+    const save = () => Store.setTool(def.id, { model: state.model, options: state.options, prompt: state.prompt, prompts: state.prompts, closeness: state.closeness });
 
     // ----- Model picker -----
     refs.model = el('select', { id: `${def.id}-model` });
@@ -59,6 +60,7 @@ const ToolUI = {
       return el('div', { className: 'card' },
         el('div', { className: 'label' }, inp.label),
         inp.hint ? el('p', { className: 'hint small input-hint' }, inp.hint) : '',
+        inp.closeness ? this.closenessSwitch(def.id, inp, state) : '',
         zone, thumbs);
     });
 
@@ -67,7 +69,7 @@ const ToolUI = {
     if (def.request) {
       refs.request = el('textarea', { id: `${def.id}-request`, rows: 3, placeholder: def.request.placeholder });
       requestCard = el('div', { className: 'card' },
-        el('label', { className: 'label', htmlFor: `${def.id}-request` }, def.request.label), refs.request);
+        el('label', { className: 'label', htmlFor: `${def.id}-request` }, def.request.label + (def.request.optional ? ' (optional)' : '')), refs.request);
     }
 
     // ----- Run -----
@@ -92,6 +94,30 @@ const ToolUI = {
     this.tools[def.id] = { def, state, refs, save };
     this.renderModelSelect(def.id);
     return section;
+  },
+
+  // Loose / Balanced / Close buttons for one inspiration box.
+  closenessSwitch(id, inp, state) {
+    const levels = [['loose', 'Loose'], ['balanced', 'Balanced'], ['close', 'Close']];
+    const current = () => state.closeness[inp.key] || 'balanced';
+    const group = el('div', { className: 'segmented', role: 'radiogroup', 'aria-label': `How closely to follow the ${inp.label.toLowerCase()}` });
+    const buttons = levels.map(([value, text]) => {
+      const b = el('button', { type: 'button', textContent: text, role: 'radio', dataset: { value } });
+      b.addEventListener('click', () => {
+        state.closeness[inp.key] = value;
+        this.tools[id].save();
+        paint();
+      });
+      return b;
+    });
+    const paint = () => buttons.forEach((b) => {
+      const on = b.dataset.value === current();
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-checked', String(on));
+    });
+    paint();
+    group.append(...buttons);
+    return el('div', { className: 'closeness' }, el('span', { className: 'quick-caption' }, 'How closely to follow'), group);
   },
 
   // The default and current prompt for a tool, or for one output of a multi-output tool.
@@ -343,11 +369,16 @@ const ToolUI = {
 
   // Builds the full prompt text.
   buildPrompt(id, outKey) {
-    const { def, refs } = this.tools[id];
-    const template = this.currentPrompt(id, outKey);
-    if (!def.request) return template;
-    const request = refs.request.value.trim();
-    return template.includes('{request}') ? template.replaceAll('{request}', request) : `${template}\n\n${request}`;
+    const { def, state, refs } = this.tools[id];
+    let text = this.currentPrompt(id, outKey);
+    // Tool-specific sections written fresh for each Run, e.g. {parts} in the Character Builder.
+    if (def.fill) {
+      const has = Object.fromEntries(def.inputs.map((i) => [i.key, state.inputs[i.key].length > 0]));
+      for (const [key, value] of Object.entries(def.fill({ has, closeness: state.closeness }))) text = text.replaceAll(`{${key}}`, value);
+    }
+    if (!def.request) return text;
+    const request = refs.request.value.trim() || (def.request.optional ? 'None.' : '');
+    return text.includes('{request}') ? text.replaceAll('{request}', request) : `${text}\n\n${request}`;
   },
 
   async run(id) {
@@ -357,6 +388,9 @@ const ToolUI = {
 
     if (!apiKey) return setStatus(refs.status, 'Add your Gemini API key in Settings first.', 'error');
     const sheetImgs = state.inputs.sheet || [];
+    if (def.requireAny && !def.inputs.some((i) => state.inputs[i.key].length)) {
+      return setStatus(refs.status, def.requireAny, 'error');
+    }
     for (const inp of def.inputs) {
       if (inp.optional || inp.type === 'saved') continue;
       if (inp.orSaved && sheetImgs.length) continue; // a sheet alone is enough for the character
@@ -367,7 +401,7 @@ const ToolUI = {
           : `Add a ${name} image first.`, 'error');
       }
     }
-    if (def.request && !refs.request.value.trim()) {
+    if (def.request && !def.request.optional && !refs.request.value.trim()) {
       return setStatus(refs.status, `Fill in "${def.request.label}" first.`, 'error');
     }
 

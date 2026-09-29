@@ -252,3 +252,9 @@ button.danger { color: var(--danger); }
 .result-group { display: grid; gap: 12px; background: rgba(0, 0, 0, .08); border-radius: 24px; padding: 10px; }
 .result-title { font-weight: 600; margin: 0 0 8px 4px; }
 .result-group .save-character { background: var(--card); border-radius: 20px; padding: 12px; margin: 0; }
+
+/* ---------- Loose / Balanced / Close switch ---------- */
+.closeness { display: grid; gap: 4px; margin-bottom: 10px; }
+.segmented { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--field); border-radius: 999px; padding: 3px; gap: 3px; }
+.segmented button { margin: 0; padding: 8px 4px; border: none; background: transparent; border-radius: 999px; font-size: 14px; color: var(--muted); }
+.segmented button.on { background: var(--pill); color: var(--text); font-weight: 600; }

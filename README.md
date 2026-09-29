@@ -27,6 +27,7 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 
 | Tool | You upload | What you get |
 |---|---|---|
+| **Character Builder** | Inspiration pictures for face, upper body, lower body and/or hair, each with its own Loose / Balanced / Close setting | One new, original full-body character that blends them naturally |
 | **Character Sheet** | A character reference | Two sheets: a **body sheet** (front, 3/4, side, back at 16:9) and a **face sheet** (12 close-ups and expressions at 4:3) |
 | **Background** | A background + a character (photo or sheet) | The same character placed in that setting |
 | **Outfit** | A character (photo or sheet) + an outfit | The same character wearing that outfit |
@@ -55,6 +56,12 @@ Every AI tool has:
 - **Hidden prompt**: the prompt sent with your images. All of them are in **Settings → Hidden prompts**: tap one, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
 - **Clear & start fresh** empties the uploads, text and results (your model and options stay).
 - **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter).
+
+## Making a new character
+
+1. **Character Builder**: add inspiration pictures (any of face, upper body, lower body, hair) and choose how closely to follow each one. Loose takes only the general idea, Balanced keeps the main traits, Close follows the picture closely. Tip: set **Images per run** to 2–4 under ⚙ to get several versions to pick from.
+2. **Send to… → Character Sheet › Character reference**, then create the body and face sheets.
+3. **Save both as a character**, and pick them in any tool from then on.
 
 ## Character sheet tips
 

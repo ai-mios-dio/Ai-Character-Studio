@@ -47,6 +47,61 @@ const SINGLE_OUTPUT =
 
 const TOOLS = [
   {
+    id: 'builder',
+    title: 'Character Builder',
+    intro: 'Design a new character from inspiration pictures. Add any of the parts below, choose how closely to follow each one, and tap Run.',
+    inputs: [
+      { key: 'face', label: 'Face', tag: 'FACE INSPIRATION', optional: true, closeness: true },
+      { key: 'upper', label: 'Upper body', tag: 'UPPER BODY INSPIRATION', optional: true, closeness: true },
+      { key: 'lower', label: 'Lower body', tag: 'LOWER BODY INSPIRATION', optional: true, closeness: true },
+      { key: 'hair', label: 'Hair', tag: 'HAIR INSPIRATION', optional: true, closeness: true },
+    ],
+    requireAny: 'Add at least one inspiration picture (face, upper body, lower body or hair).',
+    request: { label: 'Extra details', optional: true, placeholder: 'e.g. late 20s, athletic, warm olive skin, confident look' },
+    runLabel: 'Build character',
+    defaultOptions: { aspectRatio: '2:3' }, // tall frame for a full-body figure
+    // Writes the {parts} section: only the parts you uploaded, each with its own closeness.
+    fill: ({ has, closeness }) => {
+      const what = {
+        face: 'face shape and facial features (eyes, eyebrows, nose, lips, jaw, cheekbones), skin tone and complexion',
+        upper: 'upper-body build: shoulders, chest, arms, torso shape, and how muscle and fat are distributed',
+        lower: 'lower-body build: waist, hips, buttocks, thighs, leg shape and leg length',
+        hair: 'hairstyle, length, texture and colour',
+      };
+      const how = {
+        loose: 'LOOSE INSPIRATION. Take only the general impression (overall type, rough shape, colouring and vibe) and invent the specific details freely, so the result is clearly different from the reference.',
+        balanced: 'BALANCED. Keep the main recognisable characteristics, but reinterpret the finer details so it becomes part of a new person.',
+        close: 'CLOSE MATCH. Follow this reference closely in shape, proportions and details.',
+      };
+      const names = { face: 'FACE', upper: 'UPPER BODY', lower: 'LOWER BODY', hair: 'HAIR' };
+      const lines = Object.keys(what).filter((k) => has[k]).map((k) =>
+        `- ${names[k]} (from the ${names[k]} INSPIRATION image): ${what[k]}. How closely: ${how[closeness[k] || 'balanced']}`);
+      const missing = Object.keys(what).filter((k) => !has[k]).map((k) => names[k].toLowerCase());
+      if (missing.length) lines.push(`- No picture was given for: ${missing.join(', ')}. Invent these so they suit the rest of the character naturally.`);
+      return { parts: lines.join('\n') };
+    },
+    prompt:
+`Design ONE new, original character and show them in a single full-body image, built from the inspiration images provided.
+
+WHAT TO TAKE FROM EACH IMAGE:
+{parts}
+
+Take ONLY the listed part from each inspiration image. Ignore everything else in it: the other body parts, the person's identity, clothing, accessories, pose, background, lighting and image style.
+
+ONE NATURAL PERSON, NOT A COLLAGE:
+- The same skin tone and undertone across the face, neck, arms, hands and legs.
+- One consistent apparent age for the whole body.
+- Smooth, natural transitions at the neck, shoulders, waist and hips, with no visible joins or mismatched parts.
+- Believable anatomy: head, torso and legs in realistic proportion to each other. Where the inspirations conflict (for example a slim upper body and a heavier lower body), blend them into one plausible build rather than joining two different bodies.
+- Consistent lighting over the whole figure.
+This must be a NEW individual, not a copy of anyone in the inspiration images.
+
+EXTRA DETAILS (follow these if given): {request}
+
+OUTPUT: one photorealistic full-body image (unless the extra details ask for another style). Front view, head to feet fully in frame, standing upright in a relaxed neutral pose with arms slightly away from the body, neutral expression, looking at the camera. Simple fitted plain clothing in neutral colours (a plain fitted top and fitted shorts or leggings) so the body shape is clearly visible, barefoot or simple plain shoes. Plain white background, even studio lighting. No tattoos, no jewelery. Only this one character. No text or labels.`,
+  },
+
+  {
     id: 'sheet',
     title: 'Character Sheet',
     intro: 'Upload a character reference and tap Run. You get two sheets: a full-body sheet and a face sheet.',
