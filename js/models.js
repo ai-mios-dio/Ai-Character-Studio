@@ -99,7 +99,7 @@ const Models = {
       headers: { 'x-goog-api-key': apiKey },
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error?.message || `Could not load models (HTTP ${res.status})`);
+    if (!res.ok) throw explainApiError(res.status, data, 'model list');
 
     const models = (data.models || [])
       .filter((m) => /image/i.test(m.name) && (m.supportedGenerationMethods || []).includes('generateContent'))

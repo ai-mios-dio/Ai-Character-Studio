@@ -1,5 +1,25 @@
 // Talks to Google's Gemini API (the Nano Banana models) to generate images.
 
+// Turns Google's error replies into a message that says how to fix the problem.
+function explainApiError(status, data, model) {
+  const msg = data.error?.message || `Request failed (HTTP ${status})`;
+  const reason = data.error?.status || '';
+  const tips = {
+    PERMISSION_DENIED:
+      'Google refused this API key. Make a new key at aistudio.google.com/apikey and paste it in Settings. ' +
+      'If you made the key in Google Cloud Console instead, open the key there and check that "Generative Language API" ' +
+      'is enabled and allowed, and that any website restriction includes this site.',
+    INVALID_ARGUMENT: /api key/i.test(msg)
+      ? 'The API key is wrong or incomplete. Copy it again from aistudio.google.com/apikey and paste it in Settings.'
+      : 'The model rejected one of the settings. Open Model options and set them back to Default.',
+    RESOURCE_EXHAUSTED:
+      'You hit your usage limit. Wait a minute and try again. Image models may need billing turned on for your key in AI Studio.',
+    NOT_FOUND: `The model "${model}" isn't available to your key. Tap Refresh model list in Settings and pick another.`,
+  };
+  const tip = tips[reason] || (status === 403 ? tips.PERMISSION_DENIED : '');
+  return new Error(tip ? `${msg}\n→ ${tip}` : msg);
+}
+
 const Gemini = {
   // Turns an image file into the base64 text the API wants.
   blobToBase64(blob) {
@@ -44,7 +64,7 @@ const Gemini = {
     });
 
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error?.message || `Request failed (HTTP ${res.status})`);
+    if (!res.ok) throw explainApiError(res.status, data, model);
 
     const images = [];
     let text = '';
