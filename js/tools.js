@@ -201,7 +201,7 @@ ${SINGLE_OUTPUT}`,
   {
     id: 'pose',
     title: 'Pose',
-    intro: 'Put your character in the same pose as a reference. Pick or upload your character, add the pose, tap Run.',
+    intro: 'Put your character in the same pose and facial expression as a reference. Pick or upload your character, add the pose, tap Run.',
     inputs: [
       { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
       SAVED_CHARACTER,
@@ -209,10 +209,10 @@ ${SINGLE_OUTPUT}`,
     ],
     runLabel: 'Match pose',
     prompt:
-`This is an EDIT of the CHARACTER image: change ONLY the character's body position so it matches the pose in the POSE REFERENCE image. Everything else about the CHARACTER image stays: the same person, outfit, background, setting, lighting and style.
+`This is an EDIT of the CHARACTER image: change ONLY the character's pose, meaning their body position AND their facial expression, so both match the POSE REFERENCE image. Everything else about the CHARACTER image stays: the same person and facial features, outfit, background, setting, lighting and style.
 
 ${CHARACTER_SOURCE}
-In CASE A, ignore the different poses and expressions on the sheet; they only show what the character looks like. The ONLY pose to use is the one in the POSE REFERENCE.
+In CASE A, ignore the different poses and expressions on the sheet; they only show what the character looks like. The ONLY pose and expression to use are the ones in the POSE REFERENCE.
 
 ${IDENTITY_LOCK} Also keep the character's outfit, accessories, colours and visual style exactly as in the CHARACTER image.
 
@@ -220,18 +220,20 @@ ${BODY_GUARD}
 
 POSE: copy the body position from the POSE REFERENCE image precisely: head tilt and turn, gaze direction, torso angle and lean, shoulder and hip angles, the position and bend of each arm, elbow, wrist, hand and finger, the position and bend of each leg, knee and foot, weight distribution, and which way the body faces. Match left and right exactly as shown (do not mirror). Move the character's own body into this pose; never change their body proportions or limb lengths to match the reference person.
 
+FACIAL EXPRESSION IS PART OF THE POSE: copy the expression from the POSE REFERENCE as precisely as the body: the emotion and how strong it is; the mouth (open or closed, smiling, laughing, frowning, teeth showing, lips pressed or parted); the eyes (wide, relaxed, squinting, winking or closed) and where they look; the eyebrows (raised, furrowed, relaxed, one raised); cheeks, nose scrunch and jaw. Perform that expression ON THE CHARACTER'S OWN FACE: their face shape, eyes, nose, lips, skin and all facial features stay exactly theirs; only the expression changes. Do not keep the expression from the CHARACTER image. If the face in the POSE REFERENCE is hidden or not visible, choose an expression that naturally fits the pose.
+
 TAKE ONLY THE POSE FROM THE POSE REFERENCE. Do NOT copy anything else from it:
 - not its background, location, environment, scenery, floor, walls or sky
 - not its props, furniture or objects (unless the pose physically needs something to sit on or lean on; then use a matching item from the character's own setting)
 - not its lighting, colours, time of day, weather or mood
 - not its camera angle, lens, crop or image style
-- not the face, body shape, skin, hair, clothing or identity of the person in it
+- not the facial features, face shape, body shape, skin, hair, clothing or identity of the person in it (take their facial EXPRESSION only, never their face)
 
 BACKGROUND AND CAMERA:
 - If CASE B (single picture): keep the EXACT background and setting of the CHARACTER image, with its lighting and camera viewpoint. If the new pose takes up a different amount of space, widen or adjust the framing just enough to fit the whole pose, and extend the character's original background naturally to fill it.
 - If CASE A (character sheet only): use a plain, clean background in the same style as the sheet.
 
-FINAL CHECK before answering: the background must come from the CHARACTER image (or be plain for a sheet), never from the POSE REFERENCE.
+FINAL CHECK before answering: (1) the body pose AND the facial expression match the POSE REFERENCE; (2) the face is still clearly the character's own face; (3) the background comes from the CHARACTER image (or is plain for a sheet), never from the POSE REFERENCE.
 
 ${SINGLE_OUTPUT}`,
   },

@@ -31,7 +31,7 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 | **Character Sheet** | A character reference | Two sheets: a **body sheet** (front, 3/4, side, back at 16:9) and a **face sheet** (12 close-ups and expressions at 4:3) |
 | **Background** | A background + a character (photo or sheet) | The same character placed in that setting |
 | **Outfit** | A character (photo or sheet) + an outfit | The same character wearing that outfit |
-| **Pose** | A character (photo or sheet) + a pose reference | The same character in that pose |
+| **Pose** | A character (photo or sheet) + a pose reference | The same character in that pose, with the same facial expression |
 | **Character Scene** | A character (photo or sheet) + a text request | One new image of that single character |
 | **Characters** | A name + a body sheet and/or face sheet | A saved character you can pick in the other tools |
 | **Pose Cutter** | One or more character sheets | Each pose/expression as its own PNG (runs on your device, no API) |
