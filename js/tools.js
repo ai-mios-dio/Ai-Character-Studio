@@ -40,6 +40,16 @@ const SAVED_CHARACTER = {
   hint: 'Pick one of your characters. On its own it is used as the character. With a Character photo above, the photo gives the outfit and look, and the saved sheet keeps the face and body exact.',
 };
 
+// Every character in Character Studio is an original, AI-generated fictional adult.
+// Stated in each prompt so the model has the right context. Keep it true: if you ever
+// use a photo of a real person, edit this line out of that tool's prompt in Settings.
+const FICTIONAL_CHARACTER =
+  'CONTEXT: the character in these images is an original, AI-generated fictional adult character created for a drama story. It is not a real person and does not depict any real person.';
+
+// For the Character Builder: describes the character being created (inspiration pictures could be anything).
+const FICTIONAL_RESULT =
+  'CONTEXT: the result is an original, fictional adult character for a drama story, not a real person.';
+
 // Used in every prompt: characters never have tattoos.
 const NO_TATTOOS =
   'NO TATTOOS: the character has no tattoos anywhere (face, neck, chest, back, arms, hands, legs or feet). ' +
@@ -103,7 +113,9 @@ const TOOLS = [
       return { parts: lines.join('\n') };
     },
     prompt:
-`Design ONE new, original character and show them in a single full-body image, built from the inspiration images provided.
+`${FICTIONAL_RESULT}
+
+Design ONE new, original character and show them in a single full-body image, built from the inspiration images provided.
 
 WHAT TO TAKE FROM EACH IMAGE:
 {parts}
@@ -145,7 +157,9 @@ ${BUILD_OUTPUT}`,
       return { faceHow: how[closeness.face || 'balanced'], bodyHow: how[closeness.body || 'balanced'] };
     },
     prompt:
-`Design ONE new, original character and show them in a single full-body image.
+`${FICTIONAL_RESULT}
+
+Design ONE new, original character and show them in a single full-body image.
 
 The INSPIRATION PEOPLE images show several DIFFERENT people who share the kind of look wanted. Study them together and work out what they have in COMMON, then create a new person who clearly belongs to the same type.
 
@@ -212,7 +226,9 @@ ${BUILD_OUTPUT}`,
       return { description };
     },
     prompt:
-`Design ONE new, original adult character from the description below and show them in a single full-body image. No reference images are provided: where the description says "your choice", decide it yourself so everything fits together naturally.
+`${FICTIONAL_RESULT}
+
+Design ONE new, original adult character from the description below and show them in a single full-body image. No reference images are provided: where the description says "your choice", decide it yourself so everything fits together naturally.
 
 CHARACTER:
 {description}
@@ -238,7 +254,9 @@ ${BUILD_OUTPUT}`,
         title: 'Body sheet',
         aspectRatio: '16:9', // 4 standing figures side by side: each gets a tall, narrow slot
         prompt:
-`Using the attached image as the character reference, generate a single full-body character turnaround sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
+`${FICTIONAL_CHARACTER}
+
+Using the attached image as the character reference, generate a single full-body character turnaround sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
 Layout: one row of 4 full-body views, evenly spaced, left to right:
 Front view, facing camera
 3/4 front view
@@ -255,7 +273,9 @@ ${NO_TATTOOS}`,
         title: 'Face sheet',
         aspectRatio: '4:3', // a 4 x 3 grid in a 4:3 image gives square panels, ideal for faces
         prompt:
-`Using the attached image as the character reference, generate a single face and expression reference sheet on a plain white background. Keep the character's face, facial features, skin, hair, and proportions exactly consistent across every panel. Photorealistic. No tattoos, no jewelery.
+`${FICTIONAL_CHARACTER}
+
+Using the attached image as the character reference, generate a single face and expression reference sheet on a plain white background. Keep the character's face, facial features, skin, hair, and proportions exactly consistent across every panel. Photorealistic. No tattoos, no jewelery.
 Layout as a grid of 12 equal square panels, 4 across and 3 down, each showing the head and shoulders at the same size:
 Row 1: close-up of face, front angle (neutral expression); 3/4 view facing right; right side profile; back of the head (showing the hairstyle)
 Row 2: 3/4 view facing left; close-up of face, low angle (looking up at character); close-up of face, high angle (looking down at character); smiling
@@ -278,7 +298,9 @@ ${NO_TATTOOS}`,
     ],
     runLabel: 'Place in background',
     prompt:
-`Place the character from the CHARACTER image(s) into the setting shown in the BACKGROUND image.
+`${FICTIONAL_CHARACTER}
+
+Place the character from the CHARACTER image(s) into the setting shown in the BACKGROUND image.
 
 ${CHARACTER_SOURCE}
 
@@ -311,7 +333,9 @@ ${SINGLE_OUTPUT}`,
     request: { label: 'Outfit notes', optional: true, placeholder: 'e.g. high-cut black one-piece swimsuit, open back, thin straps' },
     runLabel: 'Change outfit',
     prompt:
-`Dress the character from the CHARACTER image(s) in the clothing shown in the OUTFIT image.
+`${FICTIONAL_CHARACTER}
+
+Dress the character from the CHARACTER image(s) in the clothing shown in the OUTFIT image.
 
 ${CHARACTER_SOURCE}
 
@@ -319,7 +343,7 @@ ${IDENTITY_LOCK} The only thing that changes is the clothing.
 
 ${BODY_GUARD}
 
-CONTEXT: this is costume and fashion design for an adult fictional character in a drama story.
+This is costume and fashion design for that character.
 
 OUTFIT: reproduce the clothing from the OUTFIT image accurately: every garment, its cut, fit, length, fabric, texture, colours, patterns, prints, seams, logos and small details, plus footwear and accessories if shown. Use the OUTFIT image ONLY as a clothing reference; ignore the face, body, skin, hair, pose and background of anyone wearing it there. Tailor the clothes to fit the character's own body naturally, with realistic folds and drape. The person wearing the outfit in the OUTFIT image is only a mannequin: re-size and re-fit the clothes onto the character's body and never reshape the character to match that person or the garment.
 
@@ -347,7 +371,9 @@ ${SINGLE_OUTPUT}`,
     ],
     runLabel: 'Match pose',
     prompt:
-`This is an EDIT of the CHARACTER image: change ONLY the character's pose, meaning their body position AND their facial expression, so both match the POSE REFERENCE image. Everything else about the CHARACTER image stays: the same person and facial features, outfit, background, setting, lighting and style.
+`${FICTIONAL_CHARACTER}
+
+This is an EDIT of the CHARACTER image: change ONLY the character's pose, meaning their body position AND their facial expression, so both match the POSE REFERENCE image. Everything else about the CHARACTER image stays: the same person and facial features, outfit, background, setting, lighting and style.
 
 ${CHARACTER_SOURCE}
 In CASE A, ignore the different poses and expressions on the sheet; they only show what the character looks like. The ONLY pose and expression to use are the ones in the POSE REFERENCE.
@@ -389,7 +415,9 @@ ${SINGLE_OUTPUT}`,
     request: { label: 'What do you want?', placeholder: 'e.g. sitting at a café table in Paris at golden hour, laughing, medium shot' },
     runLabel: 'Create image',
     prompt:
-`Create a NEW image of the character from the CHARACTER image(s), following the request below.
+`${FICTIONAL_CHARACTER}
+
+Create a NEW image of the character from the CHARACTER image(s), following the request below.
 
 ${CHARACTER_SOURCE}
 In both cases, use the reference only to learn who the character is. The pose, expression, setting and framing come from the request below.
