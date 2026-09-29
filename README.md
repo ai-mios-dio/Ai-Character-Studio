@@ -27,12 +27,12 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 
 | Tool | You upload | What you get |
 |---|---|---|
-| **Character Sheet** | A character reference | A turnaround + expression sheet |
+| **Character Sheet** | A character reference | Two sheets: a **body sheet** (front, 3/4, side, back at 16:9) and a **face sheet** (12 close-ups and expressions at 4:3) |
 | **Background** | A background + a character (photo or sheet) | The same character placed in that setting |
 | **Outfit** | A character (photo or sheet) + an outfit | The same character wearing that outfit |
 | **Pose** | A character (photo or sheet) + a pose reference | The same character in that pose |
 | **Character Scene** | A character (photo or sheet) + a text request | One new image of that single character |
-| **Characters** | A name + a character sheet | A saved character you can pick in the other tools |
+| **Characters** | A name + a body sheet and/or face sheet | A saved character you can pick in the other tools |
 | **Pose Cutter** | One or more character sheets | Each pose/expression as its own PNG (runs on your device, no API) |
 
 The home screen has one big button per tool, with **Settings** at the bottom. Each button opens that tool on its own page (use **← Back** or your phone's back button to return).
@@ -41,7 +41,7 @@ Wherever a tool asks for a **Character**, you can upload either a single photo o
 
 ### Saved characters
 
-Open **Characters** from the home screen to save a character (a name plus their character sheet), or tap **Save as character** under any Character Sheet result. Characters are stored in this browser on this device.
+Open **Characters** from the home screen to save a character (a name plus their body sheet, face sheet, or both), or tap **Save both as a character** under a Character Sheet result. When you pick a saved character in a tool, all of their sheets are sent. Characters are stored in this browser on this device.
 
 Background, Outfit, Pose and Character Scene have one **Character** box with a saved-character dropdown and two uploads side by side:
 
@@ -55,6 +55,12 @@ Every AI tool has:
 - **Hidden prompt**: the prompt sent with your images. All of them are in **Settings → Hidden prompts**: tap one, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
 - **Clear & start fresh** empties the uploads, text and results (your model and options stay).
 - **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter).
+
+## Character sheet tips
+
+- Make sheets at **Size: 4K** so every panel keeps its detail.
+- The body sheet (16:9) and face sheet (4:3) set their own ratio, so the Ratio setting is hidden for this tool.
+- Each sheet has its own hidden prompt in **Settings → Hidden prompts**.
 
 ## Pose Cutter tips
 

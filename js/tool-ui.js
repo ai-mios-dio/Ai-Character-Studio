@@ -21,11 +21,12 @@ const ToolUI = {
       model: saved.model || Models.defaultId(),
       options: saved.options || { ...(def.defaultOptions || {}) },
       prompt: saved.prompt || null,     // null = use the default prompt
+      prompts: saved.prompts || {},     // tools with several outputs: one edited prompt per output
       inputs: Object.fromEntries(def.inputs.map((i) => [i.key, []])),
       savedCharacter: '',               // id of the picked saved character, '' = none
     };
     const refs = {};
-    const save = () => Store.setTool(def.id, { model: state.model, options: state.options, prompt: state.prompt });
+    const save = () => Store.setTool(def.id, { model: state.model, options: state.options, prompt: state.prompt, prompts: state.prompts });
 
     // ----- Model picker -----
     refs.model = el('select', { id: `${def.id}-model` });
@@ -93,45 +94,56 @@ const ToolUI = {
     return section;
   },
 
-  // The hidden prompt editor for one tool. These all live on the Settings page.
-  buildPromptEditor(id) {
-    const { def, state, refs, save } = this.tools[id];
-    refs.prompt = el('textarea', { id: `${def.id}-prompt`, rows: 14, value: state.prompt ?? def.prompt });
-    refs.promptBadge = el('span', { className: 'badge' });
-    refs.promptStatus = el('div', { className: 'status' });
-    const promptSave = el('button', { className: 'primary', textContent: 'Save prompt' });
-    const promptReset = el('button', { textContent: 'Reset to default' });
-    promptSave.addEventListener('click', () => {
-      state.prompt = refs.prompt.value === def.prompt ? null : refs.prompt.value;
-      save();
-      this.updatePromptBadge(id);
-      setStatus(refs.promptStatus, 'Saved.', 'ok');
-    });
-    promptReset.addEventListener('click', () => {
-      state.prompt = null;
-      refs.prompt.value = def.prompt;
-      save();
-      this.updatePromptBadge(id);
-      setStatus(refs.promptStatus, 'Back to the default prompt.', 'ok');
-    });
-    const box = el('details', { className: 'prompt-box' },
-      el('summary', {}, def.title, refs.promptBadge),
-      def.request ? el('p', { className: 'hint small' }, '{request} is replaced by what you type in the tool\'s text box.') : '',
-      refs.prompt,
-      el('div', { className: 'row' }, promptSave, promptReset),
-      refs.promptStatus,
-    );
-    this.updatePromptBadge(id);
-    return box;
+  // The default and current prompt for a tool, or for one output of a multi-output tool.
+  defaultPrompt(id, outKey) {
+    const { def } = this.tools[id];
+    return outKey ? def.outputs.find((o) => o.key === outKey).prompt : def.prompt;
+  },
+  currentPrompt(id, outKey) {
+    const { state } = this.tools[id];
+    return (outKey ? state.prompts[outKey] : state.prompt) ?? this.defaultPrompt(id, outKey);
+  },
+  setPrompt(id, outKey, text) {
+    const { state, save } = this.tools[id];
+    const value = text === this.defaultPrompt(id, outKey) ? null : text;
+    if (outKey) { if (value == null) delete state.prompts[outKey]; else state.prompts[outKey] = value; }
+    else state.prompt = value;
+    save();
   },
 
-  updatePromptBadge(id) {
-    const { state, refs } = this.tools[id];
-    refs.promptBadge.textContent = state.prompt ? 'edited' : 'default';
-    refs.promptBadge.className = 'badge' + (state.prompt ? ' edited' : '');
+  // Hidden prompt editors for one tool (one per output). These all live on the Settings page.
+  buildPromptEditors(id) {
+    const { def } = this.tools[id];
+    const outs = def.outputs ? def.outputs.map((o) => [o.key, `${def.title}: ${o.title}`]) : [[null, def.title]];
+    return outs.map(([outKey, title]) => {
+      const area = el('textarea', { id: `${def.id}-${outKey || 'main'}-prompt`, rows: 14, value: this.currentPrompt(id, outKey) });
+      const badge = el('span', { className: 'badge' });
+      const status = el('div', { className: 'status' });
+      const updateBadge = () => {
+        const edited = this.currentPrompt(id, outKey) !== this.defaultPrompt(id, outKey);
+        badge.textContent = edited ? 'edited' : 'default';
+        badge.className = 'badge' + (edited ? ' edited' : '');
+      };
+      const saveBtn = el('button', { className: 'primary', textContent: 'Save prompt' });
+      const resetBtn = el('button', { textContent: 'Reset to default' });
+      saveBtn.addEventListener('click', () => { this.setPrompt(id, outKey, area.value); updateBadge(); setStatus(status, 'Saved.', 'ok'); });
+      resetBtn.addEventListener('click', () => {
+        this.setPrompt(id, outKey, this.defaultPrompt(id, outKey));
+        area.value = this.defaultPrompt(id, outKey);
+        updateBadge();
+        setStatus(status, 'Back to the default prompt.', 'ok');
+      });
+      updateBadge();
+      return el('details', { className: 'prompt-box' },
+        el('summary', {}, title, badge),
+        def.request ? el('p', { className: 'hint small' }, '{request} is replaced by what you type in the tool\'s text box.') : '',
+        area,
+        el('div', { className: 'row' }, saveBtn, resetBtn),
+        status,
+      );
+    });
   },
 
-  // Fills the model dropdown. Called at start and after the model list is refreshed.
   renderModelSelect(id) {
     const { state, refs, save } = this.tools[id];
     const list = Models.list();
@@ -196,7 +208,7 @@ const ToolUI = {
       sel.addEventListener('change', () => onChange(key, sel.value));
       quick.push(el('label', { className: 'quick-item' }, el('span', { className: 'quick-caption' }, caption), sel));
     };
-    quickSelect('aspectRatio', 'Ratio', m.aspectRatios);
+    if (!this.tools[id].def.outputs) quickSelect('aspectRatio', 'Ratio', m.aspectRatios); // sheets set their own ratio
     if (m.imageSizes.length) quickSelect('imageSize', 'Size', m.imageSizes, (v) => (v === '512' ? '512px' : v));
     if (m.thinkingLevels.length) quickSelect('thinkingLevel', 'Thinking', m.thinkingLevels, (v) => v[0].toUpperCase() + v.slice(1));
 
@@ -293,8 +305,9 @@ const ToolUI = {
     if (state.sheetFromSaved) { state.inputs.sheet = []; state.sheetFromSaved = false; }
     if (charId) {
       const c = await Characters.get(charId);
-      if (c) {
-        state.inputs.sheet = [new File([c.sheet], `${c.name}.png`, { type: c.sheet.type || 'image/png' })];
+      if (c && c.images.length) {
+        // Put all of this character's sheets (body + face) into the sheet box.
+        state.inputs.sheet = c.images.map((img) => new File([img.blob], `${c.name}-${img.kind}.png`, { type: img.blob.type || 'image/png' }));
         state.sheetFromSaved = true;
       }
     }
@@ -329,9 +342,9 @@ const ToolUI = {
   },
 
   // Builds the full prompt text.
-  buildPrompt(id) {
-    const { def, state, refs } = this.tools[id];
-    const template = state.prompt ?? def.prompt;
+  buildPrompt(id, outKey) {
+    const { def, refs } = this.tools[id];
+    const template = this.currentPrompt(id, outKey);
     if (!def.request) return template;
     const request = refs.request.value.trim();
     return template.includes('{request}') ? template.replaceAll('{request}', request) : `${template}\n\n${request}`;
@@ -385,36 +398,61 @@ const ToolUI = {
       parts.push({ text: `${g.tag} image${g.imgs.length > 1 ? 's' : ''}:` });
       g.imgs.forEach((blob) => parts.push({ blob }));
     }
-    parts.push({ text: this.buildPrompt(id) });
-
     const count = Number(state.options.count || 1);
     refs.run.disabled = true;
-    setStatus(refs.status, `Working on ${count > 1 ? count + ' images' : 'it'}… this can take up to a minute.`);
-    const runs = await Promise.allSettled(
-      Array.from({ length: count }, () => Gemini.generate({ apiKey, model: model.id, parts, options: state.options })),
-    );
+    setStatus(refs.status, `Working on ${count > 1 || def.outputs ? 'your images' : 'it'}… this can take up to a minute.`);
+
+    // Tools with several outputs (Character Sheet: body + face) make one image per output, in parallel.
+    const outputs = def.outputs || [{ key: null }];
+    const makeSet = () => Promise.allSettled(outputs.map((out) => Gemini.generate({
+      apiKey, model: model.id,
+      parts: [...parts, { text: this.buildPrompt(id, out.key) }],
+      options: out.aspectRatio ? { ...state.options, aspectRatio: out.aspectRatio } : state.options,
+    })));
+    const sets = await Promise.all(Array.from({ length: count }, makeSet));
     refs.run.disabled = false;
 
-    const images = runs.filter((r) => r.status === 'fulfilled').flatMap((r) => r.value);
-    const errors = runs.filter((r) => r.status === 'rejected').map((r) => r.reason.message);
-    images.forEach((src) => refs.results.prepend(this.resultCard(def, src)));
-    if (!images.length) setStatus(refs.status, 'Error: ' + errors[0], 'error');
-    else setStatus(refs.status, `Done: ${images.length} image${images.length > 1 ? 's' : ''}.` +
+    let made = 0;
+    const errors = [];
+    for (const set of sets) {
+      const images = []; // [{ kind, title, src }]
+      set.forEach((r, i) => {
+        if (r.status === 'fulfilled') r.value.forEach((src) => images.push({ kind: outputs[i].key, title: outputs[i].title, src }));
+        else errors.push((outputs[i].title ? outputs[i].title + ': ' : '') + r.reason.message);
+      });
+      made += images.length;
+      if (!images.length) continue;
+      if (def.outputs) refs.results.prepend(this.resultGroup(def, images));
+      else images.forEach((img) => refs.results.prepend(this.resultCard(def, img.src)));
+    }
+    if (!made) setStatus(refs.status, 'Error: ' + errors[0], 'error');
+    else setStatus(refs.status, `Done: ${made} image${made > 1 ? 's' : ''}.` +
       (errors.length ? ` ${errors.length} failed: ${errors[0]}` : ''), errors.length ? 'error' : 'ok');
   },
 
+  // A set of images from one run (e.g. body sheet + face sheet) with one "Save as character".
+  resultGroup(def, images) {
+    const cards = images.map((img) => {
+      const card = this.resultCard(def, img.src, img.kind);
+      card.prepend(el('div', { className: 'result-title' }, img.title));
+      return card;
+    });
+    return el('div', { className: 'result-group' }, ...cards, def.saveAsCharacter ? this.saveCharacterForm(images) : '');
+  },
+
   // "Save as character": a name box and a Save button under a result.
-  saveCharacterForm(src) {
+  saveCharacterForm(images) {
     const name = el('input', { type: 'text', placeholder: 'Character name' });
-    const btn = el('button', { className: 'primary', textContent: 'Save as character' });
+    const btn = el('button', { className: 'primary', textContent: images.length > 1 ? 'Save both as a character' : 'Save as character' });
     const status = el('div', { className: 'status' });
     btn.addEventListener('click', async () => {
       if (!name.value.trim()) { name.focus(); return setStatus(status, 'Type a name first.', 'error'); }
       btn.disabled = true;
       try {
-        const blob = await (await fetch(src)).blob();
-        await Characters.add(name.value, blob);
-        setStatus(status, `Saved "${name.value.trim()}". Pick it from "Saved character" in any tool.`, 'ok');
+        const sheets = [];
+        for (const img of images) sheets.push({ kind: img.kind || 'sheet', blob: await (await fetch(img.src)).blob() });
+        await Characters.add(name.value, sheets);
+        setStatus(status, `Saved "${name.value.trim()}". Pick it from the Character box in any tool.`, 'ok');
       } catch (err) {
         btn.disabled = false;
         setStatus(status, 'Could not save: ' + err.message, 'error');
@@ -424,8 +462,8 @@ const ToolUI = {
   },
 
   // One generated image with Download and "Send to…" controls.
-  resultCard(def, src) {
-    const name = `${def.id}_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.png`;
+  resultCard(def, src, kind) {
+    const name = `${def.id}${kind ? '-' + kind : ''}_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.png`;
     const download = el('button', { textContent: 'Download' });
     download.addEventListener('click', () => downloadUrl(src, name));
 
@@ -454,7 +492,6 @@ const ToolUI = {
     return el('div', { className: 'result-item' },
       el('img', { src, alt: 'Generated image' }),
       el('div', { className: 'row' }, download, send),
-      def.saveAsCharacter ? this.saveCharacterForm(src) : '',
       el('p', { className: 'hint small' }, 'Tip: on a phone you can also press and hold the image to save it.'),
     );
   },

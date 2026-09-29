@@ -1,4 +1,5 @@
-// Your saved characters. Each one is a name plus its character sheet image.
+// Your saved characters. Each one is a name plus its sheets:
+// usually a full-body 'body' sheet and a close-up 'face' sheet (older saves have one 'sheet').
 // Stored in IndexedDB, the browser's built-in database, because images are too big
 // for localStorage. Like everything else, it stays on this device only.
 
@@ -27,24 +28,32 @@ const Characters = {
     });
   },
 
+  // Older saves kept one image in `sheet`; newer ones keep a list in `images`.
+  _normalise(c) {
+    if (c && !c.images) c.images = c.sheet ? [{ kind: 'sheet', blob: c.sheet }] : [];
+    return c;
+  },
+
   // All characters, newest first.
   async list() {
     try {
       const all = await this._do('readonly', (store) => store.getAll());
-      return (all || []).sort((a, b) => b.created - a.created);
+      return (all || []).map((c) => this._normalise(c)).sort((a, b) => b.created - a.created);
     } catch {
       return []; // storage blocked (e.g. private browsing): behave as "no characters"
     }
   },
 
-  get(id) { return this._do('readonly', (store) => store.get(id)); },
+  async get(id) { return this._normalise(await this._do('readonly', (store) => store.get(id))); },
 
-  async add(name, sheetBlob) {
+  // images: [{ kind: 'body' | 'face' | 'sheet', blob }]  (a single Blob also works)
+  async add(name, images) {
+    if (images instanceof Blob) images = [{ kind: 'sheet', blob: images }];
     const character = {
       id: 'c' + Date.now(),
       name: name.trim() || 'Unnamed character',
-      sheet: sheetBlob,
-      thumb: await this.makeThumb(sheetBlob),
+      images,
+      thumb: await this.makeThumb(images[0].blob),
       created: Date.now(),
     };
     await this._do('readwrite', (store) => store.put(character));

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Character Studio</title>
-  <link rel="stylesheet" href="css/style.css?v=15">
+  <link rel="stylesheet" href="css/style.css?v=16">
 </head>
 <body>
   <div class="app">
@@ -21,15 +21,25 @@
       <!-- ============ CHARACTERS ============ -->
       <section id="characters" class="section">
         <header class="page-head"><button class="back-btn" data-back>&larr; Back</button><h2>Characters</h2></header>
-        <p class="hint">Your saved characters. Pick them from "Saved character" in Background, Outfit, Pose and Character Scene. They are stored on this device only.</p>
+        <p class="hint">Your saved characters. Pick them in the Character box of Background, Outfit, Pose and Character Scene. They are stored on this device only.</p>
 
         <div class="card">
           <div class="label">Add a character</div>
-          <p class="hint small input-hint">Upload their character sheet and give them a name. You can also tap "Save as character" under any result in the Character Sheet tool.</p>
+          <p class="hint small input-hint">Give them a name and add their body sheet, face sheet, or both. You can also tap "Save both as a character" under a Character Sheet result.</p>
           <input type="text" id="charName" placeholder="Character name">
-          <div class="dropzone" id="charDrop" style="margin-top:10px">
-            <input type="file" id="charFile" accept="image/*">
-            <span id="charDropText">Tap to choose their character sheet</span>
+          <div class="upload-pair">
+            <div class="upload-col">
+              <div class="dropzone mini" id="charBodyDrop">
+                <input type="file" id="charBodyFile" accept="image/*" aria-label="Body sheet">
+                <span id="charBodyText">Body sheet</span>
+              </div>
+            </div>
+            <div class="upload-col">
+              <div class="dropzone mini" id="charFaceDrop">
+                <input type="file" id="charFaceFile" accept="image/*" aria-label="Face sheet">
+                <span id="charFaceText">Face sheet</span>
+              </div>
+            </div>
           </div>
           <button class="primary" id="charAdd">Save character</button>
           <div class="status" id="charStatus"></div>
@@ -124,13 +134,13 @@
   <!-- The ?v= number makes phones download fresh files after each update. Bump it when you change CSS/JS. -->
   <!-- JSZip builds the "download all" zip file. Loaded from a public CDN. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="js/storage.js?v=15"></script>
-  <script src="js/models.js?v=15"></script>
-  <script src="js/gemini.js?v=15"></script>
-  <script src="js/characters.js?v=15"></script>
-  <script src="js/cutter.js?v=15"></script>
-  <script src="js/tools.js?v=15"></script>
-  <script src="js/tool-ui.js?v=15"></script>
-  <script src="js/app.js?v=15"></script>
+  <script src="js/storage.js?v=16"></script>
+  <script src="js/models.js?v=16"></script>
+  <script src="js/gemini.js?v=16"></script>
+  <script src="js/characters.js?v=16"></script>
+  <script src="js/cutter.js?v=16"></script>
+  <script src="js/tools.js?v=16"></script>
+  <script src="js/tool-ui.js?v=16"></script>
+  <script src="js/app.js?v=16"></script>
 </body>
 </html>

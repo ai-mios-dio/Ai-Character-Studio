@@ -18,14 +18,14 @@ const IDENTITY_LOCK =
 // Each tool adds its own "if sheet / if single picture" instructions after this.
 const CHARACTER_SOURCE =
 `ABOUT THE CHARACTER IMAGE(S): first decide which of these two cases applies.
-- CASE A, CHARACTER SHEET: the image is a turnaround / reference sheet with several panels, views, close-ups or expressions. Every panel shows the SAME ONE individual from different angles. It is NOT a group of different people, and its grid layout is NOT the output format. Combine all panels to understand this one character: full-body views for height, build, body proportions and outfit; close-ups for the face.
+- CASE A, CHARACTER SHEET: the image is a turnaround / reference sheet with several panels, views, close-ups or expressions (there may be two: a full-body BODY sheet and a close-up FACE sheet). Every panel shows the SAME ONE individual from different angles. It is NOT a group of different people, and its grid layout is NOT the output format. Combine all panels to understand this one character: the full-body views (body sheet) for height, build, body proportions and outfit; the close-ups (face sheet) for the face.
 - CASE B, SINGLE PICTURE: the image shows the character once. That picture is the reference for who they are.
 
-EXTRA CHARACTER SHEET (only if an image labelled CHARACTER SHEET is also included): it is an additional reference of the SAME character shown in the CHARACTER image, not a different person. It shows one individual in several panels, not a group. Use it ONLY to get the identity exactly right: face, facial features, skin tone, eye colour, height, build and body proportions. The character's look (outfit, hair styling, makeup, accessories) comes from the CHARACTER image, NEVER from the sheet: ignore the sheet's clothing, poses, expressions, background and layout. If the two images disagree on outfit or styling, the CHARACTER image wins. Everything the instructions below say about the CHARACTER image still refers to the CHARACTER image, not the sheet.`;
+EXTRA CHARACTER SHEET(S) (only if images labelled CHARACTER SHEET are also included; there may be a full-body BODY sheet and a close-up FACE sheet): they are additional references of the SAME character shown in the CHARACTER image, not a different person. It shows one individual in several panels, not a group. Use it ONLY to get the identity exactly right: face, facial features, skin tone, eye colour, height, build and body proportions. The character's look (outfit, hair styling, makeup, accessories) comes from the CHARACTER image, NEVER from the sheet: ignore the sheet's clothing, poses, expressions, background and layout. If the two images disagree on outfit or styling, the CHARACTER image wins. Everything the instructions below say about the CHARACTER image still refers to the CHARACTER image, not the sheet.`;
 
 // Stops a person in the OUTFIT / POSE / BACKGROUND image from leaking their body shape into the character.
 const BODY_GUARD =
-`BODY PROPORTIONS COME ONLY FROM THE CHARACTER. Any other reference image (OUTFIT, POSE REFERENCE, BACKGROUND) may show a different person. That person's body is irrelevant: do NOT copy, blend in or average toward their height, build, weight, shoulder width, chest, waist, hips, limb length, leg length, torso length, neck, hand size or head size. Take the character's body only from the character references. If a CHARACTER SHEET is provided (or the CHARACTER image is a sheet), its full-body front and side views are the authority for body proportions.
+`BODY PROPORTIONS COME ONLY FROM THE CHARACTER. Any other reference image (OUTFIT, POSE REFERENCE, BACKGROUND) may show a different person. That person's body is irrelevant: do NOT copy, blend in or average toward their height, build, weight, shoulder width, chest, waist, hips, limb length, leg length, torso length, neck, hand size or head size. Take the character's body only from the character references. If character sheets are provided (or the CHARACTER image is a sheet), the full-body front, side and back views are the authority for body proportions, and the face close-ups are the authority for the face.
 PROPORTION CHECK before answering: compare your result with the character references. Head-to-body ratio, shoulder-to-hip ratio, leg-to-torso ratio and overall build must match the character exactly, not the other person. If they drift, correct them.`;
 
 // Dropdown of your saved characters (see the Characters page).
@@ -49,22 +49,40 @@ const TOOLS = [
   {
     id: 'sheet',
     title: 'Character Sheet',
-    intro: 'Upload a character reference and tap Run to get a turnaround and expression sheet.',
+    intro: 'Upload a character reference and tap Run. You get two sheets: a full-body sheet and a face sheet.',
     inputs: [{ key: 'character', label: 'Character reference', tag: 'CHARACTER REFERENCE' }],
-    runLabel: 'Create character sheet',
+    runLabel: 'Create character sheets',
     saveAsCharacter: true,
-    defaultOptions: { aspectRatio: '16:9' },
-    prompt:
-`Using the attached image as the character reference, generate a single character turnaround and expression reference sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
-Layout as a grid:
-Front view, full body, facing camera, arms relaxed at sides
+    // One Run makes both sheets. Each has its own prompt (editable in Settings) and a fixed ratio.
+    outputs: [
+      {
+        key: 'body',
+        title: 'Body sheet',
+        aspectRatio: '16:9', // 4 standing figures side by side: each gets a tall, narrow slot
+        prompt:
+`Using the attached image as the character reference, generate a single full-body character turnaround sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
+Layout: one row of 4 full-body views, evenly spaced, left to right:
+Front view, facing camera
 3/4 front view
-Right side profile, full body
-Close-up of face, front angle
-Close-up of face, low angle (looking up at character)
-Close-up of face, high angle (looking down at character)
-Expression grid: neutral, smiling, angry, crying, shocked, smug/smirking
-Each panel should be clearly separated with consistent lighting and the same neutral background.`,
+Right side profile
+Back view
+In every view: standing upright in a relaxed neutral pose, arms relaxed and held slightly away from the body so the body outline is clearly visible, neutral expression, whole body from head to feet in frame with nothing cropped.
+All four figures at exactly the same scale: feet on the same ground line and the top of the head at the same height, so body proportions can be compared between views.
+Each view should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.`,
+      },
+      {
+        key: 'face',
+        title: 'Face sheet',
+        aspectRatio: '4:3', // a 4 x 3 grid in a 4:3 image gives square panels, ideal for faces
+        prompt:
+`Using the attached image as the character reference, generate a single face and expression reference sheet on a plain white background. Keep the character's face, facial features, skin, hair, and proportions exactly consistent across every panel. Photorealistic. No tattoos, no jewelery.
+Layout as a grid of 12 equal square panels, 4 across and 3 down, each showing the head and shoulders at the same size:
+Row 1: close-up of face, front angle (neutral expression); 3/4 view facing right; right side profile; back of the head (showing the hairstyle)
+Row 2: 3/4 view facing left; close-up of face, low angle (looking up at character); close-up of face, high angle (looking down at character); smiling
+Row 3: angry; crying; shocked; smug/smirking
+Each panel should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.`,
+      },
+    ],
   },
 
   {

@@ -121,22 +121,26 @@ $('settingsSave').addEventListener('click', () => {
 $('modelsRefresh').addEventListener('click', () => refreshModels($('modelsStatus')));
 
 // ================ CHARACTERS ================
-let charFile = null;
-setupDropzone($('charDrop'), $('charFile'), (files) => {
-  charFile = files[0] || null;
-  $('charDropText').textContent = charFile ? `Chosen: ${charFile.name}` : 'Tap to choose their character sheet';
-});
+// The two sheets being added: body (full-body views) and face (close-ups).
+const charFiles = { body: null, face: null };
+const CHAR_SLOTS = { body: ['charBodyDrop', 'charBodyFile', 'charBodyText', 'Body sheet'], face: ['charFaceDrop', 'charFaceFile', 'charFaceText', 'Face sheet'] };
+for (const [kind, [drop, input, text, label]] of Object.entries(CHAR_SLOTS)) {
+  setupDropzone($(drop), $(input), (files) => {
+    charFiles[kind] = files[0] || null;
+    $(text).textContent = charFiles[kind] ? `${label} ✓` : label;
+  });
+}
 
 $('charAdd').addEventListener('click', async () => {
   const status = $('charStatus');
   if (!$('charName').value.trim()) return setStatus(status, 'Type a name first.', 'error');
-  if (!charFile) return setStatus(status, 'Choose their character sheet first.', 'error');
+  const images = Object.entries(charFiles).filter(([, f]) => f).map(([kind, blob]) => ({ kind, blob }));
+  if (!images.length) return setStatus(status, 'Add a body sheet, a face sheet, or both.', 'error');
   try {
-    await Characters.add($('charName').value, charFile);
+    await Characters.add($('charName').value, images);
     setStatus(status, `Saved "${$('charName').value.trim()}".`, 'ok');
     $('charName').value = '';
-    charFile = null;
-    $('charDropText').textContent = 'Tap to choose their character sheet';
+    for (const [kind, [, , text, label]] of Object.entries(CHAR_SLOTS)) { charFiles[kind] = null; $(text).textContent = label; }
   } catch (err) {
     setStatus(status, 'Could not save: ' + err.message, 'error');
   }
@@ -162,9 +166,11 @@ async function renderCharacters() {
       del.textContent = 'Tap again to delete';
       setTimeout(() => { delete del.dataset.armed; del.textContent = 'Delete'; }, 4000);
     });
+    const kinds = { body: 'Body sheet', face: 'Face sheet', sheet: 'Sheet' };
+    const has = c.images.map((img) => kinds[img.kind] || img.kind).join(' + ');
     box.append(el('div', { className: 'char-card' },
       el('img', { src: c.thumb, alt: c.name }),
-      el('div', { className: 'char-info' }, name, el('div', { className: 'row' }, rename, del))));
+      el('div', { className: 'char-info' }, name, el('div', { className: 'hint small' }, has), el('div', { className: 'row' }, rename, del))));
   }
 }
 
@@ -281,7 +287,7 @@ buildHome();
 const cutterSection = $('cutter');
 for (const def of TOOLS) {
   $('content').insertBefore(ToolUI.build(def), cutterSection);
-  $('promptEditors').append(ToolUI.buildPromptEditor(def.id));
+  $('promptEditors').append(...ToolUI.buildPromptEditors(def.id));
 }
 $('apiKey').value = Store.getApiKey();
 renderModelsTable();
