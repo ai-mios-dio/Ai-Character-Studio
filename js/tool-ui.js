@@ -65,52 +65,53 @@ const ToolUI = {
     refs.status = el('div', { className: 'status' });
     refs.run.addEventListener('click', () => this.run(def.id));
 
-    // ----- Hidden prompt editor -----
-    refs.prompt = el('textarea', { id: `${def.id}-prompt`, rows: 14, value: state.prompt ?? def.prompt });
-    refs.promptBadge = el('span', { className: 'badge' });
-    refs.promptStatus = el('div', { className: 'status' });
-    const promptSave = el('button', { textContent: 'Save prompt' });
-    const promptReset = el('button', { textContent: 'Reset to default' });
-    promptSave.addEventListener('click', () => {
-      state.prompt = refs.prompt.value === def.prompt ? null : refs.prompt.value;
-      save();
-      this.updatePromptBadge(def.id);
-      setStatus(refs.promptStatus, 'Saved.', 'ok');
-    });
-    promptReset.addEventListener('click', () => {
-      state.prompt = null;
-      refs.prompt.value = def.prompt;
-      save();
-      this.updatePromptBadge(def.id);
-      setStatus(refs.promptStatus, 'Back to the default prompt.', 'ok');
-    });
-    const promptBox = el('details', { className: 'card prompt-box' },
-      el('summary', {}, 'Hidden prompt ', refs.promptBadge),
-      el('p', { className: 'hint small' },
-        'This is sent with your images every time you tap Run. Edit it and tap Save prompt to change it for good.' +
-        (def.request ? ' {request} is replaced by what you type in the box above.' : '')),
-      refs.prompt,
-      el('div', { className: 'row' }, promptSave, promptReset),
-      refs.promptStatus,
-    );
-
     refs.results = el('div', { className: 'results' });
 
     const section = el('section', { id: def.id, className: 'section' },
-      el('h2', {}, def.title),
+      pageHeader(def.title),
       el('p', { className: 'hint' }, def.intro),
       modelCard,
       ...inputCards,
       requestCard,
       el('div', { className: 'run-row' }, refs.run, refs.status),
       refs.results,
-      promptBox,
     );
 
     this.tools[def.id] = { def, state, refs, save };
     this.renderModelSelect(def.id);
-    this.updatePromptBadge(def.id);
     return section;
+  },
+
+  // The hidden prompt editor for one tool. These all live on the Settings page.
+  buildPromptEditor(id) {
+    const { def, state, refs, save } = this.tools[id];
+    refs.prompt = el('textarea', { id: `${def.id}-prompt`, rows: 14, value: state.prompt ?? def.prompt });
+    refs.promptBadge = el('span', { className: 'badge' });
+    refs.promptStatus = el('div', { className: 'status' });
+    const promptSave = el('button', { className: 'primary', textContent: 'Save prompt' });
+    const promptReset = el('button', { textContent: 'Reset to default' });
+    promptSave.addEventListener('click', () => {
+      state.prompt = refs.prompt.value === def.prompt ? null : refs.prompt.value;
+      save();
+      this.updatePromptBadge(id);
+      setStatus(refs.promptStatus, 'Saved.', 'ok');
+    });
+    promptReset.addEventListener('click', () => {
+      state.prompt = null;
+      refs.prompt.value = def.prompt;
+      save();
+      this.updatePromptBadge(id);
+      setStatus(refs.promptStatus, 'Back to the default prompt.', 'ok');
+    });
+    const box = el('details', { className: 'prompt-box' },
+      el('summary', {}, def.title, refs.promptBadge),
+      def.request ? el('p', { className: 'hint small' }, '{request} is replaced by what you type in the tool\'s text box.') : '',
+      refs.prompt,
+      el('div', { className: 'row' }, promptSave, promptReset),
+      refs.promptStatus,
+    );
+    this.updatePromptBadge(id);
+    return box;
   },
 
   updatePromptBadge(id) {

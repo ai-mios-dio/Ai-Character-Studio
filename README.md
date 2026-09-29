@@ -33,10 +33,12 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 | **Character Scene** | A character sheet + a text request | One new image of that single character |
 | **Pose Cutter** | One or more character sheets | Each pose/expression as its own PNG (runs on your device, no API) |
 
+The home screen has one big button per tool, with **Settings** at the bottom. Each button opens that tool on its own page (use **← Back** or your phone's back button to return).
+
 Every AI tool has:
 
 - **Model**: a dropdown of the image models your key can use. The options under **Model options** change to match the model you pick (aspect ratio, image size, thinking level, Google Search, temperature, seed, images per run). Anything left on *Default* isn't sent, so the model uses its own default.
-- **Hidden prompt**: the prompt sent with your images. It's folded away, but you can open it, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
+- **Hidden prompt**: the prompt sent with your images. All of them are in **Settings → Hidden prompts**: tap one, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
 - **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter).
 
 ## Pose Cutter tips

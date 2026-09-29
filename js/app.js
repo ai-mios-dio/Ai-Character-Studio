@@ -29,26 +29,47 @@ function setupDropzone(zone, input, onFiles) {
   });
 }
 
-// ---------------- Menu ----------------
+// ---------------- Pages ----------------
+// Each page has its own address (#sheet, #settings...), so the phone's back button works.
+const PAGES = () => [...TOOLS.map((t) => [t.id, t.title]), ['cutter', 'Pose Cutter']];
+
 function showSection(id) {
-  document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.section === id));
-  document.querySelectorAll('.section').forEach((s) => s.classList.toggle('active', s.id === id));
-  Store.set('cs.lastSection', id);
-  window.scrollTo(0, 0);
+  if (location.hash !== '#' + id) location.hash = id; // triggers route()
+  else route();
 }
 
-function buildNav() {
-  const nav = $('nav');
-  const items = [
-    ...TOOLS.map((t) => [t.id, t.title]),
-    ['cutter', 'Pose Cutter'],
-    ['settings', 'Settings'],
-  ];
-  for (const [id, title] of items) {
-    const btn = el('button', { className: 'nav-btn', textContent: title, dataset: { section: id } });
-    btn.addEventListener('click', () => showSection(id));
-    nav.append(btn);
+let currentPage = null, lastPage = null;
+function route() {
+  let id = location.hash.slice(1) || 'home';
+  if (!document.getElementById(id)?.classList.contains('section')) id = 'home';
+  document.querySelectorAll('.section').forEach((s) => s.classList.toggle('active', s.id === id));
+  lastPage = currentPage;
+  currentPage = id;
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+// Back button at the top of each page. If we got here from Home, step back in history
+// (keeps the phone's own back button in sync); otherwise just open Home.
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('[data-back]')) return;
+  if (lastPage === 'home') history.back();
+  else location.hash = 'home';
+});
+
+function pageHeader(title) {
+  return el('header', { className: 'page-head' },
+    el('button', { className: 'back-btn', innerHTML: '&larr; Back', dataset: { back: '' } }),
+    el('h2', {}, title));
+}
+
+function buildHome() {
+  const box = $('homeButtons');
+  for (const [id, title] of PAGES()) {
+    const btn = el('a', { className: 'home-btn', href: '#' + id, textContent: title });
+    box.append(btn);
   }
+  box.append(el('a', { className: 'home-btn settings-btn', href: '#settings', textContent: 'Settings' }));
 }
 
 // ================ SETTINGS ================
@@ -195,13 +216,15 @@ $('cutZip').addEventListener('click', async () => {
 });
 
 // ---------------- Start up ----------------
-buildNav();
+buildHome();
 const cutterSection = $('cutter');
-for (const def of TOOLS) $('content').insertBefore(ToolUI.build(def), cutterSection);
+for (const def of TOOLS) {
+  $('content').insertBefore(ToolUI.build(def), cutterSection);
+  $('promptEditors').append(ToolUI.buildPromptEditor(def.id));
+}
 $('apiKey').value = Store.getApiKey();
 renderModelsTable();
-const last = Store.get('cs.lastSection', TOOLS[0].id);
-showSection(document.getElementById(last) ? last : TOOLS[0].id);
+route();
 
 // Quietly refresh the model list once a day if we have a key.
 if (Store.getApiKey() && Date.now() - (Models.loadedAt() || 0) > 24 * 3600 * 1000) {

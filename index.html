@@ -8,18 +8,19 @@
 </head>
 <body>
   <div class="app">
-    <!-- Menu. Buttons for the AI tools are added automatically from js/tools.js. -->
-    <nav class="sidebar">
-      <h1 class="logo">Character Studio</h1>
-      <div class="nav-list" id="nav"></div>
-    </nav>
-
     <main class="content" id="content">
+      <!-- ============ HOME ============ -->
+      <!-- One big button per tool. They're added automatically from js/tools.js. -->
+      <section id="home" class="section">
+        <h1 class="logo">Character Studio</h1>
+        <div class="home-buttons" id="homeButtons"></div>
+      </section>
+
       <!-- The AI tool sections (Character Sheet, Background Swap...) are inserted here. -->
 
       <!-- ============ POSE CUTTER ============ -->
       <section id="cutter" class="section" data-title="Pose Cutter">
-        <h2>Pose Cutter</h2>
+        <header class="page-head"><button class="back-btn" data-back>&larr; Back</button><h2>Pose Cutter</h2></header>
         <p class="hint">Upload one or more character sheets. Each separate pose or expression is found, cut out, and saved as its own image. This runs on your device and doesn't use the API.</p>
 
         <div class="card">
@@ -62,7 +63,7 @@
 
       <!-- ============ SETTINGS ============ -->
       <section id="settings" class="section" data-title="Settings">
-        <h2>Settings</h2>
+        <header class="page-head"><button class="back-btn" data-back>&larr; Back</button><h2>Settings</h2></header>
         <div class="card">
           <label class="label" for="apiKey">Gemini API key</label>
           <input type="password" id="apiKey" autocomplete="off" placeholder="Paste your key from aistudio.google.com/apikey">
@@ -71,6 +72,12 @@
             <button class="primary" id="settingsSave">Save key &amp; load models</button>
           </div>
           <div class="status" id="settingsStatus"></div>
+        </div>
+
+        <div class="card">
+          <div class="label">Hidden prompts</div>
+          <p class="hint small">These are sent with your images every time you tap Run in a tool. Tap one to open it, edit it, then tap Save prompt.</p>
+          <div id="promptEditors"></div>
         </div>
 
         <div class="card">
