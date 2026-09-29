@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Character Studio</title>
-  <link rel="stylesheet" href="css/style.css?v=10">
+  <link rel="stylesheet" href="css/style.css?v=12">
 </head>
 <body>
   <div class="app">
@@ -18,6 +18,26 @@
 
       <!-- The AI tool sections (Character Sheet, Background Swap...) are inserted here. -->
 
+      <!-- ============ CHARACTERS ============ -->
+      <section id="characters" class="section">
+        <header class="page-head"><button class="back-btn" data-back>&larr; Back</button><h2>Characters</h2></header>
+        <p class="hint">Your saved characters. Pick them from "Saved character" in Background, Outfit, Pose and Character Scene. They are stored on this device only.</p>
+
+        <div class="card">
+          <div class="label">Add a character</div>
+          <p class="hint small input-hint">Upload their character sheet and give them a name. You can also tap "Save as character" under any result in the Character Sheet tool.</p>
+          <input type="text" id="charName" placeholder="Character name">
+          <div class="dropzone" id="charDrop" style="margin-top:10px">
+            <input type="file" id="charFile" accept="image/*">
+            <span id="charDropText">Tap to choose their character sheet</span>
+          </div>
+          <button class="primary" id="charAdd">Save character</button>
+          <div class="status" id="charStatus"></div>
+        </div>
+
+        <div id="charList" class="char-list"></div>
+      </section>
+
       <!-- ============ POSE CUTTER ============ -->
       <section id="cutter" class="section" data-title="Pose Cutter">
         <header class="page-head"><button class="back-btn" data-back>&larr; Back</button><h2>Pose Cutter</h2></header>
@@ -29,7 +49,7 @@
             <span>Tap to add character sheets (multiple OK)</span>
           </div>
           <div class="thumbs" id="cutThumbs"></div>
-          <button class="small-btn" id="cutClear">Clear list</button>
+          <button class="small-btn" id="cutClear">Clear &amp; start fresh</button>
 
           <details class="settings-box">
             <summary>Detection settings</summary>
@@ -104,12 +124,13 @@
   <!-- The ?v= number makes phones download fresh files after each update. Bump it when you change CSS/JS. -->
   <!-- JSZip builds the "download all" zip file. Loaded from a public CDN. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="js/storage.js?v=10"></script>
-  <script src="js/models.js?v=10"></script>
-  <script src="js/gemini.js?v=10"></script>
-  <script src="js/cutter.js?v=10"></script>
-  <script src="js/tools.js?v=10"></script>
-  <script src="js/tool-ui.js?v=10"></script>
-  <script src="js/app.js?v=10"></script>
+  <script src="js/storage.js?v=12"></script>
+  <script src="js/models.js?v=12"></script>
+  <script src="js/gemini.js?v=12"></script>
+  <script src="js/characters.js?v=12"></script>
+  <script src="js/cutter.js?v=12"></script>
+  <script src="js/tools.js?v=12"></script>
+  <script src="js/tool-ui.js?v=12"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>

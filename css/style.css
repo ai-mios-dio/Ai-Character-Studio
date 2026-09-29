@@ -168,7 +168,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 .results { display: grid; gap: 16px; }
 .result-item { background: var(--card); border-radius: 20px; padding: 12px; }
 .result-item img { max-width: 100%; display: block; border-radius: 12px; }
-.send-to { width: auto; margin-top: 12px; }
+.send-to { width: 100%; max-width: 100%; margin-top: 12px; }
+.result-item { min-width: 0; overflow: hidden; }
 
 /* ---------- Pose Cutter results ---------- */
 .sheet-group { margin-bottom: 24px; }
@@ -214,3 +215,15 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 .load-error[hidden] { display: none; }
 
 .input-hint { margin: -2px 0 10px; }
+
+.clear-btn { width: 100%; margin: 10px 0 0; background: transparent; border: 2px solid var(--pill); color: var(--ink); font-weight: 600; }
+
+/* ---------- Characters ---------- */
+.char-list { display: grid; gap: 12px; }
+.char-card { display: flex; gap: 12px; align-items: center; background: var(--card); border-radius: 20px; padding: 12px; }
+.char-card img { width: 110px; height: 80px; object-fit: contain; background: #fff; border-radius: 12px; flex-shrink: 0; }
+.char-info { flex: 1; min-width: 0; }
+button.danger { color: var(--danger); }
+.small-link { display: inline-block; margin-top: 10px; color: var(--muted); font-size: 14px; }
+.save-character { display: grid; gap: 8px; margin-top: 12px; }
+.save-character button { margin: 0; }

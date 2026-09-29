@@ -32,18 +32,27 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 | **Outfit** | A character (photo or sheet) + an outfit | The same character wearing that outfit |
 | **Pose** | A character (photo or sheet) + a pose reference | The same character in that pose |
 | **Character Scene** | A character (photo or sheet) + a text request | One new image of that single character |
+| **Characters** | A name + a character sheet | A saved character you can pick in the other tools |
 | **Pose Cutter** | One or more character sheets | Each pose/expression as its own PNG (runs on your device, no API) |
 
 The home screen has one big button per tool, with **Settings** at the bottom. Each button opens that tool on its own page (use **← Back** or your phone's back button to return).
 
 Wherever a tool asks for a **Character**, you can upload either a single photo or a character sheet. The hidden prompt explains both cases to the model, so a sheet is always treated as one person.
 
-These tools also have an optional **Character sheet** box. Use it when your Character image is a photo with the look you want (outfit, hair) and you also have a sheet of the same character: the sheet is used only to get the face and body right, and the outfit/look comes from the photo.
+### Saved characters
+
+Open **Characters** from the home screen to save a character (a name plus their character sheet), or tap **Save as character** under any Character Sheet result. Characters are stored in this browser on this device.
+
+Background, Outfit, Pose and Character Scene have a **Saved character** dropdown:
+
+- **Saved character only:** their sheet is used as the character. No upload needed.
+- **Saved character + a Character photo:** the photo gives the outfit and look, and the saved sheet keeps the face and body exact.
 
 Every AI tool has:
 
 - **Model**: a dropdown of the image models your key can use. The options under **Model options** change to match the model you pick (aspect ratio, image size, thinking level, Google Search, temperature, seed, images per run). Anything left on *Default* isn't sent, so the model uses its own default.
 - **Hidden prompt**: the prompt sent with your images. All of them are in **Settings → Hidden prompts**: tap one, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
+- **Clear & start fresh** empties the uploads, text and results (your model and options stay).
 - **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter).
 
 ## Pose Cutter tips

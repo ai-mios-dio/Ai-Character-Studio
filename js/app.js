@@ -31,7 +31,7 @@ function setupDropzone(zone, input, onFiles) {
 
 // ---------------- Pages ----------------
 // Each page has its own address (#sheet, #settings...), so the phone's back button works.
-const PAGES = () => [...TOOLS.map((t) => [t.id, t.title]), ['cutter', 'Pose Cutter']];
+const PAGES = () => [...TOOLS.map((t) => [t.id, t.title]), ['characters', 'Characters'], ['cutter', 'Pose Cutter']];
 
 function showSection(id) {
   if (location.hash !== '#' + id) location.hash = id; // triggers route()
@@ -120,6 +120,60 @@ $('settingsSave').addEventListener('click', () => {
 });
 $('modelsRefresh').addEventListener('click', () => refreshModels($('modelsStatus')));
 
+// ================ CHARACTERS ================
+let charFile = null;
+setupDropzone($('charDrop'), $('charFile'), (files) => {
+  charFile = files[0] || null;
+  $('charDropText').textContent = charFile ? `Chosen: ${charFile.name}` : 'Tap to choose their character sheet';
+});
+
+$('charAdd').addEventListener('click', async () => {
+  const status = $('charStatus');
+  if (!$('charName').value.trim()) return setStatus(status, 'Type a name first.', 'error');
+  if (!charFile) return setStatus(status, 'Choose their character sheet first.', 'error');
+  try {
+    await Characters.add($('charName').value, charFile);
+    setStatus(status, `Saved "${$('charName').value.trim()}".`, 'ok');
+    $('charName').value = '';
+    charFile = null;
+    $('charDropText').textContent = 'Tap to choose their character sheet';
+  } catch (err) {
+    setStatus(status, 'Could not save: ' + err.message, 'error');
+  }
+});
+
+async function renderCharacters() {
+  const box = $('charList');
+  const list = await Characters.list();
+  box.innerHTML = '';
+  if (!list.length) {
+    box.append(el('p', { className: 'hint' }, 'No characters yet. Add one above.'));
+    return;
+  }
+  for (const c of list) {
+    const name = el('input', { type: 'text', value: c.name, 'aria-label': 'Character name' });
+    const rename = el('button', { className: 'small-btn', textContent: 'Rename' });
+    rename.addEventListener('click', () => Characters.rename(c.id, name.value));
+    // Delete asks for a second tap instead of a pop-up.
+    const del = el('button', { className: 'small-btn danger', textContent: 'Delete' });
+    del.addEventListener('click', () => {
+      if (del.dataset.armed) return Characters.remove(c.id);
+      del.dataset.armed = '1';
+      del.textContent = 'Tap again to delete';
+      setTimeout(() => { delete del.dataset.armed; del.textContent = 'Delete'; }, 4000);
+    });
+    box.append(el('div', { className: 'char-card' },
+      el('img', { src: c.thumb, alt: c.name }),
+      el('div', { className: 'char-info' }, name, el('div', { className: 'row' }, rename, del))));
+  }
+}
+
+// Keep this page and every tool's dropdown up to date when characters change.
+Characters.onChange(() => {
+  renderCharacters();
+  Object.keys(ToolUI.tools).forEach((id) => ToolUI.fillSavedPicker(id));
+});
+
 // ================ POSE CUTTER ================
 let cutSources = [];   // image files waiting to be cut
 let cutOutputs = [];   // [{ sheet, files: [{ name, blob }] }]
@@ -139,7 +193,14 @@ function renderCutSources() {
   });
   setStatus($('cutStatus'), cutSources.length ? `${cutSources.length} sheet(s) ready.` : '');
 }
-$('cutClear').addEventListener('click', () => { cutSources = []; renderCutSources(); });
+$('cutClear').addEventListener('click', () => {
+  cutSources = [];
+  cutOutputs = [];
+  $('cutResults').innerHTML = '';
+  $('cutZip').disabled = true;
+  renderCutSources();
+  setStatus($('cutStatus'), 'Cleared.', 'ok');
+});
 
 // Show the current slider values next to each slider.
 [['cutTol', 'tolOut'], ['cutMerge', 'mergeOut'], ['cutMin', 'minOut'], ['cutPad', 'padOut']].forEach(([inp, out]) => {
@@ -224,6 +285,7 @@ for (const def of TOOLS) {
 }
 $('apiKey').value = Store.getApiKey();
 renderModelsTable();
+renderCharacters();
 route();
 
 // Quietly refresh the model list once a day if we have a key.

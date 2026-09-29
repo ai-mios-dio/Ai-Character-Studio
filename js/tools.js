@@ -23,13 +23,20 @@ const CHARACTER_SOURCE =
 
 EXTRA CHARACTER SHEET (only if an image labelled CHARACTER SHEET is also included): it is an additional reference of the SAME character shown in the CHARACTER image, not a different person. It shows one individual in several panels, not a group. Use it ONLY to get the identity exactly right: face, facial features, skin tone, eye colour, height, build and body proportions. The character's look (outfit, hair styling, makeup, accessories) comes from the CHARACTER image, NEVER from the sheet: ignore the sheet's clothing, poses, expressions, background and layout. If the two images disagree on outfit or styling, the CHARACTER image wins. Everything the instructions below say about the CHARACTER image still refers to the CHARACTER image, not the sheet.`;
 
-// Optional extra upload box: a character sheet used only for face/body accuracy.
-const SHEET_INPUT = {
+// Stops a person in the OUTFIT / POSE / BACKGROUND image from leaking their body shape into the character.
+const BODY_GUARD =
+`BODY PROPORTIONS COME ONLY FROM THE CHARACTER. Any other reference image (OUTFIT, POSE REFERENCE, BACKGROUND) may show a different person. That person's body is irrelevant: do NOT copy, blend in or average toward their height, build, weight, shoulder width, chest, waist, hips, limb length, leg length, torso length, neck, hand size or head size. Take the character's body only from the character references. If a CHARACTER SHEET is provided (or the CHARACTER image is a sheet), its full-body front and side views are the authority for body proportions.
+PROPORTION CHECK before answering: compare your result with the character references. Head-to-body ratio, shoulder-to-hip ratio, leg-to-torso ratio and overall build must match the character exactly, not the other person. If they drift, correct them.`;
+
+// Dropdown of your saved characters (see the Characters page).
+//   Picked on its own: the saved sheet is used as the character.
+//   Picked together with a Character photo: the photo gives the look, the sheet gives face and body.
+const SAVED_CHARACTER = {
   key: 'sheet',
-  label: 'Character sheet (optional)',
+  type: 'saved',
+  label: 'Saved character (optional)',
   tag: 'CHARACTER SHEET',
-  optional: true,
-  hint: 'Adds accuracy for the face and body. The outfit and look still come from the Character image above.',
+  hint: 'Pick one of your characters. On its own it is used as the character. With a Character photo above, the photo gives the outfit and look, and the saved sheet keeps the face and body exact.',
 };
 
 // Shared ending: one image, one character, nothing extra.
@@ -44,6 +51,7 @@ const TOOLS = [
     intro: 'Upload a character reference and tap Run to get a turnaround and expression sheet.',
     inputs: [{ key: 'character', label: 'Character reference', tag: 'CHARACTER REFERENCE' }],
     runLabel: 'Create character sheet',
+    saveAsCharacter: true,
     defaultOptions: { aspectRatio: '16:9' },
     prompt:
 `Using the attached image as the character reference, generate a single character turnaround and expression reference sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
@@ -64,8 +72,8 @@ Each panel should be clearly separated with consistent lighting and the same neu
     intro: 'Put your character into a new setting. Upload the background, upload the character (a photo or a character sheet), tap Run.',
     inputs: [
       { key: 'background', label: 'Background', tag: 'BACKGROUND' },
-      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
-      SHEET_INPUT,
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, hint: 'Not needed if you pick a saved character below.' },
+      SAVED_CHARACTER,
     ],
     runLabel: 'Place in background',
     prompt:
@@ -74,6 +82,8 @@ Each panel should be clearly separated with consistent lighting and the same neu
 ${CHARACTER_SOURCE}
 
 ${IDENTITY_LOCK} Keep the character's outfit, accessories, colours and visual style exactly as in the reference.
+
+${BODY_GUARD}
 
 POSE AND FRAMING:
 - If CASE A (character sheet): show the character full body, in a natural relaxed pose that suits the setting (standing, based on the sheet's front or 3/4 view), with a neutral or gentle expression.
@@ -91,8 +101,8 @@ ${SINGLE_OUTPUT}`,
     title: 'Outfit',
     intro: 'Dress your character in a new outfit. Upload the character (a photo or a character sheet), upload the outfit, tap Run.',
     inputs: [
-      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
-      SHEET_INPUT,
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, hint: 'Not needed if you pick a saved character below.' },
+      SAVED_CHARACTER,
       { key: 'outfit', label: 'Outfit', tag: 'OUTFIT' },
     ],
     runLabel: 'Change outfit',
@@ -103,7 +113,9 @@ ${CHARACTER_SOURCE}
 
 ${IDENTITY_LOCK} The only thing that changes is the clothing.
 
-OUTFIT: reproduce the clothing from the OUTFIT image accurately: every garment, its cut, fit, length, fabric, texture, colours, patterns, prints, seams, logos and small details, plus footwear and accessories if shown. Use the OUTFIT image ONLY as a clothing reference; ignore the face, body, skin, hair, pose and background of anyone wearing it there. Tailor the clothes to fit the character's own body naturally, with realistic folds and drape. Never reshape the body to fit the outfit.
+${BODY_GUARD}
+
+OUTFIT: reproduce the clothing from the OUTFIT image accurately: every garment, its cut, fit, length, fabric, texture, colours, patterns, prints, seams, logos and small details, plus footwear and accessories if shown. Use the OUTFIT image ONLY as a clothing reference; ignore the face, body, skin, hair, pose and background of anyone wearing it there. Tailor the clothes to fit the character's own body naturally, with realistic folds and drape. The person wearing the outfit in the OUTFIT image is only a mannequin: re-size and re-fit the clothes onto the character's body and never reshape the character to match that person or the garment.
 
 POSE AND FRAMING:
 - If CASE A (character sheet): show the character full body, standing in a relaxed front or 3/4 view like the sheet's main full-body view, with a neutral expression, on the same plain background style as the sheet, so the whole outfit is visible.
@@ -117,8 +129,8 @@ ${SINGLE_OUTPUT}`,
     title: 'Pose',
     intro: 'Put your character in the same pose as a reference. Upload the character (a photo or a character sheet), upload the pose, tap Run.',
     inputs: [
-      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
-      SHEET_INPUT,
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, hint: 'Not needed if you pick a saved character below.' },
+      SAVED_CHARACTER,
       { key: 'pose', label: 'Pose reference', tag: 'POSE REFERENCE' },
     ],
     runLabel: 'Match pose',
@@ -129,6 +141,8 @@ ${CHARACTER_SOURCE}
 In CASE A, ignore the different poses and expressions on the sheet; they only show what the character looks like. The ONLY pose to use is the one in the POSE REFERENCE.
 
 ${IDENTITY_LOCK} Also keep the character's outfit, accessories, colours and visual style exactly as in the CHARACTER image.
+
+${BODY_GUARD}
 
 POSE: copy the body position from the POSE REFERENCE image precisely: head tilt and turn, gaze direction, torso angle and lean, shoulder and hip angles, the position and bend of each arm, elbow, wrist, hand and finger, the position and bend of each leg, knee and foot, weight distribution, and which way the body faces. Match left and right exactly as shown (do not mirror). Move the character's own body into this pose; never change their body proportions or limb lengths to match the reference person.
 
@@ -153,8 +167,8 @@ ${SINGLE_OUTPUT}`,
     title: 'Character Scene',
     intro: 'Upload your character (a photo or a character sheet), describe what you want, and tap Run for a new image of that character.',
     inputs: [
-      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER' },
-      SHEET_INPUT,
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, hint: 'Not needed if you pick a saved character below.' },
+      SAVED_CHARACTER,
     ],
     request: { label: 'What do you want?', placeholder: 'e.g. sitting at a café table in Paris at golden hour, laughing, medium shot' },
     runLabel: 'Create image',
@@ -165,6 +179,8 @@ ${CHARACTER_SOURCE}
 In both cases, use the reference only to learn who the character is. The pose, expression, setting and framing come from the request below.
 
 ${IDENTITY_LOCK} Keep their outfit too, unless the request below says to change it.
+
+${BODY_GUARD}
 
 OUTPUT RULES:
 - Generate ONE new, full-frame image that shows this character EXACTLY ONCE.

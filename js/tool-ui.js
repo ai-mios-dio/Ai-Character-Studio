@@ -22,6 +22,7 @@ const ToolUI = {
       options: saved.options || { ...(def.defaultOptions || {}) },
       prompt: saved.prompt || null,     // null = use the default prompt
       inputs: Object.fromEntries(def.inputs.map((i) => [i.key, []])),
+      savedCharacter: '',               // id of the picked saved character, '' = none
     };
     const refs = {};
     const save = () => Store.setTool(def.id, { model: state.model, options: state.options, prompt: state.prompt });
@@ -44,6 +45,7 @@ const ToolUI = {
 
     // ----- Upload boxes -----
     const inputCards = def.inputs.map((inp) => {
+      if (inp.type === 'saved') return this.buildSavedPicker(def, inp, state, refs);
       const thumbs = el('div', { className: 'thumbs' });
       refs['thumbs-' + inp.key] = thumbs;
       const fileInput = el('input', { type: 'file', accept: 'image/*', multiple: true, id: `${def.id}-${inp.key}-files` });
@@ -67,6 +69,8 @@ const ToolUI = {
     refs.run = el('button', { className: 'primary run-btn', textContent: def.runLabel || 'Run' });
     refs.status = el('div', { className: 'status' });
     refs.run.addEventListener('click', () => this.run(def.id));
+    const clearBtn = el('button', { className: 'clear-btn', textContent: 'Clear & start fresh' });
+    clearBtn.addEventListener('click', () => this.clear(def.id));
 
     refs.results = el('div', { className: 'results' });
 
@@ -76,7 +80,7 @@ const ToolUI = {
       modelCard,
       ...inputCards,
       requestCard,
-      el('div', { className: 'run-row' }, refs.run, refs.status),
+      el('div', { className: 'run-row' }, refs.run, clearBtn, refs.status),
       refs.results,
     );
 
@@ -210,6 +214,7 @@ const ToolUI = {
   renderThumbs(id, key) {
     const { state, refs } = this.tools[id];
     const box = refs['thumbs-' + key];
+    if (!box) return;
     box.innerHTML = '';
     state.inputs[key].forEach((blob, i) => {
       const img = el('img', { src: URL.createObjectURL(blob), title: 'Tap to remove' });
@@ -217,6 +222,57 @@ const ToolUI = {
       box.append(img);
     });
     if (state.inputs[key].length) box.append(el('span', { className: 'hint small' }, 'Tap an image to remove it'));
+  },
+
+  // Dropdown of saved characters, with a small preview of the picked one's sheet.
+  buildSavedPicker(def, inp, state, refs) {
+    refs.saved = el('select', { id: `${def.id}-saved` });
+    refs.savedPreview = el('div', { className: 'thumbs' });
+    refs.saved.addEventListener('change', () => {
+      state.savedCharacter = refs.saved.value;
+      this.renderSavedPreview(def.id);
+    });
+    const manage = el('a', { href: '#characters', className: 'small-link', textContent: 'Add or manage characters' });
+    this.fillSavedPicker(def.id, refs);
+    return el('div', { className: 'card' },
+      el('label', { className: 'label', htmlFor: `${def.id}-saved` }, inp.label),
+      inp.hint ? el('p', { className: 'hint small input-hint' }, inp.hint) : '',
+      refs.saved, refs.savedPreview, manage);
+  },
+
+  async fillSavedPicker(id, refs = this.tools[id]?.refs) {
+    if (!refs?.saved) return;
+    const list = await Characters.list();
+    const keep = refs.saved.value;
+    refs.saved.innerHTML = '';
+    refs.saved.add(new Option(list.length ? 'None' : 'None (no saved characters yet)', ''));
+    for (const c of list) refs.saved.add(new Option(c.name, c.id));
+    refs.saved.value = list.some((c) => c.id === keep) ? keep : '';
+    if (this.tools[id]) {
+      this.tools[id].state.savedCharacter = refs.saved.value;
+      this.renderSavedPreview(id);
+    }
+  },
+
+  async renderSavedPreview(id) {
+    const { state, refs } = this.tools[id];
+    refs.savedPreview.innerHTML = '';
+    if (!state.savedCharacter) return;
+    const c = await Characters.get(state.savedCharacter);
+    if (c) refs.savedPreview.append(el('img', { src: c.thumb, alt: c.name }));
+  },
+
+  // Empties uploads, text box and results so the tool is fresh. Model and options stay.
+  clear(id) {
+    const { def, state, refs } = this.tools[id];
+    for (const inp of def.inputs) {
+      state.inputs[inp.key] = [];
+      this.renderThumbs(id, inp.key);
+    }
+    if (refs.request) refs.request.value = '';
+    if (refs.saved) { refs.saved.value = ''; state.savedCharacter = ''; this.renderSavedPreview(id); }
+    refs.results.innerHTML = '';
+    setStatus(refs.status, 'Cleared.', 'ok');
   },
 
   // Builds the full prompt text.
@@ -234,24 +290,44 @@ const ToolUI = {
     const model = Models.get(state.model);
 
     if (!apiKey) return setStatus(refs.status, 'Add your Gemini API key in Settings first.', 'error');
+    // Load the picked saved character's sheet, if any.
+    const saved = state.savedCharacter ? await Characters.get(state.savedCharacter) : null;
     for (const inp of def.inputs) {
-      if (!inp.optional && !state.inputs[inp.key].length) return setStatus(refs.status, `Add a ${inp.label.replace(/\s*\(.*\)/, '').toLowerCase()} image first.`, 'error');
+      if (inp.optional || inp.type === 'saved') continue;
+      if (inp.orSaved && saved) continue; // a saved character can stand in for this upload
+      if (!state.inputs[inp.key].length) {
+        const name = inp.label.replace(/\s*\(.*\)/, '').toLowerCase();
+        return setStatus(refs.status, `Add a ${name} image${inp.orSaved ? ' or pick a saved character' : ''} first.`, 'error');
+      }
     }
     if (def.request && !refs.request.value.trim()) {
       return setStatus(refs.status, `Fill in "${def.request.label}" first.`, 'error');
     }
-    const totalRefs = def.inputs.reduce((n, i) => n + state.inputs[i.key].length, 0);
+
+    // Work out which images go under which label.
+    //   Photo + saved character -> photo is CHARACTER, saved sheet is CHARACTER SHEET.
+    //   Saved character only    -> the saved sheet becomes the CHARACTER image itself.
+    const groups = [];
+    for (const inp of def.inputs) {
+      if (inp.type === 'saved') continue;
+      let imgs = state.inputs[inp.key];
+      if (inp.orSaved && !imgs.length && saved) imgs = [saved.sheet];
+      if (imgs.length) groups.push({ tag: inp.tag, imgs });
+      if (inp.orSaved && state.inputs[inp.key].length && saved) {
+        const sheetInp = def.inputs.find((i) => i.type === 'saved');
+        groups.push({ tag: sheetInp.tag, imgs: [saved.sheet] });
+      }
+    }
+    const totalRefs = groups.reduce((n, g) => n + g.imgs.length, 0);
     if (totalRefs > model.maxRefs) {
       return setStatus(refs.status, `${model.label} takes up to ${model.maxRefs} images; you added ${totalRefs}. Remove some or pick another model.`, 'error');
     }
 
     // Each group of images gets a label first, so the prompt can refer to it by name.
     const parts = [];
-    for (const inp of def.inputs) {
-      const imgs = state.inputs[inp.key];
-      if (!imgs.length) continue; // optional box left empty: send nothing for it
-      parts.push({ text: `${inp.tag} image${imgs.length > 1 ? 's' : ''}:` });
-      imgs.forEach((blob) => parts.push({ blob }));
+    for (const g of groups) {
+      parts.push({ text: `${g.tag} image${g.imgs.length > 1 ? 's' : ''}:` });
+      g.imgs.forEach((blob) => parts.push({ blob }));
     }
     parts.push({ text: this.buildPrompt(id) });
 
@@ -271,6 +347,26 @@ const ToolUI = {
       (errors.length ? ` ${errors.length} failed: ${errors[0]}` : ''), errors.length ? 'error' : 'ok');
   },
 
+  // "Save as character": a name box and a Save button under a result.
+  saveCharacterForm(src) {
+    const name = el('input', { type: 'text', placeholder: 'Character name' });
+    const btn = el('button', { className: 'primary', textContent: 'Save as character' });
+    const status = el('div', { className: 'status' });
+    btn.addEventListener('click', async () => {
+      if (!name.value.trim()) { name.focus(); return setStatus(status, 'Type a name first.', 'error'); }
+      btn.disabled = true;
+      try {
+        const blob = await (await fetch(src)).blob();
+        await Characters.add(name.value, blob);
+        setStatus(status, `Saved "${name.value.trim()}". Pick it from "Saved character" in any tool.`, 'ok');
+      } catch (err) {
+        btn.disabled = false;
+        setStatus(status, 'Could not save: ' + err.message, 'error');
+      }
+    });
+    return el('div', { className: 'save-character' }, name, btn, status);
+  },
+
   // One generated image with Download and "Send to…" controls.
   resultCard(def, src) {
     const name = `${def.id}_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.png`;
@@ -281,7 +377,7 @@ const ToolUI = {
     send.add(new Option('Send to…', ''));
     send.add(new Option('Pose Cutter', 'cutter'));
     for (const t of Object.values(this.tools)) {
-      for (const inp of t.def.inputs) send.add(new Option(`${t.def.title} › ${inp.label}`, `${t.def.id}:${inp.key}`));
+      for (const inp of t.def.inputs.filter((i) => i.type !== 'saved')) send.add(new Option(`${t.def.title} › ${inp.label.replace(/\s*\(.*\)/, '')}`, `${t.def.id}:${inp.key}`));
     }
     send.addEventListener('change', async () => {
       const target = send.value;
@@ -302,6 +398,7 @@ const ToolUI = {
     return el('div', { className: 'result-item' },
       el('img', { src, alt: 'Generated image' }),
       el('div', { className: 'row' }, download, send),
+      def.saveAsCharacter ? this.saveCharacterForm(src) : '',
       el('p', { className: 'hint small' }, 'Tip: on a phone you can also press and hold the image to save it.'),
     );
   },
