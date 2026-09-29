@@ -1,31 +1,47 @@
 # Character Studio
 
-A small web app for character creation tools. Everything runs in your browser, so there's nothing to install.
+A small web app of character creation tools. Everything runs in your browser, so there's nothing to install.
 
 ## How to open it
 
-1. Download this repository (green **Code** button → **Download ZIP**) and unzip it.
-2. Double-click `index.html`. It opens in your browser.
+**On a computer:** download this repository (green **Code** button → **Download ZIP**), unzip it, and double-click `index.html`.
+
+**On a phone:** host it with GitHub Pages (see below), then open the link.
+
+### GitHub Pages (use it from any device)
+
+1. On GitHub, open the repository → **Settings** → **Pages**.
+2. Under **Build and deployment**, set **Source** to *Deploy from a branch*, pick the branch, and choose the `/ (root)` folder. Tap **Save**.
+3. After a minute or two, the page shows your link (e.g. `https://<your-name>.github.io/Character-sheets/`).
+
+GitHub Pages is free for **public** repositories. A private repository needs a paid GitHub plan.
+The code contains no secrets: your API key is typed into the app and stays in your browser.
 
 ## First-time setup
 
 1. Get a Gemini API key at <https://aistudio.google.com/apikey>.
-2. In the app, open **Settings**, paste the key, and click **Save settings**.
-   The key is stored only in your browser. Never put it in a file you upload to GitHub.
+2. In the app, open **Settings**, paste the key, and tap **Save key & load models**.
+   The app asks Google which image models your key can use and shows what each one supports.
 
-## The sections
+## The tools
 
-| Section | What it does |
-|---|---|
-| **Character Sheet** | Upload reference image(s), pick a saved prompt, add optional details, and generate a sheet with Nano Banana 2 (`gemini-3.1-flash-image-preview`). Results can be downloaded or sent straight to the Pose Cutter. |
-| **Pose Cutter** | Upload one or many character sheets. Each separate pose/expression is detected, cut out, and saved as its own PNG (6 poses in → 6 images out). Download them one by one or all together as a `.zip`. |
-| **Prompt Library** | Save your predetermined prompts. Put `{details}` in a prompt to choose where the "Extra details" text is inserted. |
-| **Settings** | API key and model ID. |
+| Tool | You upload | What you get |
+|---|---|---|
+| **Character Sheet** | A character reference | A turnaround + expression sheet |
+| **Background Swap** | A background + a character | The same character placed in that setting |
+| **Outfit Swap** | A character + an outfit | The same character wearing that outfit |
+| **Character Scene** | A character sheet + a text request | One new image of that single character |
+| **Pose Cutter** | One or more character sheets | Each pose/expression as its own PNG (runs on your device, no API) |
+
+Every AI tool has:
+
+- **Model**: a dropdown of the image models your key can use. The options under **Model options** change to match the model you pick (aspect ratio, image size, thinking level, Google Search, temperature, seed, images per run). Anything left on *Default* isn't sent, so the model uses its own default.
+- **Hidden prompt**: the prompt sent with your images. It's folded away, but you can open it, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
+- **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter).
 
 ## Pose Cutter tips
 
-The cutter works best when figures sit on a plain background with a little space between them.
-If results look wrong, open **Detection settings**:
+Works best when figures sit on a plain background with a little space between them. Open **Detection settings** if results look wrong:
 
 - **Too many pieces** (a hand or weapon cut out on its own) → raise *Merge distance*.
 - **Two poses stuck together** → lower *Merge distance*.
@@ -37,7 +53,10 @@ If results look wrong, open **Detection settings**:
 
 - `index.html`: the page layout
 - `css/style.css`: colors and styling
-- `js/app.js`: connects buttons to actions
-- `js/gemini.js`: talks to the Gemini API
+- `js/tools.js`: **the AI tools and their hidden prompts**. Add a new tool by copying a block here.
+- `js/models.js`: loads the model list and knows each model's image options
+- `js/tool-ui.js`: builds each tool's section on the page
+- `js/gemini.js`: sends requests to the Gemini API
 - `js/cutter.js`: detects and cuts out figures
-- `js/storage.js`: saves settings and prompts in the browser (the default prompt lives here)
+- `js/storage.js`: saves your key, choices, and edited prompts in the browser
+- `js/app.js`: menu, Settings, Pose Cutter, start-up

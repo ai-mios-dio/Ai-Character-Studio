@@ -34,6 +34,7 @@ body {
   gap: 4px;
 }
 .logo { font-size: 18px; margin: 0 8px 16px; }
+.nav-list { display: flex; flex-direction: column; gap: 4px; }
 .nav-btn {
   text-align: left;
   background: none;
@@ -156,10 +157,78 @@ button.small-btn { padding: 5px 10px; font-size: 13px; margin-top: 6px; }
 .settings-box input[type=range] { width: 100%; }
 .check { display: flex !important; gap: 8px; align-items: center; }
 
+/* ---------- Model picker ---------- */
+.model-info { margin-top: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.warn { color: #e6b450; }
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 4px 14px;
+}
+.options-grid label { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.options-grid .check { flex-direction: row; align-items: center; }
+input[type=number] {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font: inherit;
+}
+
+/* ---------- Run button + hidden prompt ---------- */
+.run-row { margin-bottom: 18px; }
+.run-btn { width: 100%; padding: 14px; font-size: 17px; font-weight: 600; margin: 0; }
+.prompt-box summary { cursor: pointer; font-weight: 600; }
+.badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  margin-left: 6px;
+}
+.badge.edited { background: var(--accent); color: #fff; }
+.result-item .row { align-items: center; }
+.result-item .row button { margin-top: 10px; }
+.send-to { width: auto; margin-top: 10px; }
+
+/* ---------- Model list (Settings) ---------- */
+.model-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 10px; }
+.model-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-width: 0; }
+.model-name { font-weight: 600; }
+.model-card code { font-size: 12px; word-break: break-all; }
+.model-card dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 10px 0 0; font-size: 13px; }
+.model-card dt { color: var(--muted); }
+.model-card dd { margin: 0; min-width: 0; }
+
 /* ---------- Phones / narrow screens ---------- */
 @media (max-width: 720px) {
   .app { flex-direction: column; }
-  .sidebar { width: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); }
-  .logo { width: 100%; margin-bottom: 6px; }
+  .sidebar {
+    width: auto;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 10px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo { margin: 0 4px 8px; font-size: 16px; }
+  /* menu becomes a sideways-scrolling row of tabs */
+  .nav-list { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+  .nav-btn { white-space: nowrap; padding: 8px 12px; font-size: 14px; }
   .content { padding: 16px; }
+  .card { padding: 14px; }
 }

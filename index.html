@@ -8,70 +8,24 @@
 </head>
 <body>
   <div class="app">
-    <!-- Left-side menu. Each button shows one "section" on the right. -->
+    <!-- Menu. Buttons for the AI tools are added automatically from js/tools.js. -->
     <nav class="sidebar">
       <h1 class="logo">Character Studio</h1>
-      <button class="nav-btn active" data-section="sheet">Character Sheet</button>
-      <button class="nav-btn" data-section="cutter">Pose Cutter</button>
-      <button class="nav-btn" data-section="prompts">Prompt Library</button>
-      <button class="nav-btn" data-section="settings">Settings</button>
+      <div class="nav-list" id="nav"></div>
     </nav>
 
-    <main class="content">
+    <main class="content" id="content">
+      <!-- The AI tool sections (Character Sheet, Background Swap...) are inserted here. -->
 
-      <!-- ============ SECTION 1: CHARACTER SHEET ============ -->
-      <section id="sheet" class="section active">
-        <h2>Character Sheet</h2>
-        <p class="hint">Upload reference image(s), choose a prompt, and generate a character sheet with Nano Banana 2.</p>
-
-        <div class="card">
-          <label class="label">1. Reference images</label>
-          <div class="dropzone" id="sheetDrop">
-            <input type="file" id="sheetFiles" accept="image/*" multiple>
-            <span>Click or drag images here (you can pick several)</span>
-          </div>
-          <div class="thumbs" id="sheetThumbs"></div>
-        </div>
-
-        <div class="card">
-          <label class="label" for="sheetPreset">2. Prompt</label>
-          <select id="sheetPreset"></select>
-          <textarea id="sheetPrompt" rows="8" placeholder="Prompt text"></textarea>
-          <p class="hint small">Edits here are just for this run. To save a prompt permanently, use the Prompt Library.</p>
-
-          <label class="label" for="sheetDetails">3. Extra details (optional)</label>
-          <textarea id="sheetDetails" rows="3" placeholder="e.g. red scarf, tired expression, fantasy style"></textarea>
-
-          <div class="row">
-            <label>Aspect ratio
-              <select id="sheetAspect">
-                <option>16:9</option><option>3:2</option><option>4:3</option>
-                <option>1:1</option><option>3:4</option><option>2:3</option><option>9:16</option>
-              </select>
-            </label>
-            <label>Size
-              <select id="sheetSize">
-                <option>1K</option><option selected>2K</option><option>4K</option>
-              </select>
-            </label>
-          </div>
-
-          <button class="primary" id="sheetGenerate">Generate character sheet</button>
-          <div class="status" id="sheetStatus"></div>
-        </div>
-
-        <div class="results" id="sheetResults"></div>
-      </section>
-
-      <!-- ============ SECTION 2: POSE CUTTER ============ -->
-      <section id="cutter" class="section">
+      <!-- ============ POSE CUTTER ============ -->
+      <section id="cutter" class="section" data-title="Pose Cutter">
         <h2>Pose Cutter</h2>
-        <p class="hint">Upload one or more character sheets. Each separate pose or expression is detected, cut out, and saved as its own image.</p>
+        <p class="hint">Upload one or more character sheets. Each separate pose or expression is found, cut out, and saved as its own image. This runs on your device and doesn't use the API.</p>
 
         <div class="card">
           <div class="dropzone" id="cutDrop">
             <input type="file" id="cutFiles" accept="image/*" multiple>
-            <span>Click or drag character sheets here (multiple files OK)</span>
+            <span>Tap to add character sheets (multiple OK)</span>
           </div>
           <div class="thumbs" id="cutThumbs"></div>
           <button class="small-btn" id="cutClear">Clear list</button>
@@ -96,58 +50,48 @@
             <label class="check"><input type="checkbox" id="cutTransparent" checked> Make background transparent</label>
           </details>
 
-          <button class="primary" id="cutRun">Detect &amp; cut out</button>
-          <button id="cutZip" disabled>Download all (.zip)</button>
+          <div class="row">
+            <button class="primary" id="cutRun">Detect &amp; cut out</button>
+            <button id="cutZip" disabled>Download all (.zip)</button>
+          </div>
           <div class="status" id="cutStatus"></div>
         </div>
 
         <div id="cutResults"></div>
       </section>
 
-      <!-- ============ SECTION 3: PROMPT LIBRARY ============ -->
-      <section id="prompts" class="section">
-        <h2>Prompt Library</h2>
-        <p class="hint">Your saved, predetermined prompts. They're stored in this browser.</p>
-        <div class="card">
-          <label class="label" for="promptPick">Saved prompts</label>
-          <select id="promptPick"></select>
-          <label class="label" for="promptName">Name</label>
-          <input type="text" id="promptName">
-          <label class="label" for="promptText">Prompt text</label>
-          <textarea id="promptText" rows="12"></textarea>
-          <p class="hint small">Tip: write <code>{details}</code> in the prompt to choose where the "Extra details" text goes. Otherwise it's added at the end.</p>
-          <div class="row">
-            <button class="primary" id="promptSave">Save</button>
-            <button id="promptNew">New prompt</button>
-            <button class="danger" id="promptDelete">Delete</button>
-          </div>
-          <div class="status" id="promptStatus"></div>
-        </div>
-      </section>
-
       <!-- ============ SETTINGS ============ -->
-      <section id="settings" class="section">
+      <section id="settings" class="section" data-title="Settings">
         <h2>Settings</h2>
         <div class="card">
           <label class="label" for="apiKey">Gemini API key</label>
-          <input type="password" id="apiKey" placeholder="Paste your key from aistudio.google.com/apikey">
-          <p class="hint small">Saved only in this browser on this computer. Never share it or commit it to GitHub.</p>
-          <label class="label" for="modelId">Model ID</label>
-          <input type="text" id="modelId">
-          <p class="hint small">Nano Banana 2 is <code>gemini-3.1-flash-image-preview</code>. Change this if Google renames it.</p>
-          <button class="primary" id="settingsSave">Save settings</button>
+          <input type="password" id="apiKey" autocomplete="off" placeholder="Paste your key from aistudio.google.com/apikey">
+          <p class="hint small">Saved only in this browser on this device. Never share it or put it in a GitHub file.</p>
+          <div class="row">
+            <button class="primary" id="settingsSave">Save key &amp; load models</button>
+          </div>
           <div class="status" id="settingsStatus"></div>
         </div>
-      </section>
 
+        <div class="card">
+          <div class="label">Available image models</div>
+          <p class="hint small" id="modelsLoaded"></p>
+          <div class="model-list" id="modelsTable"></div>
+          <button id="modelsRefresh">Refresh model list</button>
+          <div class="status" id="modelsStatus"></div>
+        </div>
+      </section>
     </main>
   </div>
 
   <!-- JSZip builds the "download all" zip file. Loaded from a public CDN. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="js/storage.js"></script>
+  <script src="js/models.js"></script>
   <script src="js/gemini.js"></script>
   <script src="js/cutter.js"></script>
+  <script src="js/tools.js"></script>
+  <script src="js/tool-ui.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
