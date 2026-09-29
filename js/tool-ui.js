@@ -479,7 +479,7 @@ const ToolUI = {
     const makeSet = () => Promise.allSettled(outputs.map((out) => Gemini.generate({
       apiKey, model: model.id,
       parts: [...parts, { text: this.buildPrompt(id, out.key) }],
-      options: out.aspectRatio ? { ...state.options, aspectRatio: out.aspectRatio } : state.options,
+      options: { ...state.options, ...(out.aspectRatio ? { aspectRatio: out.aspectRatio } : {}), safety: Store.getSafety() },
     })));
     const sets = await Promise.all(Array.from({ length: count }, makeSet));
     refs.run.disabled = false;

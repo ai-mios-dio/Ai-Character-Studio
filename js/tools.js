@@ -308,6 +308,7 @@ ${SINGLE_OUTPUT}`,
       SAVED_CHARACTER,
       { key: 'outfit', label: 'Outfit', tag: 'OUTFIT' },
     ],
+    request: { label: 'Outfit notes', optional: true, placeholder: 'e.g. high-cut black one-piece swimsuit, open back, thin straps' },
     runLabel: 'Change outfit',
     prompt:
 `Dress the character from the CHARACTER image(s) in the clothing shown in the OUTFIT image.
@@ -318,7 +319,13 @@ ${IDENTITY_LOCK} The only thing that changes is the clothing.
 
 ${BODY_GUARD}
 
+CONTEXT: this is costume and fashion design for an adult fictional character in a drama story.
+
 OUTFIT: reproduce the clothing from the OUTFIT image accurately: every garment, its cut, fit, length, fabric, texture, colours, patterns, prints, seams, logos and small details, plus footwear and accessories if shown. Use the OUTFIT image ONLY as a clothing reference; ignore the face, body, skin, hair, pose and background of anyone wearing it there. Tailor the clothes to fit the character's own body naturally, with realistic folds and drape. The person wearing the outfit in the OUTFIT image is only a mannequin: re-size and re-fit the clothes onto the character's body and never reshape the character to match that person or the garment.
+
+REPRODUCE THE GARMENT EXACTLY AS DESIGNED: the same cut, neckline, neckline depth, hem length, leg cut, straps, cut-outs, sheerness and how much skin it shows. Do not make it more modest or more revealing than the OUTFIT image: do not add or remove fabric, layers, linings or cover-ups, and do not change the style into a different garment.
+
+OUTFIT NOTES from the user (follow these exactly if given; they describe the garment): {request}
 
 POSE AND FRAMING:
 - If CASE A (character sheet): show the character full body, standing in a relaxed front or 3/4 view like the sheet's main full-body view, with a neutral expression, on the same plain background style as the sheet, so the whole outfit is visible.

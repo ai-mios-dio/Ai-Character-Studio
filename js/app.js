@@ -147,6 +147,12 @@ $('settingsSave').addEventListener('click', () => {
 });
 $('modelsRefresh').addEventListener('click', () => refreshModels($('modelsStatus')));
 
+$('safetyLevel').value = Store.getSafety();
+$('safetyLevel').addEventListener('change', () => {
+  Store.setSafety($('safetyLevel').value);
+  setStatus($('safetyStatus'), 'Saved. Used by every tool from the next Run.', 'ok');
+});
+
 // ================ CHARACTERS ================
 // The two sheets being added: body (full-body views) and face (close-ups).
 const charFiles = { body: null, face: null };

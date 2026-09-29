@@ -18,6 +18,9 @@ const Store = {
   },
 
   getApiKey() { return this.get('cs.apiKey', ''); },
+  // Google's adjustable safety filter level for every tool ('' = Google's default).
+  getSafety() { return this.get('cs.safety', ''); },
+  setSafety(v) { this.set('cs.safety', v); },
   setApiKey(k) { this.set('cs.apiKey', k); },
 
   // Per-tool memory: chosen model, options, and your edited hidden prompt.

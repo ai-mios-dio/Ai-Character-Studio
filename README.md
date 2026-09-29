@@ -32,7 +32,7 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 | **Character Builder → Build from Description** | No pictures: pick gender, age, body type, height, ethnicity and skin tone (or leave on Any), plus optional extra details | One new character matching your choices |
 | **Character Sheet** | A character reference | Two sheets: a **body sheet** (front, 3/4, side, back at 16:9) and a **face sheet** (12 close-ups and expressions at 4:3) |
 | **Background** | A background + a character (photo or sheet) | The same character placed in that setting |
-| **Outfit** | A character (photo or sheet) + an outfit | The same character wearing that outfit |
+| **Outfit** | A character (photo or sheet) + an outfit, plus optional Outfit notes describing the garment | The same character wearing that exact outfit |
 | **Pose** | A character (photo or sheet) + a pose reference | The same character in that pose, with the same facial expression |
 | **Character Scene** | A character (photo or sheet) + a text request | One new image of that single character |
 | **Characters** | A name + a body sheet and/or face sheet | A saved character you can pick in the other tools |
@@ -58,6 +58,13 @@ Every AI tool has:
 - **Hidden prompt**: the prompt sent with your images. All of them are in **Settings → Hidden prompts**: tap one, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
 - **Clear & start fresh** empties the uploads, text and results (your model and options stay).
 - **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter).
+
+## When a picture is blocked
+
+The error message says which filter stopped it:
+
+- **Adjustable filter:** change it in **Settings → Safety filter** (Google default, Strict, Standard, Relaxed, or Off). This applies to every tool.
+- **Fixed filter / content rules:** Google's own limits, which no app or setting can change. Describing an outfit in plain fashion terms in **Outfit notes** can help when a harmless request was misread. Photos of real people are filtered more strictly than original characters made with the Character Builder.
 
 ## Making a new character
 
