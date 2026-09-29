@@ -32,8 +32,11 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 | **Character Builder → Build from Description** | No pictures: pick gender, age, body type, height, ethnicity and skin tone (or leave on Any), plus optional extra details | One new character matching your choices |
 | **Character Sheet** | A character reference | Two sheets: a **body sheet** (front, 3/4, side, back at 16:9) and a **face sheet** (12 close-ups and expressions at 4:3) |
 | **Background** | A background + a character (photo or sheet) | The same character placed in that setting |
-| **Outfit** | A character (photo or sheet) + an outfit, plus optional Outfit notes describing the garment | The same character wearing that exact outfit |
+| **Outfit → Outfit from Picture** | A character (photo or sheet) + an outfit picture, plus optional Outfit notes | The same character wearing that exact outfit |
+| **Outfit → Outfit Gallery** | A character + a tap on one of 34 ready-made outfit tiles (8 categories) | The same character in that outfit |
+| **Outfit → Outfit from Description** | A character + your own description of an outfit or style | The same character in the outfit you described |
 | **Pose** | A character (photo or sheet) + a pose reference | The same character in that pose, with the same facial expression |
+| **Makeup** | A character + one of 21 makeup styles (Latina, Douyin, Siren Eyes, Old Hollywood…), plus optional notes | The same character with that makeup, everything else unchanged |
 | **Character Scene** | A character (photo or sheet) + a text request | One new image of that single character |
 | **Characters** | A name + a body sheet and/or face sheet | A saved character you can pick in the other tools |
 | **Pose Cutter** | One or more character sheets | Each pose/expression as its own PNG (runs on your device, no API) |
@@ -72,6 +75,10 @@ The error message says which filter stopped it:
 2. **Send to… → Character Sheet › Character reference**, then create the body and face sheets.
 3. **Save both as a character**, and pick them in any tool from then on.
 
+## Makeup styles and gallery outfits
+
+Both lists live in `js/catalog.js`. Each entry has a name and a detailed description that the AI follows; add or edit entries there. In the **Outfit Gallery**, tap **Create example pictures** once to fill the tiles: it makes one picture per outfit on a plain mannequin (one API call each) and saves them on this device.
+
 ## Character sheet tips
 
 - Make sheets at **Size: 4K** so every panel keeps its detail.
@@ -93,6 +100,7 @@ Works best when figures sit on a plain background with a little space between th
 - `index.html`: the page layout
 - `css/style.css`: colors and styling
 - `js/tools.js`: **the AI tools and their hidden prompts**. Add a new tool by copying a block here.
+- `js/catalog.js`: makeup styles and Outfit Gallery outfits
 - `js/models.js`: loads the model list and knows each model's image options
 - `js/tool-ui.js`: builds each tool's section on the page
 - `js/gemini.js`: sends requests to the Gemini API

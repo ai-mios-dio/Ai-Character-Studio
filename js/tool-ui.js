@@ -73,27 +73,37 @@ const ToolUI = {
         ...def.closenessControls.map((c) => this.closenessSwitch(def.id, c, state, c.label)));
     }
 
-    // ----- Dropdown choices (Build from Description) -----
+    // ----- Dropdown choices (Build from Description, Makeup) -----
+    //   f.required: no "Any"; the user must pick one.   f.describe(value): text shown under the dropdown.
     let fieldsCard = null;
     if (def.fields) {
       refs.fields = {};
       const rows = def.fields.map((f) => {
         const sel = el('select', { id: `${def.id}-field-${f.key}` });
-        sel.add(new Option('Any', ''));
+        sel.add(new Option(f.required ? `Choose ${f.label.toLowerCase()}…` : 'Any', ''));
         for (const o of f.options) sel.add(new Option(o, o));
         sel.value = state.fields[f.key] || '';
+        const about = el('p', { className: 'hint small field-about' });
+        const showAbout = () => { about.textContent = f.describe && sel.value ? f.describe(sel.value) : ''; };
         sel.addEventListener('change', () => {
           if (sel.value) state.fields[f.key] = sel.value; else delete state.fields[f.key];
           this.tools[def.id].save();
+          showAbout();
         });
+        showAbout();
         refs.fields[f.key] = sel;
-        return el('label', { className: 'field' }, el('span', { className: 'quick-caption' }, f.label), sel);
+        return el('label', { className: 'field' + (f.wide ? ' wide' : '') }, el('span', { className: 'quick-caption' }, f.label), sel, f.describe ? about : '');
       });
+      const anyOptional = def.fields.some((f) => !f.required);
       fieldsCard = el('div', { className: 'card' },
-        el('div', { className: 'label' }, 'Your character'),
-        el('p', { className: 'hint small input-hint' }, 'Leave any choice on "Any" to let the AI decide.'),
+        el('div', { className: 'label' }, def.fieldsTitle || 'Your character'),
+        anyOptional ? el('p', { className: 'hint small input-hint' }, 'Leave any choice on "Any" to let the AI decide.') : '',
         el('div', { className: 'fields-grid' }, ...rows));
     }
+
+    // ----- Tile board (Outfit Gallery): tap one tile to choose it -----
+    let tilesCard = null;
+    if (def.tiles) tilesCard = this.buildTiles(def, state, refs);
 
     // ----- Optional request box -----
     let requestCard = null;
@@ -118,6 +128,7 @@ const ToolUI = {
       modelCard,
       ...inputCards,
       fieldsCard,
+      tilesCard,
       controlsCard,
       requestCard,
       el('div', { className: 'run-row' }, refs.run, clearBtn, refs.status),
@@ -127,6 +138,117 @@ const ToolUI = {
     this.tools[def.id] = { def, state, refs, save };
     this.renderModelSelect(def.id);
     return section;
+  },
+
+  // A board of tiles grouped by category. The chosen tile's id is kept in state.fields[tiles.key].
+  buildTiles(def, state, refs) {
+    const t = def.tiles;
+    refs.tiles = {};
+    const pick = (id) => {
+      state.fields[t.key] = id;
+      this.tools[def.id].save();
+      Object.entries(refs.tiles).forEach(([tid, node]) => {
+        node.classList.toggle('on', tid === id);
+        node.setAttribute('aria-pressed', String(tid === id));
+      });
+      const item = t.items.find((i) => i.id === id);
+      refs.tileChosen.textContent = item ? `Chosen: ${item.name}. ${item.desc}` : '';
+    };
+    const cats = [...new Set(t.items.map((i) => i.cat))];
+    const groups = cats.map((cat) =>
+      el('div', { className: 'tile-group', dataset: { cat } },
+        el('div', { className: 'tile-cat' }, cat),
+        el('div', { className: 'tile-grid' }, t.items.filter((i) => i.cat === cat).map((item) => {
+          const img = el('div', { className: 'tile-img' });
+          const tile = el('button', { type: 'button', className: 'tile', 'aria-pressed': 'false', title: item.desc },
+            img, el('span', { className: 'tile-name' }, item.name));
+          tile.addEventListener('click', () => pick(item.id));
+          refs.tiles[item.id] = tile;
+          this.showExample(item.id, img);
+          return tile;
+        }))));
+    refs.tileChosen = el('p', { className: 'hint small tile-chosen' });
+
+    // Category buttons: show one category at a time so the board stays short on a phone.
+    const chips = el('div', { className: 'cat-chips', role: 'tablist' });
+    const showCat = (cat) => {
+      groups.forEach((g) => { g.hidden = cat !== 'All' && g.dataset.cat !== cat; });
+      chips.querySelectorAll('button').forEach((b) => {
+        b.classList.toggle('on', b.dataset.cat === cat);
+        b.setAttribute('aria-selected', String(b.dataset.cat === cat));
+      });
+    };
+    for (const cat of ['All', ...cats]) {
+      const b = el('button', { type: 'button', role: 'tab', textContent: cat, dataset: { cat } });
+      b.addEventListener('click', () => showCat(cat));
+      chips.append(b);
+    }
+    const chosenItem = t.items.find((i) => i.id === state.fields[t.key]);
+    showCat(chosenItem ? chosenItem.cat : cats[0]);
+
+    // One-time: make an example picture for every tile that doesn't have one yet.
+    const makeBtn = el('button', { className: 'small-btn', textContent: 'Create example pictures' });
+    const makeStatus = el('div', { className: 'status' });
+    makeBtn.addEventListener('click', () => this.makeExamples(def, makeBtn, makeStatus));
+
+    const card = el('div', { className: 'card' },
+      el('div', { className: 'label' }, t.title),
+      el('p', { className: 'hint small input-hint' }, t.hint),
+      chips,
+      ...groups,
+      refs.tileChosen,
+      el('div', { className: 'examples-row' }, makeBtn, el('span', { className: 'hint small' }, 'Uses your API key once per tile; pictures are saved on this device.')),
+      makeStatus);
+    if (state.fields[t.key]) setTimeout(() => pick(state.fields[t.key]));
+    return card;
+  },
+
+  async showExample(tileId, box) {
+    const blob = await Examples.get(tileId);
+    if (blob) {
+      box.style.backgroundImage = `url(${URL.createObjectURL(blob)})`;
+      box.classList.add('has-img');
+    }
+  },
+
+  async makeExamples(def, btn, status) {
+    const t = def.tiles;
+    const apiKey = Store.getApiKey();
+    if (!apiKey) return setStatus(status, 'Add your Gemini API key in Settings first.', 'error');
+    const missing = [];
+    for (const item of t.items) if (!(await Examples.get(item.id))) missing.push(item);
+    if (!missing.length) return setStatus(status, 'Every tile already has an example picture.', 'ok');
+    // Ask for a second tap before spending API calls.
+    if (!btn.dataset.armed) {
+      btn.dataset.armed = '1';
+      btn.textContent = `Tap again to make ${missing.length} pictures`;
+      setTimeout(() => { delete btn.dataset.armed; btn.textContent = 'Create example pictures'; }, 5000);
+      return;
+    }
+    delete btn.dataset.armed;
+    btn.disabled = true;
+    const model = Models.get(this.tools[def.id].state.model);
+    const size = model.imageSizes.includes('512') ? '512' : model.imageSizes.includes('1K') ? '1K' : '';
+    let done = 0, failed = 0;
+    for (const item of missing) {
+      setStatus(status, `Making ${done + failed + 1} of ${missing.length}: ${item.name}…`);
+      try {
+        const [src] = await Gemini.generate({
+          apiKey, model: model.id,
+          parts: [{ text: t.examplePrompt(item) }],
+          options: { aspectRatio: '3:4', imageSize: size || undefined, imageOnly: true, safety: Store.getSafety() },
+        });
+        const blob = await (await fetch(src)).blob();
+        await Examples.set(item.id, blob);
+        this.showExample(item.id, this.tools[def.id].refs.tiles[item.id].querySelector('.tile-img'));
+        done++;
+      } catch {
+        failed++;
+      }
+    }
+    btn.disabled = false;
+    btn.textContent = 'Create example pictures';
+    setStatus(status, `Made ${done} example picture${done === 1 ? '' : 's'}.` + (failed ? ` ${failed} failed; tap again to retry them.` : ''), failed ? 'error' : 'ok');
   },
 
   // Loose / Balanced / Close buttons for one inspiration box.
@@ -393,9 +515,13 @@ const ToolUI = {
       this.renderThumbs(id, inp.key);
     }
     if (refs.request) refs.request.value = '';
-    if (refs.fields) {
+    if (refs.tiles) {
+      Object.values(refs.tiles).forEach((t) => { t.classList.remove('on'); t.setAttribute('aria-pressed', 'false'); });
+      refs.tileChosen.textContent = '';
+    }
+    if (refs.fields || refs.tiles) {
       state.fields = {};
-      Object.values(refs.fields).forEach((sel) => { sel.value = ''; });
+      Object.values(refs.fields || {}).forEach((sel) => { sel.value = ''; sel.dispatchEvent(new Event('change')); });
       this.tools[id].save();
     }
     if (refs.saved) refs.saved.value = '';
@@ -426,6 +552,10 @@ const ToolUI = {
 
     if (!apiKey) return setStatus(refs.status, 'Add your Gemini API key in Settings first.', 'error');
     const sheetImgs = state.inputs.sheet || [];
+    for (const f of def.fields || []) {
+      if (f.required && !state.fields[f.key]) return setStatus(refs.status, `Choose a ${f.label.toLowerCase()} first.`, 'error');
+    }
+    if (def.tiles && !state.fields[def.tiles.key]) return setStatus(refs.status, def.tiles.required, 'error');
     if (def.requireAny && !def.inputs.some((i) => state.inputs[i.key].length)) {
       return setStatus(refs.status, def.requireAny, 'error');
     }

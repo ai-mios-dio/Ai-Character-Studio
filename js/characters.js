@@ -10,19 +10,24 @@ const Characters = {
   open() {
     if (this._db) return Promise.resolve(this._db);
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('character-studio', 1);
-      req.onupgradeneeded = () => req.result.createObjectStore('characters', { keyPath: 'id' });
+      // Version 2 adds 'examples' (gallery example pictures). Existing characters are kept.
+      const req = indexedDB.open('character-studio', 2);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('characters')) db.createObjectStore('characters', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('examples')) db.createObjectStore('examples');
+      };
       req.onsuccess = () => { this._db = req.result; resolve(this._db); };
       req.onerror = () => reject(req.error);
     });
   },
 
   // Runs one database action and waits for it to finish.
-  async _do(mode, action) {
+  async _do(mode, action, storeName = 'characters') {
     const db = await this.open();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction('characters', mode);
-      const req = action(tx.objectStore('characters'));
+      const tx = db.transaction(storeName, mode);
+      const req = action(tx.objectStore(storeName));
       tx.oncomplete = () => resolve(req?.result);
       tx.onerror = () => reject(tx.error);
     });
@@ -88,4 +93,13 @@ const Characters = {
     c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
     return c.toDataURL('image/jpeg', 0.8);
   },
+};
+
+// Example pictures for gallery tiles (e.g. Outfit Gallery), keyed by tile id.
+// Kept in the same on-device database as characters.
+const Examples = {
+  async get(id) {
+    try { return await Characters._do('readonly', (store) => store.get(id), 'examples'); } catch { return null; }
+  },
+  set(id, blob) { return Characters._do('readwrite', (store) => store.put(blob, id), 'examples'); },
 };

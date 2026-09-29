@@ -75,6 +75,16 @@ const BUILD_OUTPUT =
 
 ${NO_TATTOOS}`;
 
+// Shared by the three outfit tools (from Picture, Gallery, Description): fit, exactness, framing.
+const OUTFIT_RULES =
+`FIT: tailor the clothes to fit the character's own body naturally, with realistic folds and drape. Never reshape the character to match the garment or anyone else.
+
+REPRODUCE THE GARMENT EXACTLY AS DESIGNED: the same cut, neckline, neckline depth, hem length, leg cut, straps, cut-outs, sheerness and how much skin it shows. Do not make it more modest or more revealing than described: do not add or remove fabric, layers, linings or cover-ups, and do not change the style into a different garment.
+
+POSE AND FRAMING:
+- If CASE A (character sheet): show the character full body, standing in a relaxed front or 3/4 view like the sheet's main full-body view, with a neutral expression, on the same plain background style as the sheet, so the whole outfit is visible.
+- If CASE B (single picture): keep the character's pose, facial expression, camera angle, framing, background and lighting from that picture, unless the outfit physically requires a tiny adjustment. If the picture does not show enough of the body for the outfit, widen the framing just enough to show it, extending the original background naturally.`;
+
 const TOOLS = [
   {
     id: 'builder',
@@ -323,8 +333,10 @@ ${SINGLE_OUTPUT}`,
 
   {
     id: 'outfit',
-    title: 'Outfit',
-    intro: 'Dress your character in a new outfit. Pick or upload your character, add the outfit, tap Run.',
+    title: 'Outfit from Picture',
+    group: 'outfit',
+    menuText: 'Copy an outfit from a picture you upload',
+    intro: 'Dress your character in a new outfit. Pick or upload your character, add the outfit picture, tap Run.',
     inputs: [
       { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
       SAVED_CHARACTER,
@@ -345,15 +357,95 @@ ${BODY_GUARD}
 
 This is costume and fashion design for that character.
 
-OUTFIT: reproduce the clothing from the OUTFIT image accurately: every garment, its cut, fit, length, fabric, texture, colours, patterns, prints, seams, logos and small details, plus footwear and accessories if shown. Use the OUTFIT image ONLY as a clothing reference; ignore the face, body, skin, hair, pose and background of anyone wearing it there. Tailor the clothes to fit the character's own body naturally, with realistic folds and drape. The person wearing the outfit in the OUTFIT image is only a mannequin: re-size and re-fit the clothes onto the character's body and never reshape the character to match that person or the garment.
-
-REPRODUCE THE GARMENT EXACTLY AS DESIGNED: the same cut, neckline, neckline depth, hem length, leg cut, straps, cut-outs, sheerness and how much skin it shows. Do not make it more modest or more revealing than the OUTFIT image: do not add or remove fabric, layers, linings or cover-ups, and do not change the style into a different garment.
+OUTFIT: reproduce the clothing from the OUTFIT image accurately: every garment, its cut, fit, length, fabric, texture, colours, patterns, prints, seams, logos and small details, plus footwear and accessories if shown. Use the OUTFIT image ONLY as a clothing reference; ignore the face, body, skin, hair, pose and background of anyone wearing it there. The person wearing the outfit in the OUTFIT image is only a mannequin: re-size and re-fit the clothes onto the character's body.
 
 OUTFIT NOTES from the user (follow these exactly if given; they describe the garment): {request}
 
-POSE AND FRAMING:
-- If CASE A (character sheet): show the character full body, standing in a relaxed front or 3/4 view like the sheet's main full-body view, with a neutral expression, on the same plain background style as the sheet, so the whole outfit is visible.
-- If CASE B (single picture): keep the character's pose, facial expression, camera angle, framing, background and lighting from that picture, unless the outfit physically requires a tiny adjustment.
+${OUTFIT_RULES}
+
+${NO_TATTOOS}
+
+${SINGLE_OUTPUT}`,
+  },
+
+  {
+    id: 'outfit-gallery',
+    title: 'Outfit Gallery',
+    group: 'outfit',
+    menuText: 'Tap a ready-made outfit from a board of tiles',
+    intro: 'Pick or upload your character, tap an outfit tile, and tap Run.',
+    inputs: [
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
+      SAVED_CHARACTER,
+    ],
+    tiles: {
+      key: 'outfit',
+      title: 'Choose an outfit',
+      hint: 'Tap a tile. Tap "Create example pictures" once to fill the tiles with pictures.',
+      required: 'Tap an outfit tile first.',
+      items: OUTFITS,
+      // Example pictures show the outfit on a plain mannequin, so no person is involved.
+      examplePrompt: (item) => `Fashion catalogue product photo of this outfit displayed on a plain white featureless headless mannequin, full length with the shoes shown: ${item.desc} Centred, soft even studio lighting, plain light grey seamless background. No person, no face, no text.`,
+    },
+    request: { label: 'Outfit notes', optional: true, placeholder: 'Optional changes, e.g. make it navy blue, add a matching jacket' },
+    runLabel: 'Change outfit',
+    fill: ({ fields }) => {
+      const item = OUTFITS.find((o) => o.id === fields.outfit);
+      return { outfit: item ? `${item.name}: ${item.desc}` : '' };
+    },
+    prompt:
+`${FICTIONAL_CHARACTER}
+
+Dress the character from the CHARACTER image(s) in the outfit described below.
+
+${CHARACTER_SOURCE}
+
+${IDENTITY_LOCK} The only thing that changes is the clothing.
+
+${BODY_GUARD}
+
+This is costume and fashion design for that character.
+
+OUTFIT: {outfit}
+Show every garment exactly as described, with realistic fabric, texture, colour and fit.
+
+OUTFIT NOTES from the user (changes to the outfit above; follow exactly if given): {request}
+
+${OUTFIT_RULES}
+
+${NO_TATTOOS}
+
+${SINGLE_OUTPUT}`,
+  },
+
+  {
+    id: 'outfit-describe',
+    title: 'Outfit from Description',
+    group: 'outfit',
+    menuText: 'Describe any outfit or style in your own words',
+    intro: 'Pick or upload your character, describe the outfit you want, and tap Run.',
+    inputs: [
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
+      SAVED_CHARACTER,
+    ],
+    request: { label: 'Describe the outfit', placeholder: 'e.g. emerald silk evening gown with a thigh slit and gold heels, or: 70s disco style' },
+    runLabel: 'Change outfit',
+    prompt:
+`${FICTIONAL_CHARACTER}
+
+Dress the character from the CHARACTER image(s) in the outfit the user describes below.
+
+${CHARACTER_SOURCE}
+
+${IDENTITY_LOCK} The only thing that changes is the clothing.
+
+${BODY_GUARD}
+
+This is costume and fashion design for that character.
+
+OUTFIT (the user's description; follow it exactly, and if it names a style rather than exact garments, design a complete, stylish outfit in that style): {request}
+
+${OUTFIT_RULES}
 
 ${NO_TATTOOS}
 
@@ -398,6 +490,51 @@ BACKGROUND AND CAMERA:
 - If CASE A (character sheet only): use a plain, clean background in the same style as the sheet.
 
 FINAL CHECK before answering: (1) the body pose AND the facial expression match the POSE REFERENCE; (2) the face is still clearly the character's own face; (3) the background comes from the CHARACTER image (or is plain for a sheet), never from the POSE REFERENCE.
+
+${NO_TATTOOS}
+
+${SINGLE_OUTPUT}`,
+  },
+
+  {
+    id: 'makeup',
+    title: 'Makeup',
+    intro: 'Pick or upload your character, choose a makeup style, and tap Run. Everything else stays the same.',
+    inputs: [
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
+      SAVED_CHARACTER,
+    ],
+    fieldsTitle: 'Makeup',
+    fields: [
+      {
+        key: 'style', label: 'Makeup style', required: true, wide: true,
+        options: MAKEUP_STYLES.map((m) => m.name),
+        describe: (name) => MAKEUP_STYLES.find((m) => m.name === name)?.desc || '',
+      },
+    ],
+    request: { label: 'Makeup notes', optional: true, placeholder: 'Optional changes, e.g. red lips instead, no false lashes' },
+    runLabel: 'Apply makeup',
+    fill: ({ fields }) => {
+      const m = MAKEUP_STYLES.find((x) => x.name === fields.style);
+      return { makeup: m ? `${m.name}. ${m.desc}` : '' };
+    },
+    prompt:
+`${FICTIONAL_CHARACTER}
+
+This is an EDIT: apply the makeup look described below to the character's face. Change ONLY the makeup.
+
+${CHARACTER_SOURCE}
+
+${IDENTITY_LOCK} Makeup must not change the character's bone structure or features: the face shape, eye shape, nose, lip shape and proportions stay exactly theirs. Only colour, finish and definition change (contour, liner and lip liner may create the effect the style describes, as real makeup would).
+
+MAKEUP LOOK: {makeup}
+Apply every part of this look precisely: base and skin finish, brows, eyeshadow, liner, lashes, blush, contour, highlight and lips. Adapt the shades naturally to the character's skin tone, with realistic makeup texture on real skin (not painted or plastic-looking).
+
+MAKEUP NOTES from the user (changes to the look above; follow exactly if given): {request}
+
+EVERYTHING ELSE STAYS THE SAME:
+- If CASE B (single picture): keep the hair, outfit, accessories, pose, facial expression, camera angle, framing, background and lighting exactly as in that picture.
+- If CASE A (character sheet): show a front-facing head-and-shoulders portrait of the character with a neutral expression on a plain background, so the makeup is clearly visible.
 
 ${NO_TATTOOS}
 
