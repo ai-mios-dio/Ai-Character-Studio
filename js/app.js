@@ -31,7 +31,32 @@ function setupDropzone(zone, input, onFiles) {
 
 // ---------------- Pages ----------------
 // Each page has its own address (#sheet, #settings...), so the phone's back button works.
-const PAGES = () => [...TOOLS.map((t) => [t.id, t.title]), ['characters', 'Characters'], ['cutter', 'Pose Cutter']];
+// Tools with a `group` are reached through a small menu page (e.g. Character Builder).
+const GROUPS = { builder: 'Character Builder' };
+const PAGES = () => {
+  const pages = [];
+  for (const t of TOOLS) {
+    if (!t.group) pages.push([t.id, t.title]);
+    else if (!pages.some(([id]) => id === t.group + '-menu')) pages.push([t.group + '-menu', GROUPS[t.group]]);
+  }
+  return [...pages, ['characters', 'Characters'], ['cutter', 'Pose Cutter']];
+};
+
+// Builds each menu page: a header and one big button per tool in the group.
+function buildGroupMenus() {
+  for (const [group, title] of Object.entries(GROUPS)) {
+    const buttons = TOOLS.filter((t) => t.group === group).map((t) =>
+      el('a', { className: 'home-btn menu-btn', href: '#' + t.id },
+        el('span', { className: 'menu-title' }, t.title),
+        el('span', { className: 'menu-sub' }, t.menuText || '')));
+    $('content').insertBefore(
+      el('section', { id: group + '-menu', className: 'section', dataset: { parent: 'home' } },
+        pageHeader(title),
+        el('p', { className: 'hint' }, 'How do you want to design your character?'),
+        el('div', { className: 'home-buttons' }, ...buttons)),
+      $('cutter'));
+  }
+}
 
 function showSection(id) {
   if (location.hash !== '#' + id) location.hash = id; // triggers route()
@@ -49,12 +74,14 @@ function route() {
 }
 window.addEventListener('hashchange', route);
 
-// Back button at the top of each page. If we got here from Home, step back in history
-// (keeps the phone's own back button in sync); otherwise just open Home.
+// Back button at the top of each page goes to the page above it (Home, or a menu page).
+// If we just came from there, step back in history so the phone's own back button stays in sync.
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('[data-back]')) return;
-  if (lastPage === 'home') history.back();
-  else location.hash = 'home';
+  const btn = e.target.closest('[data-back]');
+  if (!btn) return;
+  const parent = btn.closest('.section')?.dataset.parent || 'home';
+  if (lastPage === parent) history.back();
+  else location.hash = parent;
 });
 
 function pageHeader(title) {
@@ -284,6 +311,7 @@ $('cutZip').addEventListener('click', async () => {
 
 // ---------------- Start up ----------------
 buildHome();
+buildGroupMenus();
 const cutterSection = $('cutter');
 for (const def of TOOLS) {
   $('content').insertBefore(ToolUI.build(def), cutterSection);

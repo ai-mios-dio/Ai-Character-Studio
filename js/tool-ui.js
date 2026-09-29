@@ -64,6 +64,14 @@ const ToolUI = {
         zone, thumbs);
     });
 
+    // ----- Similarity switches not tied to one upload box -----
+    let controlsCard = null;
+    if (def.closenessControls) {
+      controlsCard = el('div', { className: 'card' },
+        el('div', { className: 'label' }, 'How similar should the new character be?'),
+        ...def.closenessControls.map((c) => this.closenessSwitch(def.id, c, state, c.label)));
+    }
+
     // ----- Optional request box -----
     let requestCard = null;
     if (def.request) {
@@ -81,11 +89,12 @@ const ToolUI = {
 
     refs.results = el('div', { className: 'results' });
 
-    const section = el('section', { id: def.id, className: 'section' },
+    const section = el('section', { id: def.id, className: 'section', dataset: { parent: def.group ? def.group + '-menu' : 'home' } },
       pageHeader(def.title),
       el('p', { className: 'hint' }, def.intro),
       modelCard,
       ...inputCards,
+      controlsCard,
       requestCard,
       el('div', { className: 'run-row' }, refs.run, clearBtn, refs.status),
       refs.results,
@@ -97,7 +106,7 @@ const ToolUI = {
   },
 
   // Loose / Balanced / Close buttons for one inspiration box.
-  closenessSwitch(id, inp, state) {
+  closenessSwitch(id, inp, state, caption = 'How closely to follow') {
     const levels = [['loose', 'Loose'], ['balanced', 'Balanced'], ['close', 'Close']];
     const current = () => state.closeness[inp.key] || 'balanced';
     const group = el('div', { className: 'segmented', role: 'radiogroup', 'aria-label': `How closely to follow the ${inp.label.toLowerCase()}` });
@@ -117,7 +126,7 @@ const ToolUI = {
     });
     paint();
     group.append(...buttons);
-    return el('div', { className: 'closeness' }, el('span', { className: 'quick-caption' }, 'How closely to follow'), group);
+    return el('div', { className: 'closeness' }, el('span', { className: 'quick-caption' }, caption), group);
   },
 
   // The default and current prompt for a tool, or for one output of a multi-output tool.

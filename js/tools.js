@@ -45,10 +45,24 @@ const SINGLE_OUTPUT =
   'Output one single image that shows this character EXACTLY ONCE. Never a grid, panels, collage, turnaround, split screen or multiple copies of the character. ' +
   'No extra people, no text, no labels, no borders, no watermark.';
 
+// Shared by both Character Builder tools: one seamless person, and the same kind of output image.
+const BUILD_COHERENCE =
+`ONE NATURAL PERSON, NOT A COLLAGE:
+- The same skin tone and undertone across the face, neck, arms, hands and legs.
+- One consistent apparent age for the whole body.
+- Smooth, natural transitions at the neck, shoulders, waist and hips, with no visible joins or mismatched parts.
+- Believable anatomy: head, torso and legs in realistic proportion to each other. Where the inspirations conflict (for example a slim upper body and a heavier lower body), blend them into one plausible build rather than joining two different bodies.
+- Consistent lighting over the whole figure.`;
+
+const BUILD_OUTPUT =
+`OUTPUT: one photorealistic full-body image (unless the extra details ask for another style). Front view, head to feet fully in frame, standing upright in a relaxed neutral pose with arms slightly away from the body, neutral expression, looking at the camera. Simple fitted plain clothing in neutral colours (a plain fitted top and fitted shorts or leggings) so the body shape is clearly visible, barefoot or simple plain shoes. Plain white background, even studio lighting. No tattoos, no jewelery. Only this one character. No text or labels.`;
+
 const TOOLS = [
   {
     id: 'builder',
-    title: 'Character Builder',
+    title: 'Build from Parts',
+    group: 'builder', // opened from the Character Builder menu, not the home screen
+    menuText: 'Face, upper body, lower body and hair from different pictures',
     intro: 'Design a new character from inspiration pictures. Add any of the parts below, choose how closely to follow each one, and tap Run.',
     inputs: [
       { key: 'face', label: 'Face', tag: 'FACE INSPIRATION', optional: true, closeness: true },
@@ -88,17 +102,58 @@ WHAT TO TAKE FROM EACH IMAGE:
 
 Take ONLY the listed part from each inspiration image. Ignore everything else in it: the other body parts, the person's identity, clothing, accessories, pose, background, lighting and image style.
 
-ONE NATURAL PERSON, NOT A COLLAGE:
-- The same skin tone and undertone across the face, neck, arms, hands and legs.
-- One consistent apparent age for the whole body.
-- Smooth, natural transitions at the neck, shoulders, waist and hips, with no visible joins or mismatched parts.
-- Believable anatomy: head, torso and legs in realistic proportion to each other. Where the inspirations conflict (for example a slim upper body and a heavier lower body), blend them into one plausible build rather than joining two different bodies.
-- Consistent lighting over the whole figure.
+${BUILD_COHERENCE}
 This must be a NEW individual, not a copy of anyone in the inspiration images.
 
 EXTRA DETAILS (follow these if given): {request}
 
-OUTPUT: one photorealistic full-body image (unless the extra details ask for another style). Front view, head to feet fully in frame, standing upright in a relaxed neutral pose with arms slightly away from the body, neutral expression, looking at the camera. Simple fitted plain clothing in neutral colours (a plain fitted top and fitted shorts or leggings) so the body shape is clearly visible, barefoot or simple plain shoes. Plain white background, even studio lighting. No tattoos, no jewelery. Only this one character. No text or labels.`,
+${BUILD_OUTPUT}`,
+  },
+
+  {
+    id: 'blend',
+    title: 'Build from People',
+    group: 'builder',
+    menuText: 'Several pictures of people with the look you want',
+    intro: 'Add pictures of a few people with the kind of look you want. A new character is designed with the features and proportions they have in common.',
+    inputs: [
+      { key: 'people', label: 'Inspiration people', tag: 'INSPIRATION PEOPLE', optional: true, hint: 'Add 2 to 5 pictures for the best results. Full-body pictures help with body proportions.' },
+    ],
+    requireAny: 'Add pictures of the people you want to use as inspiration (2 to 5 works best).',
+    // Two switches that aren't tied to one upload box.
+    closenessControls: [
+      { key: 'face', label: 'Face' },
+      { key: 'body', label: 'Body proportions' },
+    ],
+    request: { label: 'Extra details', optional: true, placeholder: 'e.g. early 30s, taller than average, friendly look' },
+    runLabel: 'Build character',
+    defaultOptions: { aspectRatio: '2:3' },
+    fill: ({ closeness }) => {
+      const how = {
+        loose: 'LOOSELY similar: capture the general type and overall impression they share, and invent the specifics freely.',
+        balanced: 'CLEARLY similar: share the main traits they have in common, like someone of the same type or family, while being a different person.',
+        close: 'VERY similar: closely match the features and proportions they share, while still being a distinct new individual and not any one of them.',
+      };
+      return { faceHow: how[closeness.face || 'balanced'], bodyHow: how[closeness.body || 'balanced'] };
+    },
+    prompt:
+`Design ONE new, original character and show them in a single full-body image.
+
+The INSPIRATION PEOPLE images show several DIFFERENT people who share the kind of look wanted. Study them together and work out what they have in COMMON, then create a new person who clearly belongs to the same type.
+
+FACE: {faceHow}
+Look at the shared face shape, eye shape and spacing, eyebrows, nose, lips, jawline, cheekbones, skin tone and complexion, and apparent age range.
+
+BODY PROPORTIONS: {bodyHow}
+Look at the shared height impression, build, shoulder-to-hip ratio, waist, chest, leg length, torso length, and how muscle and fat are distributed.
+
+Where the inspiration people differ, use the most typical version or a natural middle ground. The result must NOT be a copy of any single inspiration person, and must not look like one of them with small changes. Ignore their clothing, accessories, poses, backgrounds and image styles.
+
+${BUILD_COHERENCE}
+
+EXTRA DETAILS (follow these if given): {request}
+
+${BUILD_OUTPUT}`,
   },
 
   {

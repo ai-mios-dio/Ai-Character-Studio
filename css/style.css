@@ -258,3 +258,8 @@ button.danger { color: var(--danger); }
 .segmented { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--field); border-radius: 999px; padding: 3px; gap: 3px; }
 .segmented button { margin: 0; padding: 8px 4px; border: none; background: transparent; border-radius: 999px; font-size: 14px; color: var(--muted); }
 .segmented button.on { background: var(--pill); color: var(--text); font-weight: 600; }
+
+/* ---------- Menu pages (e.g. Character Builder) ---------- */
+.menu-btn { flex-direction: column; gap: 4px; min-height: 104px; border-radius: 40px; }
+.menu-title { font-size: 20px; }
+.menu-sub { font-size: 14px; font-weight: 400; opacity: .85; }
