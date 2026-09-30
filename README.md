@@ -37,6 +37,7 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 | **Outfit → Outfit from Description** | A character + your own description of an outfit or style | The same character in the outfit you described |
 | **Pose** | A character (photo or sheet) + a pose reference | The same character in that pose, with the same facial expression |
 | **Makeup** | A character + one of 21 makeup styles (Latina, Douyin, Siren Eyes, Old Hollywood…), plus optional notes | The same character with that makeup, everything else unchanged |
+| **Edit** | A picture + what should change (quick-tap suggestions like Remove shoes, Add necklace, Remove jewelry), plus an optional picture of a specific item | The same picture with only that change |
 | **Character Scene** | A character (photo or sheet) + a text request | One new image of that single character |
 | **Characters** | A name + a body sheet and/or face sheet | A saved character you can pick in the other tools |
 | **Pose Cutter** | One or more character sheets | Each pose/expression as its own PNG (runs on your device, no API) |

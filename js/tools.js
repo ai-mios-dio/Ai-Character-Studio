@@ -545,6 +545,50 @@ ${SINGLE_OUTPUT}`,
   },
 
   {
+    id: 'edit',
+    title: 'Edit',
+    intro: 'Make a small change to a picture: remove or change shoes, add or remove jewelry, and so on. Everything else stays the same.',
+    inputs: [
+      { key: 'image', label: 'Picture to edit', tag: 'IMAGE TO EDIT', missing: 'Add the picture you want to edit first.' },
+      { key: 'item', label: 'Item picture (optional)', tag: 'ITEM REFERENCE', optional: true, hint: 'Only if you want a specific item, e.g. these exact shoes or this necklace.' },
+    ],
+    request: {
+      label: 'What should change?',
+      placeholder: 'e.g. remove the shoes, bare feet',
+      suggestions: [
+        ['Remove shoes', 'remove the shoes and show natural bare feet'],
+        ['Change shoes', 'change the shoes to black strappy high-heel sandals'],
+        ['Shoes from item picture', 'replace the shoes with the exact shoes from the ITEM REFERENCE picture'],
+        ['Add necklace', 'add a thin delicate gold chain necklace'],
+        ['Remove jewelry', 'remove all jewelry (necklaces, earrings, rings, bracelets, watches)'],
+        ['Add earrings', 'add small gold hoop earrings'],
+        ['Remove glasses', 'remove the glasses'],
+        ['Remove bag', 'remove the bag'],
+        ['Add item from picture', 'add the item from the ITEM REFERENCE picture, worn naturally'],
+      ],
+    },
+    runLabel: 'Apply edit',
+    prompt:
+`${FICTIONAL_CHARACTER}
+
+This is a precise, minimal EDIT of the IMAGE TO EDIT. Make ONLY the change requested below.
+
+REQUESTED CHANGE: {request}
+
+KEEP EVERYTHING ELSE EXACTLY THE SAME: the person's identity, face, facial expression, hair, skin, body, body proportions and pose; every other garment, shoe and accessory that the request does not mention; the background, lighting, colours, camera angle, framing, resolution and image style. Do not restyle, retouch, beautify, re-pose or re-frame anything.
+
+REMOVING something: show what would naturally be there without it (for example bare feet, skin, or the fabric or background behind it), matching the surrounding lighting and texture. Do not put anything new in its place unless asked.
+
+ADDING or CHANGING something: make it realistic, correctly sized and positioned, and lit and shadowed to match the image.
+
+ITEM REFERENCE (only if that picture is included): it shows the exact item to use. Reproduce that item faithfully (design, shape, colour, material and details) and fit it naturally onto the character. Use it only for the item; ignore any person, body, clothing or background in it.
+
+${NO_TATTOOS}
+
+Output one single image: the edited IMAGE TO EDIT. No text, labels, borders or watermark.`,
+  },
+
+  {
     id: 'scene',
     title: 'Character Scene',
     intro: 'Pick or upload your character, describe what you want, and tap Run for a new image of that character.',

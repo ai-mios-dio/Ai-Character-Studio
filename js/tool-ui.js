@@ -109,8 +109,24 @@ const ToolUI = {
     let requestCard = null;
     if (def.request) {
       refs.request = el('textarea', { id: `${def.id}-request`, rows: 3, placeholder: def.request.placeholder });
+      // Quick-tap suggestions add their text to the box (e.g. the Edit tool's "Remove shoes").
+      let suggestions = '';
+      if (def.request.suggestions) {
+        suggestions = el('div', { className: 'suggestions' }, def.request.suggestions.map(([label, text]) => {
+          const b = el('button', { type: 'button', textContent: label });
+          b.addEventListener('click', () => {
+            const box = refs.request;
+            box.value = box.value.trim() ? `${box.value.trim().replace(/[.;,]$/, '')}; ${text}` : text;
+            box.focus();
+          });
+          return b;
+        }));
+      }
       requestCard = el('div', { className: 'card' },
-        el('label', { className: 'label', htmlFor: `${def.id}-request` }, def.request.label + (def.request.optional ? ' (optional)' : '')), refs.request);
+        el('label', { className: 'label', htmlFor: `${def.id}-request` }, def.request.label + (def.request.optional ? ' (optional)' : '')),
+        refs.request,
+        def.request.suggestions ? el('p', { className: 'hint small' }, 'Tap to add, then edit the words to fit:') : '',
+        suggestions);
     }
 
     // ----- Run -----
@@ -571,6 +587,7 @@ const ToolUI = {
       if (inp.orSaved && sheetImgs.length) continue; // a sheet alone is enough for the character
       if (!state.inputs[inp.key].length) {
         const name = inp.label.replace(/\s*\(.*\)/, '').toLowerCase();
+        if (inp.missing) return setStatus(refs.status, inp.missing, 'error');
         return setStatus(refs.status, inp.orSaved
           ? 'Add a character: pick a saved one, or upload a reference or a sheet.'
           : `Add a ${name} image first.`, 'error');

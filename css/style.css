@@ -298,3 +298,7 @@ button.danger { color: var(--danger); }
 .cat-chips button { margin: 0; flex-shrink: 0; padding: 6px 12px; font-size: 13px; background: var(--field); border: none; }
 .cat-chips button.on { background: var(--pill); font-weight: 600; }
 .tile-group[hidden] { display: none; }
+
+/* ---------- Quick-tap suggestions under a text box ---------- */
+.suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.suggestions button { margin: 0; padding: 6px 12px; font-size: 13px; background: var(--field); border: none; }
