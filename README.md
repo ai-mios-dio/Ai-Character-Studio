@@ -1,6 +1,6 @@
-# Character Studio
+# AI Image Studio
 
-A small web app of character creation tools. Everything runs in your browser, so there's nothing to install.
+A web app for creating consistent characters, places and scenes with Google's Nano Banana image models. Everything runs in your browser, so there's nothing to install.
 
 ## How to open it
 
@@ -23,7 +23,29 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 2. In the app, open **Settings**, paste the key, and tap **Save key & load models**.
    The app asks Google which image models your key can use and shows what each one supports.
 
-## The tools
+## How it's organised
+
+The main page has three big buttons:
+
+- **Characters**: every character tool (builders, sheets, background, outfit, pose, makeup, edit, character scene), Saved Characters and the Pose Cutter.
+- **Places**: Place Builder, Place Sheet and Saved Places. A place is like a character for locations (a bedroom, a café…), so it looks the same every time.
+- **Create a Scene**: pick up to two saved characters and a saved place, describe what's happening, and get one image with everyone and everything consistent.
+
+## Places
+
+| Tool | You give it | What you get |
+|---|---|---|
+| **Place Builder** | A description, reference photos, or both, plus optional type, style and time of day | One wide, empty establishing shot of the place (16:9) |
+| **Place Sheet** | A picture of the place | A **views sheet** (2×2 grid: from the entrance, the reverse angle, left wall, right wall, 16:9) and a **details sheet** (3×3 close-ups of furniture, objects and materials, 4:3), with **Save both as a place** |
+| **Saved Places** | A name + views sheet and/or details sheet | A saved place to pick in Create a Scene |
+
+Workflow: **Place Builder → Send to… → Place Sheet → Save both as a place → Create a Scene**.
+
+## Create a Scene
+
+Pick **Character 1**, optionally **Character 2**, and a **Place** from your saved ones, choose a **Shot** (optional) and describe **What's happening?**. Each saved item's sheets are sent under its own name, and the prompt keeps each character's identity separate and the place's layout, furniture and decor exactly the same.
+
+## Character tools
 
 | Tool | You upload | What you get |
 |---|---|---|

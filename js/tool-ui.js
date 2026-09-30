@@ -52,6 +52,7 @@ const ToolUI = {
     // ----- Upload boxes -----
     const inputCards = def.inputs.map((inp) => {
       if (inp.type === 'saved') return null; // drawn inside the Character card
+      if (inp.type === 'library') return this.buildLibraryPicker(def, inp, state, refs);
       if (inp.orSaved) return this.buildCharacterCard(def, inp, def.inputs.find((i) => i.type === 'saved'), state, refs);
       const thumbs = el('div', { className: 'thumbs' });
       refs['thumbs-' + inp.key] = thumbs;
@@ -77,7 +78,7 @@ const ToolUI = {
     //   f.required: no "Any"; the user must pick one.   f.describe(value): text shown under the dropdown.
     let fieldsCard = null;
     if (def.fields) {
-      refs.fields = {};
+      refs.fields = refs.fields || {};
       const rows = def.fields.map((f) => {
         const sel = el('select', { id: `${def.id}-field-${f.key}` });
         sel.add(new Option(f.required ? `Choose ${f.label.toLowerCase()}…` : 'Any', ''));
@@ -138,7 +139,7 @@ const ToolUI = {
 
     refs.results = el('div', { className: 'results' });
 
-    const section = el('section', { id: def.id, className: 'section', dataset: { parent: def.group ? def.group + '-menu' : 'home' } },
+    const section = el('section', { id: def.id, className: 'section', dataset: { parent: parentOf(def) } },
       pageHeader(def.title),
       el('p', { className: 'hint' }, def.intro),
       modelCard,
@@ -495,6 +496,54 @@ const ToolUI = {
     );
   },
 
+  // A dropdown of saved characters or places (Create a Scene). The pick is kept like other choices.
+  buildLibraryPicker(def, inp, state, refs) {
+    refs.fields = refs.fields || {};
+    const sel = el('select', { id: `${def.id}-${inp.key}-pick` });
+    const preview = el('div', { className: 'thumbs' });
+    refs.fields[inp.key] = sel;
+    refs.libPreviews = refs.libPreviews || {};
+    refs.libPreviews[inp.key] = preview;
+    sel.addEventListener('change', () => {
+      if (sel.value) state.fields[inp.key] = sel.value; else delete state.fields[inp.key];
+      this.tools[def.id]?.save();
+      this.showLibraryPreview(def.id, inp);
+    });
+    const manage = el('a', { href: '#' + inp.library, className: 'small-link', textContent: inp.library === 'places' ? 'Add or manage places' : 'Add or manage characters' });
+    setTimeout(() => this.fillLibraryPickers(def.id));
+    return el('div', { className: 'card' },
+      el('label', { className: 'label', htmlFor: sel.id }, inp.label),
+      inp.hint ? el('p', { className: 'hint small input-hint' }, inp.hint) : '',
+      sel, preview, manage);
+  },
+
+  async fillLibraryPickers(id) {
+    const t = this.tools[id];
+    if (!t) return;
+    for (const inp of t.def.inputs.filter((i) => i.type === 'library')) {
+      const sel = t.refs.fields[inp.key];
+      const list = await LIBRARIES[inp.library].list();
+      const noun = inp.library === 'places' ? 'place' : 'character';
+      sel.innerHTML = '';
+      sel.add(new Option(list.length ? (inp.optional ? 'None' : `Choose a ${noun}…`) : `No saved ${noun}s yet`, ''));
+      for (const item of list) sel.add(new Option(item.name, item.id));
+      const keep = t.state.fields[inp.key];
+      sel.value = list.some((i) => i.id === keep) ? keep : '';
+      if (!sel.value) delete t.state.fields[inp.key];
+      this.showLibraryPreview(id, inp);
+    }
+  },
+
+  async showLibraryPreview(id, inp) {
+    const t = this.tools[id];
+    const box = t.refs.libPreviews[inp.key];
+    box.innerHTML = '';
+    const pick = t.state.fields[inp.key];
+    if (!pick) return;
+    const item = await LIBRARIES[inp.library].get(pick);
+    if (item) box.append(el('img', { src: item.thumb, alt: item.name }));
+  },
+
   // Picking a saved character puts its sheet into the Character sheet box.
   async pickSaved(id, charId) {
     const { state } = this.tools[id];
@@ -575,15 +624,19 @@ const ToolUI = {
 
     if (!apiKey) return setStatus(refs.status, 'Add your Gemini API key in Settings first.', 'error');
     const sheetImgs = state.inputs.sheet || [];
+    for (const inp of def.inputs.filter((i) => i.type === 'library' && !i.optional)) {
+      if (!state.fields[inp.key]) return setStatus(refs.status, inp.missing || `Choose ${inp.label.toLowerCase()} first.`, 'error');
+    }
     for (const f of def.fields || []) {
       if (f.required && !state.fields[f.key]) return setStatus(refs.status, `Choose a ${f.label.toLowerCase()} first.`, 'error');
     }
     if (def.tiles && !state.fields[def.tiles.key]) return setStatus(refs.status, def.tiles.required, 'error');
-    if (def.requireAny && !def.inputs.some((i) => state.inputs[i.key].length)) {
+    const typed = def.requireAnyOrText && refs.request && refs.request.value.trim();
+    if (def.requireAny && !typed && !def.inputs.some((i) => state.inputs[i.key].length)) {
       return setStatus(refs.status, def.requireAny, 'error');
     }
     for (const inp of def.inputs) {
-      if (inp.optional || inp.type === 'saved') continue;
+      if (inp.optional || inp.type === 'saved' || inp.type === 'library') continue;
       if (inp.orSaved && sheetImgs.length) continue; // a sheet alone is enough for the character
       if (!state.inputs[inp.key].length) {
         const name = inp.label.replace(/\s*\(.*\)/, '').toLowerCase();
@@ -603,6 +656,12 @@ const ToolUI = {
     const groups = [];
     for (const inp of def.inputs) {
       if (inp.type === 'saved') continue;
+      if (inp.type === 'library') {
+        // A saved character or place: send all of its sheets, labelled with its name.
+        const item = state.fields[inp.key] && await LIBRARIES[inp.library].get(state.fields[inp.key]);
+        if (item && item.images.length) groups.push({ tag: `${inp.tag} "${item.name}"`, imgs: item.images.map((i) => i.blob) });
+        continue;
+      }
       const imgs = state.inputs[inp.key];
       if (inp.orSaved) {
         const sheetTag = def.inputs.find((i) => i.type === 'saved').tag;
@@ -665,7 +724,8 @@ const ToolUI = {
       card.prepend(el('div', { className: 'result-title' }, img.title));
       return card;
     });
-    return el('div', { className: 'result-group' }, ...cards, def.saveAsCharacter ? this.saveCharacterForm(images) : '');
+    const saveTo = def.saveAs || (def.saveAsCharacter ? 'characters' : null);
+    return el('div', { className: 'result-group' }, ...cards, saveTo ? this.saveCharacterForm(images, saveTo) : '');
   },
 
   // Puts a result picture into another tool's box (or the Pose Cutter) and opens that page.
@@ -697,9 +757,10 @@ const ToolUI = {
   },
 
   // "Save as character": a name box and a Save button under a result.
-  saveCharacterForm(images) {
-    const name = el('input', { type: 'text', placeholder: 'Character name' });
-    const btn = el('button', { className: 'primary', textContent: images.length > 1 ? 'Save both as a character' : 'Save as character' });
+  saveCharacterForm(images, libName = 'characters') {
+    const noun = libName === 'places' ? 'place' : 'character';
+    const name = el('input', { type: 'text', placeholder: `${noun[0].toUpperCase() + noun.slice(1)} name` });
+    const btn = el('button', { className: 'primary', textContent: images.length > 1 ? `Save both as a ${noun}` : `Save as ${noun}` });
     const status = el('div', { className: 'status' });
     btn.addEventListener('click', async () => {
       if (!name.value.trim()) { name.focus(); return setStatus(status, 'Type a name first.', 'error'); }
@@ -707,8 +768,8 @@ const ToolUI = {
       try {
         const sheets = [];
         for (const img of images) sheets.push({ kind: img.kind || 'sheet', blob: await (await fetch(img.src)).blob() });
-        await Characters.add(name.value, sheets);
-        setStatus(status, `Saved "${name.value.trim()}". Pick it from the Character box in any tool.`, 'ok');
+        await LIBRARIES[libName].add(name.value, sheets);
+        setStatus(status, `Saved "${name.value.trim()}". Pick it in ${libName === 'places' ? 'Create a Scene' : 'the Character box of any tool'}.`, 'ok');
       } catch (err) {
         btn.disabled = false;
         setStatus(status, 'Could not save: ' + err.message, 'error');
@@ -727,7 +788,7 @@ const ToolUI = {
     send.add(new Option('Send to…', ''));
     send.add(new Option('Pose Cutter', 'cutter'));
     for (const t of Object.values(this.tools)) {
-      for (const inp of t.def.inputs) send.add(new Option(`${t.def.title} › ${inp.sendLabel || inp.label.replace(/\s*\(.*\)/, '')}`, `${t.def.id}:${inp.key}`));
+      for (const inp of t.def.inputs.filter((i) => i.type !== 'library')) send.add(new Option(`${t.def.title} › ${inp.sendLabel || inp.label.replace(/\s*\(.*\)/, '')}`, `${t.def.id}:${inp.key}`));
     }
     send.addEventListener('change', () => {
       const target = send.value;

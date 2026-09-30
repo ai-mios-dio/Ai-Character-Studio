@@ -31,31 +31,75 @@ function setupDropzone(zone, input, onFiles) {
 
 // ---------------- Pages ----------------
 // Each page has its own address (#sheet, #settings...), so the phone's back button works.
-// Tools with a `group` are reached through a small menu page (e.g. Character Builder).
+//
+// Main page -> 3 big buttons: Characters (hub), Places (hub), Create a Scene (tool).
+// A tool's `section` says which hub it lives in ('characters' is the default, 'home' = main page).
+// Tools with a `group` are reached through a small menu page inside their hub (e.g. Character Builder).
+const SECTIONS = {
+  characters: {
+    title: 'Characters', sub: 'Build, dress, pose and save your characters',
+    extra: [['characters', 'Saved Characters'], ['cutter', 'Pose Cutter']],
+  },
+  places: {
+    title: 'Places', sub: 'Rooms and locations you can reuse',
+    extra: [['places', 'Saved Places']],
+  },
+};
 const GROUPS = { builder: 'Character Builder', background: 'Background', outfit: 'Outfit' };
 const GROUP_QUESTIONS = {
   builder: 'How do you want to design your character?',
   background: 'What do you want to do?',
   outfit: 'How do you want to choose the outfit?',
 };
-const PAGES = () => {
+const sectionOf = (t) => t.section || 'characters';
+const parentOf = (t) => (t.group ? t.group + '-menu' : sectionOf(t) === 'home' ? 'home' : sectionOf(t) + '-hub');
+
+// The buttons on one hub page, in tool order, with each group shown once as its menu.
+function hubPages(section) {
   const pages = [];
-  for (const t of TOOLS) {
+  for (const t of TOOLS.filter((x) => sectionOf(x) === section)) {
     if (!t.group) pages.push([t.id, t.title]);
     else if (!pages.some(([id]) => id === t.group + '-menu')) pages.push([t.group + '-menu', GROUPS[t.group]]);
   }
-  return [...pages, ['characters', 'Characters'], ['cutter', 'Pose Cutter']];
-};
+  return [...pages, ...(SECTIONS[section]?.extra || [])];
+}
+
+// Main page: one big button per hub, then tools that live on the main page, then Settings.
+function buildHome() {
+  const box = $('homeButtons');
+  for (const [key, sec] of Object.entries(SECTIONS)) {
+    box.append(el('a', { className: 'home-btn menu-btn', href: `#${key}-hub` },
+      el('span', { className: 'menu-title' }, sec.title), el('span', { className: 'menu-sub' }, sec.sub)));
+  }
+  for (const t of TOOLS.filter((x) => sectionOf(x) === 'home')) {
+    box.append(el('a', { className: 'home-btn menu-btn', href: '#' + t.id },
+      el('span', { className: 'menu-title' }, t.title), el('span', { className: 'menu-sub' }, t.menuText || '')));
+  }
+  box.append(el('a', { className: 'home-btn settings-btn', href: '#settings', textContent: 'Settings' }));
+}
+
+// Hub pages (Characters, Places): a header and one button per tool or menu.
+function buildHubs() {
+  for (const [key, sec] of Object.entries(SECTIONS)) {
+    $('content').insertBefore(
+      el('section', { id: key + '-hub', className: 'section', dataset: { parent: 'home' } },
+        pageHeader(sec.title),
+        el('div', { className: 'home-buttons' }, hubPages(key).map(([id, title]) =>
+          el('a', { className: 'home-btn', href: '#' + id, textContent: title })))),
+      $('cutter'));
+  }
+}
 
 // Builds each menu page: a header and one big button per tool in the group.
 function buildGroupMenus() {
   for (const [group, title] of Object.entries(GROUPS)) {
-    const buttons = TOOLS.filter((t) => t.group === group).map((t) =>
+    const tools = TOOLS.filter((t) => t.group === group);
+    const buttons = tools.map((t) =>
       el('a', { className: 'home-btn menu-btn', href: '#' + t.id },
         el('span', { className: 'menu-title' }, t.title),
         el('span', { className: 'menu-sub' }, t.menuText || '')));
     $('content').insertBefore(
-      el('section', { id: group + '-menu', className: 'section', dataset: { parent: 'home' } },
+      el('section', { id: group + '-menu', className: 'section', dataset: { parent: sectionOf(tools[0]) + '-hub' } },
         pageHeader(title),
         el('p', { className: 'hint' }, GROUP_QUESTIONS[group] || ''),
         el('div', { className: 'home-buttons' }, ...buttons)),
@@ -103,14 +147,6 @@ function pageHeader(title) {
     el('h2', {}, title));
 }
 
-function buildHome() {
-  const box = $('homeButtons');
-  for (const [id, title] of PAGES()) {
-    const btn = el('a', { className: 'home-btn', href: '#' + id, textContent: title });
-    box.append(btn);
-  }
-  box.append(el('a', { className: 'home-btn settings-btn', href: '#settings', textContent: 'Settings' }));
-}
 
 // ================ SETTINGS ================
 function renderModelsTable() {
@@ -166,65 +202,102 @@ $('safetyLevel').addEventListener('change', () => {
   setStatus($('safetyStatus'), 'Saved. Used by every tool from the next Run.', 'ok');
 });
 
-// ================ CHARACTERS ================
-// The two sheets being added: body (full-body views) and face (close-ups).
-const charFiles = { body: null, face: null };
-const CHAR_SLOTS = { body: ['charBodyDrop', 'charBodyFile', 'charBodyText', 'Body sheet'], face: ['charFaceDrop', 'charFaceFile', 'charFaceText', 'Face sheet'] };
-for (const [kind, [drop, input, text, label]] of Object.entries(CHAR_SLOTS)) {
-  setupDropzone($(drop), $(input), (files) => {
-    charFiles[kind] = files[0] || null;
-    $(text).textContent = charFiles[kind] ? `${label} ✓` : label;
+// ================ SAVED LIBRARIES (Characters, Places) ================
+// Both pages are built from this description, so they work the same way.
+const LIBRARY_PAGES = [
+  {
+    id: 'characters', title: 'Saved Characters', library: Characters, prefix: 'char', parent: 'characters-hub', noun: 'character',
+    slots: [['body', 'Body sheet'], ['face', 'Face sheet']],
+    intro: 'Your saved characters. Pick them in the Character box of the character tools and in Create a Scene. They are stored on this device only.',
+    addHint: 'Give them a name and add their body sheet, face sheet, or both. You can also tap "Save both as a character" under a Character Sheet result.',
+  },
+  {
+    id: 'places', title: 'Saved Places', library: Places, prefix: 'place', parent: 'places-hub', noun: 'place',
+    slots: [['views', 'Views sheet'], ['details', 'Details sheet']],
+    intro: 'Your saved places (rooms and locations). Pick them in Create a Scene so the same place looks the same every time. They are stored on this device only.',
+    addHint: 'Give it a name and add its views sheet, details sheet, or both. You can also tap "Save both as a place" under a Place Sheet result.',
+  },
+];
+const cap = (w) => w[0].toUpperCase() + w.slice(1);
+
+function buildLibraryPage(cfg) {
+  const P = cfg.prefix;
+  const files = {};
+  const nameInput = el('input', { type: 'text', id: P + 'Name', placeholder: `${cap(cfg.noun)} name` });
+  const status = el('div', { className: 'status', id: P + 'Status' });
+  const cols = cfg.slots.map(([kind, label]) => {
+    const input = el('input', { type: 'file', id: `${P}${cap(kind)}File`, accept: 'image/*', 'aria-label': label });
+    const text = el('span', { id: `${P}${cap(kind)}Text` }, label);
+    const zone = el('div', { className: 'dropzone mini', id: `${P}${cap(kind)}Drop` }, input, text);
+    setupDropzone(zone, input, (list) => {
+      files[kind] = list[0] || null;
+      text.textContent = files[kind] ? `${label} ✓` : label;
+    });
+    return el('div', { className: 'upload-col' }, zone);
   });
+  const addBtn = el('button', { className: 'primary', id: P + 'Add', textContent: `Save ${cfg.noun}` });
+  addBtn.addEventListener('click', async () => {
+    if (!nameInput.value.trim()) return setStatus(status, 'Type a name first.', 'error');
+    const images = cfg.slots.filter(([k]) => files[k]).map(([kind]) => ({ kind, blob: files[kind] }));
+    if (!images.length) return setStatus(status, `Add a ${cfg.slots.map(([, l]) => l.toLowerCase()).join(', a ')}, or both.`, 'error');
+    try {
+      await cfg.library.add(nameInput.value, images);
+      setStatus(status, `Saved "${nameInput.value.trim()}".`, 'ok');
+      nameInput.value = '';
+      cfg.slots.forEach(([kind, label]) => { files[kind] = null; $(`${P}${cap(kind)}Text`).textContent = label; });
+    } catch (err) {
+      setStatus(status, 'Could not save: ' + err.message, 'error');
+    }
+  });
+  cfg.list = el('div', { id: P + 'List', className: 'char-list' });
+  $('content').insertBefore(
+    el('section', { id: cfg.id, className: 'section', dataset: { parent: cfg.parent } },
+      pageHeader(cfg.title),
+      el('p', { className: 'hint' }, cfg.intro),
+      el('div', { className: 'card' },
+        el('div', { className: 'label' }, `Add a ${cfg.noun}`),
+        el('p', { className: 'hint small input-hint' }, cfg.addHint),
+        nameInput,
+        el('div', { className: 'upload-pair' }, ...cols),
+        addBtn, status),
+      cfg.list),
+    $('cutter'));
+  cfg.library.onChange(() => renderLibrary(cfg));
+  renderLibrary(cfg);
 }
 
-$('charAdd').addEventListener('click', async () => {
-  const status = $('charStatus');
-  if (!$('charName').value.trim()) return setStatus(status, 'Type a name first.', 'error');
-  const images = Object.entries(charFiles).filter(([, f]) => f).map(([kind, blob]) => ({ kind, blob }));
-  if (!images.length) return setStatus(status, 'Add a body sheet, a face sheet, or both.', 'error');
-  try {
-    await Characters.add($('charName').value, images);
-    setStatus(status, `Saved "${$('charName').value.trim()}".`, 'ok');
-    $('charName').value = '';
-    for (const [kind, [, , text, label]] of Object.entries(CHAR_SLOTS)) { charFiles[kind] = null; $(text).textContent = label; }
-  } catch (err) {
-    setStatus(status, 'Could not save: ' + err.message, 'error');
-  }
-});
-
-async function renderCharacters() {
-  const box = $('charList');
-  const list = await Characters.list();
+async function renderLibrary(cfg) {
+  const box = cfg.list;
+  const list = await cfg.library.list();
   box.innerHTML = '';
   if (!list.length) {
-    box.append(el('p', { className: 'hint' }, 'No characters yet. Add one above.'));
+    box.append(el('p', { className: 'hint' }, `No ${cfg.noun}s yet. Add one above.`));
     return;
   }
-  for (const c of list) {
-    const name = el('input', { type: 'text', value: c.name, 'aria-label': 'Character name' });
+  const kinds = Object.fromEntries([...cfg.slots, ['sheet', 'Sheet']]);
+  for (const item of list) {
+    const name = el('input', { type: 'text', value: item.name, 'aria-label': `${cap(cfg.noun)} name` });
     const rename = el('button', { className: 'small-btn', textContent: 'Rename' });
-    rename.addEventListener('click', () => Characters.rename(c.id, name.value));
+    rename.addEventListener('click', () => cfg.library.rename(item.id, name.value));
     // Delete asks for a second tap instead of a pop-up.
     const del = el('button', { className: 'small-btn danger', textContent: 'Delete' });
     del.addEventListener('click', () => {
-      if (del.dataset.armed) return Characters.remove(c.id);
+      if (del.dataset.armed) return cfg.library.remove(item.id);
       del.dataset.armed = '1';
       del.textContent = 'Tap again to delete';
       setTimeout(() => { delete del.dataset.armed; del.textContent = 'Delete'; }, 4000);
     });
-    const kinds = { body: 'Body sheet', face: 'Face sheet', sheet: 'Sheet' };
-    const has = c.images.map((img) => kinds[img.kind] || img.kind).join(' + ');
+    const has = item.images.map((img) => kinds[img.kind] || img.kind).join(' + ');
     box.append(el('div', { className: 'char-card' },
-      el('img', { src: c.thumb, alt: c.name }),
+      el('img', { src: item.thumb, alt: item.name }),
       el('div', { className: 'char-info' }, name, el('div', { className: 'hint small' }, has), el('div', { className: 'row' }, rename, del))));
   }
 }
 
-// Keep this page and every tool's dropdown up to date when characters change.
-Characters.onChange(() => {
-  renderCharacters();
-  Object.keys(ToolUI.tools).forEach((id) => ToolUI.fillSavedPicker(id));
-});
+// Keep every tool's dropdowns up to date when characters or places change.
+for (const lib of Object.values(LIBRARIES)) {
+  lib.onChange(() => Object.keys(ToolUI.tools).forEach((id) => { ToolUI.fillSavedPicker(id); ToolUI.fillLibraryPickers(id); }));
+}
 
 // ================ POSE CUTTER ================
 let cutSources = [];   // image files waiting to be cut
@@ -331,7 +404,10 @@ $('cutZip').addEventListener('click', async () => {
 
 // ---------------- Start up ----------------
 buildHome();
+buildHubs();
 buildGroupMenus();
+LIBRARY_PAGES.forEach(buildLibraryPage);
+$('cutter').dataset.parent = 'characters-hub';
 const cutterSection = $('cutter');
 for (const def of TOOLS) {
   $('content').insertBefore(ToolUI.build(def), cutterSection);
@@ -339,7 +415,6 @@ for (const def of TOOLS) {
 }
 $('apiKey').value = Store.getApiKey();
 renderModelsTable();
-renderCharacters();
 route();
 
 // Quietly refresh the model list once a day if we have a key.

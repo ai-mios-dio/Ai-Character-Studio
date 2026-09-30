@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Character Studio</title>
-  <link rel="stylesheet" href="css/style.css?v=33">
+  <title>AI Image Studio</title>
+  <link rel="stylesheet" href="css/style.css?v=36">
 </head>
 <body>
   <div class="app">
@@ -12,41 +12,13 @@
       <!-- ============ HOME ============ -->
       <!-- One big button per tool. They're added automatically from js/tools.js. -->
       <section id="home" class="section">
-        <h1 class="logo">Character Studio</h1>
+        <h1 class="logo">AI Image Studio</h1>
         <div class="home-buttons" id="homeButtons"></div>
       </section>
 
       <!-- The AI tool sections (Character Sheet, Background Swap...) are inserted here. -->
 
-      <!-- ============ CHARACTERS ============ -->
-      <section id="characters" class="section">
-        <header class="page-head"><button class="back-btn" data-back>&larr; Back</button><h2>Characters</h2></header>
-        <p class="hint">Your saved characters. Pick them in the Character box of Background, Outfit, Pose and Character Scene. They are stored on this device only.</p>
-
-        <div class="card">
-          <div class="label">Add a character</div>
-          <p class="hint small input-hint">Give them a name and add their body sheet, face sheet, or both. You can also tap "Save both as a character" under a Character Sheet result.</p>
-          <input type="text" id="charName" placeholder="Character name">
-          <div class="upload-pair">
-            <div class="upload-col">
-              <div class="dropzone mini" id="charBodyDrop">
-                <input type="file" id="charBodyFile" accept="image/*" aria-label="Body sheet">
-                <span id="charBodyText">Body sheet</span>
-              </div>
-            </div>
-            <div class="upload-col">
-              <div class="dropzone mini" id="charFaceDrop">
-                <input type="file" id="charFaceFile" accept="image/*" aria-label="Face sheet">
-                <span id="charFaceText">Face sheet</span>
-              </div>
-            </div>
-          </div>
-          <button class="primary" id="charAdd">Save character</button>
-          <div class="status" id="charStatus"></div>
-        </div>
-
-        <div id="charList" class="char-list"></div>
-      </section>
+      <!-- Hub pages, menu pages, Saved Characters/Places and tool pages are added here by js/app.js. -->
 
       <!-- ============ POSE CUTTER ============ -->
       <section id="cutter" class="section" data-title="Pose Cutter">
@@ -136,7 +108,7 @@
 
   <!-- If something breaks while the app starts, show a message instead of a blank page. -->
   <div id="loadError" class="load-error" hidden>
-    Character Studio didn't load properly. Pull down to refresh, or close the tab and open it again.
+    AI Image Studio didn't load properly. Pull down to refresh, or close the tab and open it again.
   </div>
   <script>
     window.addEventListener('error', function () {
@@ -147,14 +119,14 @@
   <!-- The ?v= number makes phones download fresh files after each update. Bump it when you change CSS/JS. -->
   <!-- JSZip builds the "download all" zip file. Loaded from a public CDN. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="js/storage.js?v=33"></script>
-  <script src="js/models.js?v=33"></script>
-  <script src="js/gemini.js?v=33"></script>
-  <script src="js/characters.js?v=33"></script>
-  <script src="js/cutter.js?v=33"></script>
-  <script src="js/catalog.js?v=33"></script>
-  <script src="js/tools.js?v=33"></script>
-  <script src="js/tool-ui.js?v=33"></script>
-  <script src="js/app.js?v=33"></script>
+  <script src="js/storage.js?v=36"></script>
+  <script src="js/models.js?v=36"></script>
+  <script src="js/gemini.js?v=36"></script>
+  <script src="js/characters.js?v=36"></script>
+  <script src="js/cutter.js?v=36"></script>
+  <script src="js/catalog.js?v=36"></script>
+  <script src="js/tools.js?v=36"></script>
+  <script src="js/tool-ui.js?v=36"></script>
+  <script src="js/app.js?v=36"></script>
 </body>
 </html>

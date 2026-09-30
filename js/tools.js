@@ -50,6 +50,13 @@ const FICTIONAL_CHARACTER =
 const FICTIONAL_RESULT =
   'CONTEXT: the result is an original, fictional adult character for a drama story, not a real person.';
 
+// For Places: the room or location is a fictional set.
+const FICTIONAL_PLACE =
+  'CONTEXT: this is set and location design for an original, fictional drama story. The place is fictional.';
+
+// No people in place images (they are reusable sets).
+const EMPTY_PLACE = 'The place is EMPTY: no people, no body parts, no reflections of people, no text, labels or watermark.';
+
 // Used in every prompt: characters never have tattoos.
 const NO_TATTOOS =
   'NO TATTOOS: the character has no tattoos anywhere (face, neck, chest, back, arms, hands, legs or feet). ' +
@@ -675,4 +682,139 @@ ${NO_TATTOOS}
 REQUEST:
 {request}`,
   },
+  {
+    id: 'place-builder',
+    title: 'Place Builder',
+    section: 'places',
+    intro: 'Design a new place (a room or location). Describe it, add reference photos, or both, and tap Run. You get one wide, empty shot of the place.',
+    inputs: [
+      { key: 'refs', label: 'Reference photos (optional)', tag: 'PLACE REFERENCE', optional: true, hint: 'Photos of the room or of rooms you like. Several photos are treated as one place.' },
+    ],
+    fieldsTitle: 'The place',
+    fields: [
+      { key: 'type', label: 'Type', options: ['Bedroom', 'Living room', 'Kitchen', 'Bathroom', 'Home office', 'Office', 'Café', 'Restaurant', 'Bar / club', 'Classroom', 'Gym', 'Hotel room', 'Hallway / entrance', 'Car interior', 'Street', 'Park', 'Beach', 'Rooftop'] },
+      { key: 'style', label: 'Style', options: ['Modern', 'Minimalist', 'Cozy', 'Luxury', 'Scandinavian', 'Industrial', 'Rustic', 'Bohemian', 'Vintage', 'Traditional'] },
+      { key: 'time', label: 'Time of day', options: ['Morning', 'Midday', 'Golden hour', 'Evening', 'Night'] },
+    ],
+    request: { label: 'Describe the place', optional: true, placeholder: "e.g. Mara's bedroom: small city apartment, big window with a view, queen bed with white linen, plants, a desk with a laptop" },
+    requireAny: 'Describe the place or add at least one reference photo.',
+    requireAnyOrText: true,
+    runLabel: 'Build place',
+    defaultOptions: { aspectRatio: '16:9' },
+    fill: ({ fields }) => ({
+      place: [
+        fields.type ? `Type: ${fields.type}.` : '',
+        fields.style ? `Style: ${fields.style}.` : '',
+        fields.time ? `Time of day: ${fields.time}.` : '',
+      ].filter(Boolean).join(' ') || 'Not specified; choose what fits the description and references.',
+    }),
+    prompt:
+`${FICTIONAL_PLACE}
+
+Design ONE specific place (a room or location) and show it in a single wide establishing photograph. It will be reused as a consistent set for future scenes, so it must be clear and recognisable.
+
+THE PLACE: {place}
+DESCRIPTION (follow it if given): {request}
+
+PLACE REFERENCE photos (only if included): follow their layout, architecture, furniture, materials, colours and style closely. If there are several, treat them as one place (different angles or inspirations for the same room) and combine them into one coherent space.
+
+Make it specific and lived-in: clearly placed furniture, windows, doors, light sources, decor and textures, so each item can be recognised again later.
+
+CAMERA: wide-angle establishing shot at eye level (about 1.5 m high) from the entrance or a corner, showing most of the space: floor, walls, the main furniture, windows and the door.
+
+Photorealistic, natural lighting that matches the time of day. ${EMPTY_PLACE}`,
+  },
+
+  {
+    id: 'place-sheet',
+    title: 'Place Sheet',
+    section: 'places',
+    intro: 'Upload a picture of a place (for example from Place Builder) and tap Run. You get two sheets: a views sheet and a details sheet.',
+    inputs: [{ key: 'place', label: 'Place picture(s)', tag: 'PLACE', missing: 'Add a picture of the place first.', hint: 'One wide picture works; extra angles of the same place help.' }],
+    runLabel: 'Create place sheets',
+    saveAs: 'places',
+    // One Run makes both sheets. Each has its own prompt (editable in Settings) and a fixed ratio.
+    outputs: [
+      {
+        key: 'views',
+        title: 'Views sheet',
+        aspectRatio: '16:9', // a 2 x 2 grid of landscape panels
+        prompt:
+`${FICTIONAL_PLACE}
+
+Using the attached PLACE image(s), generate a single location reference sheet (a set turnaround) of this exact place, on a white background.
+Layout: a 2 x 2 grid of 4 equal landscape panels separated by thin white gaps:
+Top left: wide view from the main entrance or doorway, looking into the space
+Top right: reverse view from the opposite side, looking back toward the entrance
+Bottom left: view toward the left wall
+Bottom right: view toward the right wall
+Every panel: eye level (about 1.5 m), wide-angle, the same lighting and time of day.
+
+CONSISTENCY: it is the SAME place in every panel: identical architecture, room size and shape, layout, furniture pieces and their positions and sizes, materials, colours, decor, windows, doors and light sources. Anything seen in more than one panel must match exactly and sit in a consistent position. Parts not visible in the PLACE image: design them to match its style, and keep them consistent between panels.
+
+Photorealistic. ${EMPTY_PLACE}`,
+      },
+      {
+        key: 'details',
+        title: 'Details sheet',
+        aspectRatio: '4:3', // a 3 x 3 grid of square panels
+        prompt:
+`${FICTIONAL_PLACE}
+
+Using the attached PLACE image(s), generate a single details reference sheet of this exact place, on a white background.
+Layout: a 3 x 3 grid of 9 equal square close-up panels separated by thin white gaps, showing the place's most recognisable elements:
+1. the main furniture piece (for example the bed or sofa), 2. a second furniture piece, 3. storage (wardrobe, shelves or cabinets),
+4. the main table, desk or work surface with its objects, 5. a window with its curtains or blinds, 6. a light fixture or lamp,
+7. decor (art, plants or personal objects), 8. textiles (bedding, rug or cushions), 9. a close-up of the floor and wall materials.
+Choose the nine that best fit this place.
+
+CONSISTENCY: every item must match the PLACE image exactly: same design, shape, colours, materials, pattern and condition. Consistent lighting in every panel.
+
+Photorealistic. ${EMPTY_PLACE}`,
+      },
+    ],
+  },
+
+  {
+    id: 'create-scene',
+    title: 'Create a Scene',
+    section: 'home',
+    menuText: 'Put your saved characters in your saved places',
+    intro: 'Pick your characters and a place, describe what is happening, and tap Run.',
+    inputs: [
+      { key: 'char1', type: 'library', library: 'characters', label: 'Character 1', tag: 'CHARACTER 1', missing: 'Choose Character 1 first (save characters in Characters → Saved Characters).' },
+      { key: 'char2', type: 'library', library: 'characters', label: 'Character 2 (optional)', tag: 'CHARACTER 2', optional: true },
+      { key: 'place', type: 'library', library: 'places', label: 'Place', tag: 'PLACE', optional: true, hint: 'Pick a saved place so it looks the same in every scene. Without one, the setting comes from your description.' },
+    ],
+    fieldsTitle: 'Camera',
+    fields: [
+      { key: 'shot', label: 'Shot', wide: true, options: ['Wide shot (whole room)', 'Full body', 'Medium shot (waist up)', 'Close-up'] },
+    ],
+    request: { label: "What's happening?", placeholder: 'e.g. Mara sits on the edge of her bed reading a letter, evening lamp light. Leo leans in the doorway, arms crossed.' },
+    runLabel: 'Create scene',
+    defaultOptions: { aspectRatio: '16:9' },
+    fill: ({ fields }) => ({ shot: fields.shot || 'Your choice, whatever tells the scene best.' }),
+    prompt:
+`${FICTIONAL_CHARACTER} The place is a fictional set.
+
+Create ONE new image of the scene described below, using the saved references.
+
+REFERENCES (each group is labelled with its name):
+- CHARACTER 1, and CHARACTER 2 if included: character sheets (a full-body BODY sheet and/or a close-up FACE sheet). Each sheet shows ONE person from several angles; it is not a group, and its grid layout is not the output format.
+- PLACE, if included: location sheets of one place: a VIEWS sheet (the same room from several camera positions) and/or a DETAILS sheet (close-ups of its furniture, objects and materials).
+
+SCENE: {request}
+SHOT: {shot}
+
+CHARACTERS: ${IDENTITY_LOCK} This applies to EACH character separately: each one must look exactly like their own references (the face sheet decides the face, the body sheet decides height, build and proportions). Never mix features between characters; they stay clearly different people. Their relative heights must match their sheets. Keep each character's outfit from their sheets unless the scene says otherwise.
+
+PLACE (if included): the scene happens in THIS exact place: the same architecture, layout, furniture pieces and their positions, materials, colours, decor and windows as in the PLACE references. Use a camera position that makes sense for the room's layout (as if standing where one of its views was taken) and show only what would be visible from there. Do not add, remove or rearrange furniture unless the scene asks for it. Lighting and time of day follow the scene; otherwise match the place references. If no PLACE references are included, create a fitting setting from the scene description.
+
+INTEGRATION: characters at the correct scale for the furniture and for each other, touching the floor and objects naturally with matching shadows, lighting and perspective.
+
+${NO_TATTOOS}
+
+Output one single, full-frame image (no grid, panels or collage). Each character appears exactly once. No other people unless the scene asks for them. No text, labels, borders or watermark.`,
+  },
+
 ];
