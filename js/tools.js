@@ -150,6 +150,14 @@ const ROOM_DESCRIPTION_REQUEST = {
   aiPrompt: ROOM_DESCRIBE_PROMPT,
 };
 
+// Create a Scene: the camera spots match the 4 panels of a Place Sheet's VIEWS sheet.
+const PLACE_VIEWS = [
+  { name: 'From the entrance', panel: 'top-left', desc: 'Camera at the main entrance or doorway, looking into the room.' },
+  { name: 'From the far side, facing the entrance', panel: 'top-right', desc: 'Camera on the opposite side of the room, looking back toward the entrance.' },
+  { name: 'Facing the left wall', panel: 'bottom-left', desc: 'Camera looking toward the left wall (left as seen from the entrance).' },
+  { name: 'Facing the right wall', panel: 'bottom-right', desc: 'Camera looking toward the right wall (right as seen from the entrance).' },
+];
+
 // Create a Scene, "Words only": turns a pose photo into a description, so the person in it is never sent.
 const POSE_DESCRIBE_PROMPT =
 `Describe ONLY the body pose in this photo, precisely enough that an artist could recreate it with a completely different person. For each person in the photo (if there are two, describe the one on the left first, and how they touch or hold each other): which way the body faces and the camera angle to them; standing, sitting, kneeling or lying; head tilt and turn and where the eyes look; the facial expression; torso lean and twist; each arm, elbow, wrist and hand (what the hands rest on or hold); each leg, knee and foot; where the weight is. Say left and right from the viewer's side.
@@ -892,6 +900,7 @@ Photorealistic, natural lighting that matches the time of day. ${EMPTY_PLACE}`,
     fieldsTitle: 'Camera & poses',
     fields: [
       { key: 'shot', label: 'Shot', wide: true, options: ['Wide shot (whole room)', 'Full body', 'Medium shot (waist up)', 'Close-up'] },
+      { key: 'view', label: 'Camera spot in the place', wide: true, options: PLACE_VIEWS.map((v) => v.name), describe: (v) => PLACE_VIEWS.find((x) => x.name === v)?.desc || '' },
       { key: 'together', label: 'Pose together (with 2 characters)', wide: true, options: DUO_POSES.map((p) => p.name), describe: (v) => DUO_POSES.find((p) => p.name === v)?.desc || '' },
       { key: 'poseFor', label: 'Pose picture is for', wide: true, options: ['Character 1', 'Character 2', 'Both (copy the two people in it)'] },
       { key: 'poseMode', label: 'Pose picture sends', wide: true, options: ['Photo (most exact pose)', 'Words only (the pose person can\'t leak in)'], describe: (v) => v.startsWith('Words') ? 'The AI first describes the pose in words; only the words are sent, never the photo. Use this if the person from the pose picture shows up in your scene.' : 'The photo is sent. Most exact pose, but sometimes the person in it leaks into the scene.' },
@@ -918,8 +927,10 @@ Photorealistic, natural lighting that matches the time of day. ${EMPTY_PLACE}`,
         const pose = POSES.find((p) => p.id === fields[`char${n}Pose`]);
         if (pose) lines.push(`CHARACTER ${n}: ${pose.desc}`);
       });
+      const view = PLACE_VIEWS.find((v) => v.name === fields.view);
       return {
         shot: fields.shot || 'Your choice, whatever tells the scene best.',
+        view: view ? `${view.desc} Match the camera position, direction and height of the ${view.panel} panel of the PLACE VIEWS sheet, so the room looks the same as in that panel.` : 'Your choice: pick the PLACE VIEWS panel that best shows the scene and match its camera position, direction and height.',
         poses: lines.length ? lines.join('\n') : 'Whatever fits the scene description naturally.',
       };
     },
@@ -936,6 +947,7 @@ REFERENCES (each group is labelled with its name):
 
 SCENE: {request}
 SHOT: {shot}
+CAMERA SPOT (if a PLACE is included): {view}
 POSES:
 {poses}
 
@@ -946,7 +958,9 @@ OUTFITS: if a character comes with an OUTFIT SHEET, that sheet is their full-bod
 POSE REFERENCE (if included): the person in it is a STRANGER, not one of the characters, and must NOT appear in the image. Take ONLY the pose from it: body position, head angle, arms, hands, legs, feet, weight and facial expression, matching left and right as shown. Never copy the face, hair, skin, body shape, height, weight, clothes, shoes, accessories, background, props, lighting or camera style of the person in it, and never change a character's body proportions to fit it. Think of it as a stick-figure diagram: the character performs the pose with their OWN face, hair, body and outfit.
 IDENTITY CHECK (when a POSE REFERENCE is included): look at the finished face and body. If they resemble the person in the POSE REFERENCE more than the character's own FACE sheet and body/outfit sheet, redo them as the character.
 
-PLACE (if included): the scene happens in THIS exact place: the same architecture, layout, furniture pieces and their positions, materials, colours, decor and windows as in the PLACE references. Use a camera position that makes sense for the room's layout (as if standing where one of its views was taken) and show only what would be visible from there. Do not add, remove or rearrange furniture unless the scene asks for it. Lighting and time of day follow the scene; otherwise match the place references. If no PLACE references are included, create a fitting setting from the scene description.
+PLACE (if included): the scene happens in THIS exact place: the same architecture, layout, furniture pieces and their positions, materials, colours, decor and windows as in the PLACE references. Use the camera spot above, as if standing where that view was taken, and show only what would be visible from there. Do not add, remove or rearrange furniture unless the scene asks for it.
+- ROOM SIZE: keep the room's real size and open floor space exactly as in the PLACE references. Never make the room smaller, narrower or more cramped, and never push walls or furniture closer together to fit the characters. Use a natural wide-angle view (about a 24 mm lens at eye level, about 1.5 m high) so the room feels as spacious as in its references.
+- FURNITURE ALIGNMENT: every piece keeps its exact orientation and placement. Furniture that stands against a wall stays flush and parallel to that wall (for example the bed's headboard stays flat against its wall, square to it, never angled, rotated or pulled into the room). Straight lines of walls, floor tiles, bed and furniture edges stay straight and follow one consistent perspective. Lighting and time of day follow the scene; otherwise match the place references. If no PLACE references are included, create a fitting setting from the scene description.
 
 REAL-WORLD SCALE (very important): the sheets have plain backgrounds, so they show NO size. Build the scene at true real-world size:
 - If a character comes with a "real height", draw them at EXACTLY that height. Otherwise they are ordinary adults of normal height (about 155-185 cm / 5'1"-6'1"), never giants. With two characters, their height difference must match their heights (or their sheets).

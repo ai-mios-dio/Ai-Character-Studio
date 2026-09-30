@@ -46,7 +46,7 @@ Workflow: **Place Builder → Send to… → Place Sheet → Save both as a plac
 
 ## Create a Scene
 
-Pick **Character 1**, optionally **Character 2**, and a **Place** from your saved ones, choose a **Shot** (optional) and describe **What's happening?**. Each saved item's sheets are sent under its own name, and the prompt keeps each character's identity separate and the place's layout, furniture and decor exactly the same.
+Pick **Character 1**, optionally **Character 2**, and a **Place** from your saved ones, choose a **Shot** and a **Camera spot in the place** (optional: from the entrance, from the far side, facing the left wall or facing the right wall, matching the 4 panels of the place's views sheet) and describe **What's happening?**. Each saved item's sheets are sent under its own name, and the prompt keeps each character's identity separate and the place's layout, furniture and decor exactly the same.
 
 For each character you can also pick:
 
