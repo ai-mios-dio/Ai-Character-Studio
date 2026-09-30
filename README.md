@@ -29,7 +29,9 @@ The main page has three big buttons:
 
 - **Characters**: every character tool (builders, Sheets (Character Sheet and Outfit Sheet), background, outfit, pose, makeup, edit, character scene), Saved Characters and the Pose Cutter.
 - **Places**: Place Builder, Place Sheet and Saved Places. A place is like a character for locations (a bedroom, a café…), so it looks the same every time.
-- **Create a Scene**: pick up to two saved characters and a saved place, describe what's happening, and get one image with everyone and everything consistent.
+- **Scenes**:
+  - **Create a Scene**: pick up to two saved characters and a saved place, describe what's happening, and get one image with everyone and everything consistent.
+  - **Scene Angles**: upload one picture of your character posed in a place (and optionally pick the saved character) and get one image with 4 views of that exact moment from different camera positions: around them (front, 3/4, side, back) or camera styles (eye level, high, low, close-up), as one row of 4 or a 2 x 2 grid.
 
 ## Places
 

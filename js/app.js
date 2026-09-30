@@ -45,11 +45,14 @@ const SECTIONS = {
     extra: [['places', 'Saved Places']],
   },
 };
-const GROUPS = { builder: 'Character Builder', sheets: 'Sheets', swap: 'Swap', outfit: 'Outfit' };
+const GROUPS = { builder: 'Character Builder', sheets: 'Sheets', swap: 'Swap', outfit: 'Outfit', scenes: 'Scenes' };
+// Subtitle for groups shown as a card on the main page.
+const GROUP_SUBS = { scenes: 'Put characters in places, or see one moment from every angle' };
 const GROUP_QUESTIONS = {
   builder: 'How do you want to design your character?',
   sheets: 'Which sheet do you want to make?',
   swap: 'What do you want to swap?',
+  scenes: 'What do you want to make?',
   outfit: 'How do you want to choose the outfit?',
 };
 const sectionOf = (t) => t.section || 'characters';
@@ -84,12 +87,13 @@ const ICONS = {
   video: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/>',
   swap: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
   shoe: '<path d="M3 16v-5l4-1 3 3 5 1 5 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><path d="M3 19h18"/>',
+  angles: '<circle cx="12" cy="12" r="2.5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/>',
   sparkle: '<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>',
 };
 // Which icon each page uses.
 const ICON_FOR = {
   'characters-hub': 'characters', 'places-hub': 'places', 'create-scene': 'scene', settings: 'settings',
-  'builder-menu': 'builder', 'sheets-menu': 'sheets', 'swap-menu': 'swap', 'outfit-menu': 'outfit',
+  'builder-menu': 'builder', 'sheets-menu': 'sheets', 'scenes-menu': 'scene', 'scene-angles': 'angles', 'swap-menu': 'swap', 'outfit-menu': 'outfit',
   pose: 'pose', makeup: 'makeup', edit: 'edit', scene: 'character-scene', characters: 'saved', places: 'saved',
   cutter: 'cutter', 'place-builder': 'builder', 'place-sheet': 'sheets', 'place-video': 'video',
   // tools inside the menus
@@ -109,7 +113,14 @@ function buildHome() {
     el('span', { className: 'menu-text' }, el('span', { className: 'menu-title' }, title), el('span', { className: 'menu-sub' }, sub)),
     el('span', { className: 'chev', 'aria-hidden': 'true', textContent: '›' }));
   for (const [key, sec] of Object.entries(SECTIONS)) box.append(card(`#${key}-hub`, sec.title, sec.sub));
-  for (const t of TOOLS.filter((x) => sectionOf(x) === 'home')) box.append(card('#' + t.id, t.title, t.menuText || ''));
+  // Tools on the main page; a group of them (e.g. Scenes) shows once, as its menu.
+  const shown = new Set();
+  for (const t of TOOLS.filter((x) => sectionOf(x) === 'home')) {
+    if (!t.group) { box.append(card('#' + t.id, t.title, t.menuText || '')); continue; }
+    if (shown.has(t.group)) continue;
+    shown.add(t.group);
+    box.append(card(`#${t.group}-menu`, GROUPS[t.group], GROUP_SUBS[t.group] || ''));
+  }
   box.append(el('a', { className: 'home-btn settings-btn', href: '#settings' }, iconEl('settings'), el('span', {}, 'Settings')));
 }
 
@@ -135,7 +146,7 @@ function buildGroupMenus() {
         el('span', { className: 'menu-title' }, t.title),
         el('span', { className: 'menu-sub' }, t.menuText || '')));
     $('content').insertBefore(
-      el('section', { id: group + '-menu', className: 'section', dataset: { parent: sectionOf(tools[0]) + '-hub' } },
+      el('section', { id: group + '-menu', className: 'section', dataset: { parent: sectionOf(tools[0]) === 'home' ? 'home' : sectionOf(tools[0]) + '-hub' } },
         pageHeader(title),
         el('p', { className: 'hint' }, GROUP_QUESTIONS[group] || ''),
         el('div', { className: 'home-buttons' }, ...buttons)),

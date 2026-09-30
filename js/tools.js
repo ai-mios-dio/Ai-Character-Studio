@@ -239,6 +239,32 @@ const SWAP_ITEMS = [
   { name: 'Other', what: 'item shown in the ITEM REFERENCE (see the notes for what it is)', hint: 'Say what it is in the notes.', rules: 'Work out which item it is from the reference and the notes, and replace only that.' },
 ];
 
+// Scene Angles: one moment (character + pose + place) seen from 4 camera positions in one image.
+const SCENE_ANGLES_PROMPT =
+`${FICTIONAL_CHARACTER} The place is a fictional set.
+
+The SCENE REFERENCE image shows the character in a pose in a place. Create ONE image that shows this EXACT same moment from 4 different camera positions, like a film crew photographing one frozen moment from around the set.
+
+LAYOUT: {layout}:
+{views}
+Every panel shows the whole character (head to feet, except a close-up panel), at a similar size, with the surroundings around them. No text, labels, numbers, arrows or borders other than the thin gaps.
+
+SAME MOMENT IN EVERY PANEL:
+- POSE: exactly the pose from the SCENE REFERENCE, frozen: the same position of the head, arms, hands, legs and feet, the same weight and balance, the same facial expression and gaze direction. Seen from a new angle, the pose must be the same 3D pose, not a new pose. Where a limb is hidden in the reference, continue it naturally.
+- CHARACTER: the same person, face, hair, body proportions, outfit, shoes, accessories and anything they hold, exactly as in the SCENE REFERENCE.
+- PLACE: the same location, furniture, objects, walls, floor and decor as in the SCENE REFERENCE, each in the same position relative to the character, seen from each new camera position. Parts of the place that the reference does not show (for example behind the camera) must be designed to match its style, materials and colours, and stay consistent between panels.
+- LIGHT: the same light sources, direction, colour and time of day; shadows fall the same way in the world, so they look different from each camera position.
+
+CHARACTER SHEET (only if images labelled CHARACTER SHEET are included): they show this same character from other angles. Use them ONLY to get the face, hair (for example the back of the hairstyle) and body proportions right from the sides the SCENE REFERENCE does not show. Pose, outfit, props, place and lighting come from the SCENE REFERENCE, never from the sheet.
+
+${IDENTITY_LOCK}
+
+Photorealistic, matching the style of the SCENE REFERENCE. Only this one character (plus anyone else already in the SCENE REFERENCE, in their same positions).
+
+NOTES (follow these if given): {request}
+
+${NO_TATTOOS}`;
+
 const TOOLS = [
   {
     id: 'builder',
@@ -988,6 +1014,7 @@ Photorealistic, natural lighting that matches the time of day. ${EMPTY_PLACE}`,
     id: 'create-scene',
     title: 'Create a Scene',
     section: 'home',
+    group: 'scenes',
     menuText: 'Put your saved characters in your saved places',
     intro: 'Pick your characters and a place, describe what is happening, and tap Run.',
     inputs: [
@@ -1079,6 +1106,48 @@ INTEGRATION: characters at the correct scale for the furniture and for each othe
 ${NO_TATTOOS}
 
 Output one single, full-frame image (no grid, panels or collage). Each character appears exactly once. No other people unless the scene asks for them. No text, labels, borders or watermark.`,
+  },
+
+  {
+    id: 'scene-angles',
+    title: 'Scene Angles',
+    section: 'home',
+    group: 'scenes',
+    menuText: 'One picture of your character posed in a place → 4 camera angles of that exact moment in one image',
+    intro: 'Add a picture of your character in a pose in a place. You get one image with 4 views of that exact moment from different camera positions: same pose, same place, same lighting. Picking the saved character helps get their face, hair and body right from the sides the picture doesn\'t show.',
+    inputs: [
+      { key: 'character', label: 'Character in a pose in a place', tag: 'SCENE REFERENCE', orSaved: true, required: true, sendLabel: 'Scene picture', missing: 'Add the picture of your character posed in the place.' },
+      SAVED_CHARACTER,
+    ],
+    noOutfitPick: true, // the outfit comes from the scene picture
+    fieldsTitle: 'Views',
+    fields: [
+      { key: 'angles', label: 'Angles', required: true, wide: true, options: ['Around them: front, 3/4, side, back', 'Camera styles: eye level, high, low, close-up'] },
+      { key: 'layout', label: 'Layout', required: true, wide: true, options: ['One row of 4 (like the body sheet)', '2 x 2 grid'] },
+    ],
+    defaultFields: { angles: 'Around them: front, 3/4, side, back', layout: 'One row of 4 (like the body sheet)' },
+    request: { label: 'Notes', optional: true, placeholder: 'e.g. keep the phone in her right hand; show the window behind her in the back view' },
+    runLabel: 'Make 4 angles',
+    outputs: [{ key: 'angles', title: 'Scene angles', aspectRatio: '16:9', prompt: SCENE_ANGLES_PROMPT }],
+    fill: ({ fields }) => {
+      const around = !(fields.angles || '').startsWith('Camera');
+      const grid = (fields.layout || '').startsWith('2');
+      return {
+        layout: grid
+          ? 'a 2 x 2 grid of 4 equal landscape panels separated by thin white gaps, in this order: top left, top right, bottom left, bottom right'
+          : 'one row of 4 equal tall panels side by side, separated by thin white gaps, in this order from left to right',
+        views: around
+          ? `1. FRONT: camera in front of the character, facing them.
+2. 3/4 FRONT: camera moved about 45 degrees around them.
+3. SIDE: camera at 90 degrees, a clean side profile of the pose.
+4. BACK: camera behind the character, looking at their back, with what is in front of them now visible beyond them.
+The camera circles AROUND the character at the same distance and at chest height; only its position changes.`
+          : `1. EYE LEVEL: straight on, at the character's eye height, full body.
+2. HIGH ANGLE: camera above, looking down at the character.
+3. LOW ANGLE: camera near the floor, looking up at the character.
+4. CLOSE-UP: head and shoulders, from the front or 3/4 front.`,
+      };
+    },
   },
 
 ];
