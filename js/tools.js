@@ -198,6 +198,17 @@ EXTRA DETAILS (follow these if given): {request}
 ${BUILD_OUTPUT}`;
 
 // Character Sheet prompts (also used by Inspired Character Sheet, step 2).
+// Sheets only: stops the "doll" / mannequin look (plastic skin, blank eyes) without changing who they are.
+const NATURAL_LOOK =
+`LOOK LIKE A REAL PERSON, NOT A DOLL: this must look like an unretouched photo of a real actor at a costume fitting, not a doll, mannequin, wax figure or 3D render.
+- Skin: real skin texture with visible pores, fine lines, slight natural unevenness in tone, a little natural shine; no airbrushed, plastic or porcelain skin.
+- Face: natural slight asymmetry; eyes with life (natural moisture, catchlights, relaxed lids), not glassy or staring; natural lips with texture.
+- Expression (where a calm one is asked for): relaxed and alive, as if caught between words: soft jaw, lips gently closed or barely parted, a hint of warmth in the eyes. Not a blank, frozen or empty stare, and not a posed smile.
+- Hair: real strands with a few natural flyaways, not a helmet or wig.
+- Body: natural relaxed posture with a slight weight shift, relaxed hands with natural finger curl, real fabric wrinkles.
+- Light: soft photographic studio light with natural shadows, true-to-life colours; no over-smoothing, glow or beauty filter.
+These are photographic qualities only: keep the character's face, features, skin tone and body exactly as in the reference.`;
+
 const SHEET_BODY_PROMPT =
 `${FICTIONAL_CHARACTER}
 
@@ -207,9 +218,11 @@ Front view, facing camera
 3/4 front view
 Right side profile
 Back view
-In every view: standing upright in a relaxed neutral pose, arms relaxed and held slightly away from the body so the body outline is clearly visible, neutral expression, whole body from head to feet in frame with nothing cropped.
+In every view: standing upright in a relaxed natural pose, arms relaxed and held slightly away from the body so the body outline is clearly visible, calm natural expression, whole body from head to feet in frame with nothing cropped.
 All four figures at exactly the same scale: feet on the same ground line and the top of the head at the same height, so body proportions can be compared between views.
 Each view should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.
+
+${NATURAL_LOOK}
 
 ${NO_TATTOOS}`;
 const SHEET_FACE_PROMPT =
@@ -217,10 +230,14 @@ const SHEET_FACE_PROMPT =
 
 {multiRef}Using the attached image(s) as the character reference, generate a single face and expression reference sheet on a plain white background. Keep the character's face, facial features, skin, hair, and proportions exactly consistent across every panel. Photorealistic. No tattoos, no jewelery.
 Layout as a grid of 12 equal square panels, 4 across and 3 down, each showing the head and shoulders at the same size:
-Row 1: close-up of face, front angle (neutral expression); 3/4 view facing right; right side profile; back of the head (showing the hairstyle)
+Row 1: close-up of face, front angle (calm, relaxed natural expression); 3/4 view facing right; right side profile; back of the head (showing the hairstyle)
 Row 2: 3/4 view facing left; close-up of face, low angle (looking up at character); close-up of face, high angle (looking down at character); smiling
 Row 3: angry; crying; shocked; smug/smirking
 Each panel should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.
+
+The expressions (smiling, angry, crying, shocked, smug) must look like a real actor genuinely feeling them: a smile that reaches the eyes with slight crinkles, tension in the brow and jaw for anger, wet eyes and reddened skin for crying. The same face in every panel.
+
+${NATURAL_LOOK}
 
 ${NO_TATTOOS}`;
 
@@ -499,9 +516,11 @@ Front view, facing camera
 3/4 front view
 Right side profile
 Back view
-In every view: standing upright in a relaxed neutral pose, arms relaxed and held slightly away from the body so the body outline and the outfit are clearly visible, neutral expression, whole body from head to feet in frame with nothing cropped.
+In every view: standing upright in a relaxed natural pose, arms relaxed and held slightly away from the body so the body outline and the outfit are clearly visible, calm natural expression, whole body from head to feet in frame with nothing cropped.
 All four figures at exactly the same scale: feet on the same ground line and the top of the head at the same height, so body proportions can be compared between views.
 Each view should be clearly separated with consistent lighting and the same neutral background. Only this one character. No face close-ups, no expressions panels, no text or labels.
+
+${NATURAL_LOOK}
 
 ${NO_TATTOOS}`,
       },
