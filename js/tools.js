@@ -163,6 +163,10 @@ const POSE_DESCRIBE_PROMPT =
 `Describe ONLY the body pose in this photo, precisely enough that an artist could recreate it with a completely different person. For each person in the photo (if there are two, describe the one on the left first, and how they touch or hold each other): which way the body faces and the camera angle to them; standing, sitting, kneeling or lying; head tilt and turn and where the eyes look; the facial expression; torso lean and twist; each arm, elbow, wrist and hand (what the hands rest on or hold); each leg, knee and foot; where the weight is. Say left and right from the viewer's side.
 Do NOT describe the person themselves: no face, hair, skin, body shape, age, clothing, shoes, accessories, background, props or lighting. Plain text, one short paragraph per person, no headings or lists.`;
 
+// Character Sheet: more than one reference picture of the same person.
+const MULTI_REFERENCE =
+`If more than one CHARACTER REFERENCE image is attached, they all show the SAME ONE person (for example a face close-up and a full-body photo). Combine them into one consistent character: take the face and facial features from the clearest, closest view of the face; take height, build and body proportions from the image that shows the most of the body; take the outfit, hair styling and makeup from the full-body image (if the images show different outfits, use the one in the first image). Never blend in a second person and never create two characters.`;
+
 const TOOLS = [
   {
     id: 'builder',
@@ -333,7 +337,7 @@ ${BUILD_OUTPUT}`,
     title: 'Character Sheet',
     group: 'sheets',
     menuText: 'A new character: body sheet + face sheet with expressions',
-    intro: 'Upload a character reference and tap Run. You get two sheets: a full-body sheet and a face sheet.',
+    intro: 'Upload one or more pictures of your character (for example a face close-up and a full-body photo) and tap Run. You get two sheets: a full-body sheet and a face sheet.',
     inputs: [{ key: 'character', label: 'Character reference', tag: 'CHARACTER REFERENCE' }],
     runLabel: 'Create character sheets',
     saveAsCharacter: true,
@@ -346,7 +350,9 @@ ${BUILD_OUTPUT}`,
         prompt:
 `${FICTIONAL_CHARACTER}
 
-Using the attached image as the character reference, generate a single full-body character turnaround sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
+${MULTI_REFERENCE}
+
+Using the attached image(s) as the character reference, generate a single full-body character turnaround sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
 Layout: one row of 4 full-body views, evenly spaced, left to right:
 Front view, facing camera
 3/4 front view
@@ -365,7 +371,9 @@ ${NO_TATTOOS}`,
         prompt:
 `${FICTIONAL_CHARACTER}
 
-Using the attached image as the character reference, generate a single face and expression reference sheet on a plain white background. Keep the character's face, facial features, skin, hair, and proportions exactly consistent across every panel. Photorealistic. No tattoos, no jewelery.
+${MULTI_REFERENCE}
+
+Using the attached image(s) as the character reference, generate a single face and expression reference sheet on a plain white background. Keep the character's face, facial features, skin, hair, and proportions exactly consistent across every panel. Photorealistic. No tattoos, no jewelery.
 Layout as a grid of 12 equal square panels, 4 across and 3 down, each showing the head and shoulders at the same size:
 Row 1: close-up of face, front angle (neutral expression); 3/4 view facing right; right side profile; back of the head (showing the hairstyle)
 Row 2: 3/4 view facing left; close-up of face, low angle (looking up at character); close-up of face, high angle (looking down at character); smiling
