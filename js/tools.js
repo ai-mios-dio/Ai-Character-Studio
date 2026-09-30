@@ -167,6 +167,67 @@ Do NOT describe the person themselves: no face, hair, skin, body shape, age, clo
 const MULTI_REFERENCE =
 `If more than one CHARACTER REFERENCE image is attached, they all show the SAME ONE person (for example a face close-up and a full-body photo). Combine them into one consistent character: take the face and facial features from the clearest, closest view of the face; take height, build and body proportions from the image that shows the most of the body; take the outfit, hair styling and makeup from the full-body image (if the images show different outfits, use the one in the first image). Never blend in a second person and never create two characters.`;
 
+// Build from People (and Inspired Character Sheet, step 1): a new character from what several people share.
+const blendFill = ({ closeness }) => {
+      const how = {
+        loose: 'LOOSELY similar: capture the general type and overall impression they share, and invent the specifics freely.',
+        balanced: 'CLEARLY similar: share the main traits they have in common, like someone of the same type or family, while being a different person.',
+        close: 'VERY similar: closely match the features and proportions they share, while still being a distinct new individual and not any one of them.',
+      };
+      return { faceHow: how[closeness.face || 'balanced'], bodyHow: how[closeness.body || 'balanced'] };
+    };
+const BLEND_PROMPT =
+`${FICTIONAL_RESULT}
+
+Design ONE new, original character and show them in a single full-body image.
+
+The INSPIRATION PEOPLE images show several DIFFERENT people who share the kind of look wanted. Study them together and work out what they have in COMMON, then create a new person who clearly belongs to the same type.
+
+FACE: {faceHow}
+Look at the shared face shape, eye shape and spacing, eyebrows, nose, lips, jawline, cheekbones, skin tone and complexion, and apparent age range.
+
+BODY PROPORTIONS: {bodyHow}
+Look at the shared height impression, build, shoulder-to-hip ratio, waist, chest, leg length, torso length, and how muscle and fat are distributed.
+
+Where the inspiration people differ, use the most typical version or a natural middle ground. The result must NOT be a copy of any single inspiration person, and must not look like one of them with small changes. Ignore their clothing, accessories, poses, backgrounds and image styles.
+
+${BUILD_COHERENCE}
+
+EXTRA DETAILS (follow these if given): {request}
+
+${BUILD_OUTPUT}`;
+
+// Character Sheet prompts (also used by Inspired Character Sheet, step 2).
+const SHEET_BODY_PROMPT =
+`${FICTIONAL_CHARACTER}
+
+${MULTI_REFERENCE}
+
+Using the attached image(s) as the character reference, generate a single full-body character turnaround sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
+Layout: one row of 4 full-body views, evenly spaced, left to right:
+Front view, facing camera
+3/4 front view
+Right side profile
+Back view
+In every view: standing upright in a relaxed neutral pose, arms relaxed and held slightly away from the body so the body outline is clearly visible, neutral expression, whole body from head to feet in frame with nothing cropped.
+All four figures at exactly the same scale: feet on the same ground line and the top of the head at the same height, so body proportions can be compared between views.
+Each view should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.
+
+${NO_TATTOOS}`;
+const SHEET_FACE_PROMPT =
+`${FICTIONAL_CHARACTER}
+
+${MULTI_REFERENCE}
+
+Using the attached image(s) as the character reference, generate a single face and expression reference sheet on a plain white background. Keep the character's face, facial features, skin, hair, and proportions exactly consistent across every panel. Photorealistic. No tattoos, no jewelery.
+Layout as a grid of 12 equal square panels, 4 across and 3 down, each showing the head and shoulders at the same size:
+Row 1: close-up of face, front angle (neutral expression); 3/4 view facing right; right side profile; back of the head (showing the hairstyle)
+Row 2: 3/4 view facing left; close-up of face, low angle (looking up at character); close-up of face, high angle (looking down at character); smiling
+Row 3: angry; crying; shocked; smug/smirking
+Each panel should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.
+
+${NO_TATTOOS}`;
+
 const TOOLS = [
   {
     id: 'builder',
@@ -240,34 +301,8 @@ ${BUILD_OUTPUT}`,
     request: { label: 'Extra details', optional: true, placeholder: 'e.g. early 30s, taller than average, friendly look' },
     runLabel: 'Build character',
     defaultOptions: { aspectRatio: '2:3' },
-    fill: ({ closeness }) => {
-      const how = {
-        loose: 'LOOSELY similar: capture the general type and overall impression they share, and invent the specifics freely.',
-        balanced: 'CLEARLY similar: share the main traits they have in common, like someone of the same type or family, while being a different person.',
-        close: 'VERY similar: closely match the features and proportions they share, while still being a distinct new individual and not any one of them.',
-      };
-      return { faceHow: how[closeness.face || 'balanced'], bodyHow: how[closeness.body || 'balanced'] };
-    },
-    prompt:
-`${FICTIONAL_RESULT}
-
-Design ONE new, original character and show them in a single full-body image.
-
-The INSPIRATION PEOPLE images show several DIFFERENT people who share the kind of look wanted. Study them together and work out what they have in COMMON, then create a new person who clearly belongs to the same type.
-
-FACE: {faceHow}
-Look at the shared face shape, eye shape and spacing, eyebrows, nose, lips, jawline, cheekbones, skin tone and complexion, and apparent age range.
-
-BODY PROPORTIONS: {bodyHow}
-Look at the shared height impression, build, shoulder-to-hip ratio, waist, chest, leg length, torso length, and how muscle and fat are distributed.
-
-Where the inspiration people differ, use the most typical version or a natural middle ground. The result must NOT be a copy of any single inspiration person, and must not look like one of them with small changes. Ignore their clothing, accessories, poses, backgrounds and image styles.
-
-${BUILD_COHERENCE}
-
-EXTRA DETAILS (follow these if given): {request}
-
-${BUILD_OUTPUT}`,
+    fill: blendFill,
+    prompt: BLEND_PROMPT,
   },
 
   {
@@ -336,7 +371,7 @@ ${BUILD_OUTPUT}`,
     id: 'sheet',
     title: 'Character Sheet',
     group: 'sheets',
-    menuText: 'A new character: body sheet + face sheet with expressions',
+    menuText: 'From picture(s) of ONE character: body sheet + face sheet',
     intro: 'Upload one or more pictures of your character (for example a face close-up and a full-body photo) and tap Run. You get two sheets: a full-body sheet and a face sheet.',
     inputs: [{ key: 'character', label: 'Character reference', tag: 'CHARACTER REFERENCE' }],
     runLabel: 'Create character sheets',
@@ -347,41 +382,40 @@ ${BUILD_OUTPUT}`,
         key: 'body',
         title: 'Body sheet',
         aspectRatio: '16:9', // 4 standing figures side by side: each gets a tall, narrow slot
-        prompt:
-`${FICTIONAL_CHARACTER}
-
-${MULTI_REFERENCE}
-
-Using the attached image(s) as the character reference, generate a single full-body character turnaround sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
-Layout: one row of 4 full-body views, evenly spaced, left to right:
-Front view, facing camera
-3/4 front view
-Right side profile
-Back view
-In every view: standing upright in a relaxed neutral pose, arms relaxed and held slightly away from the body so the body outline is clearly visible, neutral expression, whole body from head to feet in frame with nothing cropped.
-All four figures at exactly the same scale: feet on the same ground line and the top of the head at the same height, so body proportions can be compared between views.
-Each view should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.
-
-${NO_TATTOOS}`,
+        prompt: SHEET_BODY_PROMPT,
       },
       {
         key: 'face',
         title: 'Face sheet',
         aspectRatio: '4:3', // a 4 x 3 grid in a 4:3 image gives square panels, ideal for faces
-        prompt:
-`${FICTIONAL_CHARACTER}
-
-${MULTI_REFERENCE}
-
-Using the attached image(s) as the character reference, generate a single face and expression reference sheet on a plain white background. Keep the character's face, facial features, skin, hair, and proportions exactly consistent across every panel. Photorealistic. No tattoos, no jewelery.
-Layout as a grid of 12 equal square panels, 4 across and 3 down, each showing the head and shoulders at the same size:
-Row 1: close-up of face, front angle (neutral expression); 3/4 view facing right; right side profile; back of the head (showing the hairstyle)
-Row 2: 3/4 view facing left; close-up of face, low angle (looking up at character); close-up of face, high angle (looking down at character); smiling
-Row 3: angry; crying; shocked; smug/smirking
-Each panel should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.
-
-${NO_TATTOOS}`,
+        prompt: SHEET_FACE_PROMPT,
       },
+    ],
+  },
+
+  {
+    id: 'sheet-inspired',
+    title: 'Inspired Character Sheet',
+    group: 'sheets',
+    menuText: 'A NEW character inspired by several people: body sheet + face sheet',
+    intro: 'Add pictures of a few people with the kind of look you want. First a new character is designed from what they have in common, then their body and face sheets are made from that design, so both sheets show the same new person.',
+    inputs: [
+      { key: 'people', label: 'Inspiration people', tag: 'INSPIRATION PEOPLE', optional: true, hint: 'Add 2 to 5 pictures for the best results. Full-body pictures help with body proportions.' },
+    ],
+    requireAny: 'Add pictures of the people you want to use as inspiration (2 to 5 works best).',
+    closenessControls: [
+      { key: 'face', label: 'Face' },
+      { key: 'body', label: 'Body proportions' },
+    ],
+    request: { label: 'Extra details', optional: true, placeholder: 'e.g. early 30s, taller than average, friendly look' },
+    runLabel: 'Design character & make sheets',
+    saveAsCharacter: true,
+    fill: blendFill,
+    outputs: [
+      // first: made before the others; the sheets are then made from this picture instead of the inspiration people.
+      { key: 'design', title: 'New character', first: true, aspectRatio: '2:3', prompt: BLEND_PROMPT },
+      { key: 'body', title: 'Body sheet', aspectRatio: '16:9', prompt: SHEET_BODY_PROMPT },
+      { key: 'face', title: 'Face sheet', aspectRatio: '4:3', prompt: SHEET_FACE_PROMPT },
     ],
   },
 

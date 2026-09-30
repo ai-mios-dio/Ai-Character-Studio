@@ -880,15 +880,30 @@ const ToolUI = {
     }
     const count = Number(state.options.count || 1);
     refs.run.disabled = true;
-    setStatus(refs.status, `Working on ${count > 1 || def.outputs ? 'your images' : 'it'}… this can take up to a minute.`);
+    const twoSteps = def.outputs?.some((o) => o.first);
+    setStatus(refs.status, twoSteps ? 'Designing the new character, then making the sheets… this can take up to two minutes.'
+      : `Working on ${count > 1 || def.outputs ? 'your images' : 'it'}… this can take up to a minute.`);
 
     // Tools with several outputs (Character Sheet: body + face) make one image per output, in parallel.
+    // An output marked `first` (Inspired Character Sheet: the new character) is made before the others,
+    // and the others are then made from that picture, so they all show the same new person.
     const outputs = def.outputs || [{ key: null }];
-    const makeSet = () => Promise.allSettled(outputs.map((out) => Gemini.generate({
+    const first = outputs.find((o) => o.first);
+    const rest = outputs.filter((o) => !o.first);
+    const gen = (out, useParts) => Gemini.generate({
       apiKey, model: model.id,
-      parts: [...parts, { text: this.buildPrompt(id, out.key) }],
+      parts: [...useParts, { text: this.buildPrompt(id, out.key) }],
       options: { ...state.options, ...(out.aspectRatio ? { aspectRatio: out.aspectRatio } : {}), safety: Store.getSafety() },
-    })));
+    });
+    const makeSet = async () => {
+      if (!first) return Promise.allSettled(rest.map((out) => gen(out, parts)));
+      let src;
+      try { [src] = await gen(first, parts); } catch (err) { return [{ status: 'rejected', reason: err }]; }
+      const blob = await (await fetch(src)).blob();
+      const fromDesign = [{ text: 'CHARACTER REFERENCE image:' }, { blob }];
+      return [{ status: 'fulfilled', value: [src] }, ...await Promise.allSettled(rest.map((out) => gen(out, fromDesign)))];
+    };
+    const ordered = first ? [first, ...rest] : rest; // matches the order of each set's results
     const runId = state.runId = (state.runId || 0) + 1;
     const sets = await Promise.all(Array.from({ length: count }, makeSet));
     if (runId !== state.runId) return; // the page was cleared (or left) while this was running
@@ -899,8 +914,8 @@ const ToolUI = {
     for (const set of sets) {
       const images = []; // [{ kind, title, src }]
       set.forEach((r, i) => {
-        if (r.status === 'fulfilled') r.value.forEach((src) => images.push({ kind: outputs[i].key, title: outputs[i].title, src }));
-        else errors.push((outputs[i].title ? outputs[i].title + ': ' : '') + r.reason.message);
+        if (r.status === 'fulfilled') r.value.forEach((src) => images.push({ kind: ordered[i].key, title: ordered[i].title, src, first: ordered[i].first }));
+        else errors.push((ordered[i].title ? ordered[i].title + ': ' : '') + r.reason.message);
       });
       made += images.length;
       if (!images.length) continue;
@@ -925,7 +940,7 @@ const ToolUI = {
     // Outfit Sheet: save the sheet as one outfit of the saved character that was picked.
     const body = def.saveAsOutfit && images.find((i) => i.kind === 'body');
     return el('div', { className: 'result-group' }, ...cards,
-      saveTo ? this.saveCharacterForm(images, saveTo, notes) : '',
+      saveTo && images.some((i) => !i.first) ? this.saveCharacterForm(images.filter((i) => !i.first), saveTo, notes) : '',
       body ? this.saveOutfitForm(body, this.tools[def.id].state.savedCharacter) : '');
   },
 
