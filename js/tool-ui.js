@@ -14,6 +14,32 @@ function el(tag, props = {}, ...children) {
 
 // Full-screen "generating" page: the logo with the app's colours flowing through it, a message,
 // a timer and Cancel. Loader.show() while images are being made, Loader.hide() when done.
+// Height as two number boxes (ft + in), so nobody has to type ' and ".
+// Saved as e.g. 5'4" (163 cm). Older saves like 5'4" or 163 cm are read back into the boxes.
+function heightPicker(value = '') {
+  let ft = '', inch = '';
+  const imp = /(\d+)\s*'\s*(\d+)?/.exec(value);
+  const cm = /(\d+(?:\.\d+)?)\s*cm/i.exec(value);
+  if (imp) { ft = imp[1]; inch = imp[2] || '0'; }
+  else if (cm) { const total = Math.round(Number(cm[1]) / 2.54); ft = String(Math.floor(total / 12)); inch = String(total % 12); }
+  const box = (v, label, max) => el('input', { type: 'number', inputMode: 'numeric', min: 0, max, value: v, placeholder: label, 'aria-label': `Height ${label}` });
+  const feet = box(ft, 'ft', 8), inches = box(inch, 'in', 11);
+  const wrap = el('div', { className: 'height-picker' },
+    el('span', { className: 'height-label' }, 'Height (optional)'),
+    el('label', { className: 'height-box' }, feet, el('span', {}, 'ft')),
+    el('label', { className: 'height-box' }, inches, el('span', {}, 'in')));
+  return {
+    el: wrap,
+    // '' when feet is empty; otherwise 5'4" (163 cm)
+    get() {
+      const f = parseInt(feet.value, 10), i = Math.min(11, parseInt(inches.value, 10) || 0);
+      if (!f) return '';
+      return `${f}'${i}" (${Math.round((f * 12 + i) * 2.54)} cm)`;
+    },
+    clear() { feet.value = ''; inches.value = ''; },
+  };
+}
+
 const Loader = {
   el: null,
   build() {
@@ -1325,7 +1351,7 @@ const ToolUI = {
   saveCharacterForm(images, libName = 'characters', notes = '') {
     const noun = libName === 'places' ? 'place' : 'character';
     const name = el('input', { type: 'text', placeholder: `${noun[0].toUpperCase() + noun.slice(1)} name` });
-    const height = libName === 'characters' ? el('input', { type: 'text', placeholder: `Height (optional), e.g. 5'4" or 163 cm` }) : null;
+    const height = libName === 'characters' ? heightPicker() : null;
     const btn = el('button', { className: 'primary', textContent: images.length > 1 ? `Save both as a ${noun}` : `Save as ${noun}` });
     const status = el('div', { className: 'status' });
     btn.addEventListener('click', async () => {
@@ -1334,14 +1360,14 @@ const ToolUI = {
       try {
         const sheets = [];
         for (const img of images) sheets.push({ kind: img.kind || 'sheet', blob: await (await fetch(img.src)).blob() });
-        await LIBRARIES[libName].add(name.value, sheets, notes, height ? height.value : '');
+        await LIBRARIES[libName].add(name.value, sheets, notes, height ? height.get() : '');
         setStatus(status, `Saved "${name.value.trim()}". Pick it in ${libName === 'places' ? 'Create a Scene' : 'the Character box of any tool'}.`, 'ok');
       } catch (err) {
         btn.disabled = false;
         setStatus(status, 'Could not save: ' + err.message, 'error');
       }
     });
-    return el('div', { className: 'save-character' }, name, height || '', btn, status);
+    return el('div', { className: 'save-character' }, name, height ? height.el : '', btn, status);
   },
 
   // One generated image with Download and "Send to…" controls.

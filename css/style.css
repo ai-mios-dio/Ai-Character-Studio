@@ -611,3 +611,12 @@ body.loading { overflow: hidden; }
 .loader-core .loader-logo, .loader-core .loader-flow { animation-name: none; }
 .loader-core .loader-flow { animation: loader-flow 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .loader-ring { animation-duration: 4s; } .loader-core { animation: none; } }
+
+/* Height: ft + in number boxes */
+.height-picker { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.height-label { font-size: 13px; color: var(--muted); flex-basis: 100%; }
+.height-box { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.height-box input { width: 100%; text-align: center; font-size: 18px; min-height: 48px; }
+.height-box span { color: var(--muted); font-weight: 600; }
+.char-info .height-picker { margin-top: 6px; }
+.char-info .height-box input { min-height: 40px; font-size: 16px; }

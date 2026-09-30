@@ -100,7 +100,7 @@ Wherever a tool asks for a **Character**, you can upload either a single photo o
 
 ### Saved characters
 
-Open **Characters** from the home screen to save a character (a name plus their body sheet, face sheet, or both), or tap **Save both as a character** under a Character Sheet result. You can also give them an optional **Height** (e.g. 5'4" or 163 cm), and change it later with **Save changes** on their card. Create a Scene sends the height so the character is the right size for the room and next to other characters. When you pick a saved character in a tool, all of their sheets are sent. Characters are stored in this browser on this device.
+Open **Characters** from the home screen to save a character (a name plus their body sheet, face sheet, or both), or tap **Save both as a character** under a Character Sheet result. You can also give them an optional **Height** (two number boxes: feet and inches), and change it later with **Save changes** on their card. Create a Scene sends the height so the character is the right size for the room and next to other characters. When you pick a saved character in a tool, all of their sheets are sent. Characters are stored in this browser on this device.
 
 Background, Outfit, Pose and Character Scene have one **Character** box with a saved-character dropdown and two uploads side by side:
 
