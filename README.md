@@ -106,6 +106,8 @@ Background, Outfit, Pose and Character Scene have one **Character** box with a s
 
 Under the saved character there's an **Outfit** dropdown (Background, Replace Person, Pose, Makeup and Character Scene): pick one of their saved outfits and its sheet is used instead of their body sheet, together with their face sheet. The Outfit tools and Outfit Sheet don't have it, because they change the outfit themselves.
 
+Every AI tool works **step by step**, one screen at a time, made for using a phone with one hand: **Model** first, then each picture or choice, then your text, then **Review**. The big **Back / Next** buttons sit at the bottom of the screen. Review lists every step with an **Edit** button, plus **Do it in AI Studio** and **Clear**; the Run button (e.g. *Match pose*) is at the bottom right. After a run, the **Results** screen shows the pictures, with **← Review** to change something and **Start new**.
+
 Every AI tool has:
 
 - **Model**: a dropdown of the image models your key can use, with quick settings underneath (Ratio, Size, Thinking; only the ones the model supports). The ⚙ gear opens the rest: images per run, temperature, seed, Google Search and more. Anything left on *Auto*/*Default* isn't sent, so the model uses its own default.

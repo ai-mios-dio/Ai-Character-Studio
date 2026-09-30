@@ -152,22 +152,136 @@ const ToolUI = {
 
     refs.results = el('div', { className: 'results' });
 
-    const section = el('section', { id: def.id, className: 'section', dataset: { parent: parentOf(def) } },
+    // ----- Steps: one screen each, then Review, then Results -----
+    const steps = [{ title: 'Model', card: modelCard, keys: [], sum: () => this.modelSummary(def.id) }];
+    def.inputs.forEach((inp, n) => {
+      if (!inputCards[n]) return;
+      const title = inp.orSaved ? 'Character' : inp.label.replace(/\s*\(.*\)/, '');
+      steps.push({ title, card: inputCards[n], keys: [inp.key, ...(inp.orSaved ? ['sheet'] : [])], sum: () => this.inputSummary(def.id, inp) });
+    });
+    if (controlsCard) steps.push({ title: 'Similarity', card: controlsCard, keys: [], sum: () => def.closenessControls.map((c) => `${c.label}: ${state.closeness[c.key] || 'balanced'}`).join(' · ') });
+    if (fieldsCard) steps.push({ title: def.fieldsTitle || 'Your character', card: fieldsCard, keys: [], sum: () => def.fields.map((f) => `${f.label}: ${state.fields[f.key] || 'Any'}`).join(' · ') });
+    if (tilesCard) steps.push({ title: def.tiles.title || 'Choose one', card: tilesCard, keys: [], sum: () => def.tiles.items.find((i) => i.id === state.fields[def.tiles.key])?.name || 'Needed: tap one' });
+    if (requestCard) {
+      steps.push({ title: def.request.label, card: requestCard, keys: ['request'], sum: () => {
+        const t = refs.request.value.trim();
+        return t ? (t.length > 90 ? t.slice(0, 90) + '…' : t) : def.request.optional ? 'None' : 'Needed';
+      } });
+    }
+    refs.steps = steps;
+    refs.review = el('div', { className: 'review-list' });
+    const stepEls = steps.map((st, n) => el('div', { className: 'wiz-step' }, n === 0 ? el('p', { className: 'hint intro' }, def.intro) : '', st.card));
+    const reviewEl = el('div', { className: 'wiz-step' },
+      el('div', { className: 'card' }, el('div', { className: 'label' }, 'Review'), refs.review),
+      el('div', { className: 'review-extra' }, manualBtn, clearBtn));
+    const resultsEl = el('div', { className: 'wiz-step' }, refs.results);
+    refs.stepEls = [...stepEls, reviewEl, resultsEl];
+    refs.progress = el('div', { className: 'wiz-progress' });
+    refs.body = el('div', { className: 'wiz-body' }, ...refs.stepEls);
+    refs.back = el('button', { className: 'wiz-back' });
+    refs.next = el('button', { className: 'primary wiz-next' });
+    refs.back.addEventListener('click', () => this.stepBack(def.id));
+    refs.next.addEventListener('click', () => this.stepNext(def.id));
+    refs.run.classList.add('wiz-next');
+
+    const section = el('section', { id: def.id, className: 'section wizard', dataset: { parent: parentOf(def) } },
       pageHeader(def.title),
-      el('p', { className: 'hint' }, def.intro),
-      modelCard,
-      ...inputCards,
-      fieldsCard,
-      tilesCard,
-      controlsCard,
-      requestCard,
-      el('div', { className: 'run-row' }, refs.run, manualBtn, clearBtn, refs.status),
-      refs.results,
+      refs.progress,
+      refs.body,
+      el('div', { className: 'wiz-bar' }, refs.status, el('div', { className: 'wiz-buttons' }, refs.back, refs.next, refs.run)),
     );
 
     this.tools[def.id] = { def, state, refs, save };
     this.renderModelSelect(def.id);
+    this.goStep(def.id, 0);
     return section;
+  },
+
+  // ----- Step-by-step pages -----
+  // Steps 0..n-1 are the tool's boxes, n is Review, n+1 is Results.
+  goStep(id, to) {
+    const { def, refs } = this.tools[id];
+    const n = refs.steps.length;
+    const at = to === 'review' ? n : to === 'results' ? n + 1 : Math.max(0, Math.min(to, n + 1));
+    refs.at = at;
+    refs.stepEls.forEach((e, i) => { e.hidden = i !== at; });
+    refs.body.scrollTop = 0;
+    const onReview = at === n, onResults = at === n + 1;
+    if (onReview) this.renderReview(id);
+    // Progress: "Step 2 of 5 · Character" and a bar.
+    const title = onReview ? 'Review' : onResults ? 'Results' : refs.steps[at].title;
+    const pct = Math.round((Math.min(at, n) / n) * 100);
+    refs.progress.innerHTML = '';
+    refs.progress.append(
+      el('div', { className: 'wiz-label' }, onResults ? 'Results' : `${onReview ? 'Review' : `Step ${at + 1} of ${n}`} · ${title}`.replace(/^Review · Review$/, 'Review')),
+      el('div', { className: 'wiz-track' }, el('div', { className: 'wiz-fill', style: `width:${onResults ? 100 : pct}%` })));
+    // Bottom bar: Back on the left, Next / Run / New on the right.
+    refs.back.textContent = at === 0 ? '✕ Exit' : onResults ? '← Review' : '← Back';
+    refs.next.hidden = onReview;
+    refs.run.hidden = !onReview;
+    refs.next.textContent = onResults ? 'Start new' : at === n - 1 ? 'Review →' : 'Next →';
+    if (!onReview && !onResults) setStatus(refs.status, '');
+    void def;
+  },
+  stepNext(id) {
+    const { refs } = this.tools[id];
+    if (refs.at === refs.steps.length + 1) { this.clear(id, { quiet: true }); return; }
+    this.goStep(id, refs.at + 1);
+  },
+  stepBack(id) {
+    const { refs } = this.tools[id];
+    if (refs.at === 0) return document.querySelector(`#${id} [data-back]`).click(); // leave the tool
+    this.goStep(id, refs.at === refs.steps.length + 1 ? 'review' : refs.at - 1);
+  },
+  // The step that holds an input (used by "Send to…" to open the right screen).
+  stepOf(id, key) {
+    const i = this.tools[id].refs.steps.findIndex((st) => st.keys.includes(key));
+    return i < 0 ? 0 : i;
+  },
+
+  renderReview(id) {
+    const { refs } = this.tools[id];
+    refs.review.innerHTML = '';
+    refs.steps.forEach((st, i) => {
+      const edit = el('button', { className: 'small-btn', textContent: 'Edit' });
+      edit.addEventListener('click', () => this.goStep(id, i));
+      const sum = st.sum();
+      refs.review.append(el('div', { className: 'review-row' + (/^Needed|^Missing/.test(sum) ? ' needed' : '') },
+        el('div', { className: 'review-text' }, el('div', { className: 'review-title' }, st.title), el('div', { className: 'review-sum' }, sum)),
+        edit));
+    });
+  },
+
+  modelSummary(id) {
+    const { state } = this.tools[id];
+    const m = Models.get(state.model);
+    const o = state.options;
+    return [m?.label || state.model, o.aspectRatio, o.imageSize, o.count > 1 ? `${o.count} images` : ''].filter(Boolean).join(' · ');
+  },
+
+  inputSummary(id, inp) {
+    const { state, refs } = this.tools[id];
+    const pics = (n) => (n ? `${n} picture${n > 1 ? 's' : ''}` : '');
+    const needed = inp.optional ? 'None' : 'Needed';
+    if (inp.type === 'library') {
+      const sel = refs.fields[inp.key];
+      if (!sel.value) return inp.optional ? 'None' : 'Needed: pick one';
+      const bits = [sel.selectedOptions[0].text];
+      const o = refs.outfitPicks?.[inp.key];
+      if (o?.value) bits.push(`outfit: ${o.selectedOptions[0].text}`);
+      const pose = refs.fields[inp.key + 'Pose'];
+      if (pose?.value) bits.push(`pose: ${pose.selectedOptions[0].text}`);
+      return bits.join(' · ');
+    }
+    if (inp.type === 'video') return state.inputs[inp.key].length ? `${state.inputs[inp.key].length} frames` : needed;
+    if (inp.orSaved) {
+      const bits = [];
+      if (refs.saved?.value) bits.push(refs.saved.selectedOptions[0].text + (refs.savedOutfit?.value ? ` · outfit: ${refs.savedOutfit.selectedOptions[0].text}` : ''));
+      else if (state.inputs.sheet?.length) bits.push(`sheet: ${pics(state.inputs.sheet.length)}`);
+      if (state.inputs[inp.key].length) bits.push(`reference: ${pics(state.inputs[inp.key].length)}`);
+      return bits.join(' · ') || 'Needed: pick or upload a character';
+    }
+    return pics(state.inputs[inp.key].length) || needed;
   },
 
   // A board of tiles grouped by category. The chosen tile's id is kept in state.fields[tiles.key].
@@ -773,6 +887,7 @@ const ToolUI = {
     state.savedCharacter = '';
     state.sheetFromSaved = false;
     refs.results.innerHTML = '';
+    if (!keepChoices) this.goStep(id, 0);
     setStatus(refs.status, quiet ? '' : 'Cleared.', quiet ? '' : 'ok');
   },
 
@@ -934,6 +1049,7 @@ const ToolUI = {
       if (def.outputs) refs.results.prepend(this.resultGroup(def, images));
       else images.forEach((img) => refs.results.prepend(this.resultCard(def, img.src)));
     }
+    if (made) this.goStep(id, 'results');
     if (!made) setStatus(refs.status, 'Error: ' + errors[0], 'error');
     else setStatus(refs.status, `Done: ${made} image${made > 1 ? 's' : ''}.` +
       (errors.length ? ` ${errors.length} failed: ${errors[0]}` : ''), errors.length ? 'error' : 'ok');
@@ -1052,8 +1168,8 @@ const ToolUI = {
       el('p', { className: 'hint small' }, 'Open aistudio.google.com, choose the image model (Nano Banana), then follow the steps. The pictures are numbered: add them in that order, because the prompt refers to them by number. Copying or downloading both give the full-size pictures.'),
       items.length ? dl : '',
       ...steps));
-    setStatus(refs.status, 'Ready: download the pictures and copy the prompt below.', 'ok');
-    window.scrollTo(0, refs.results.offsetTop - 20);
+    this.goStep(id, 'results');
+    setStatus(refs.status, 'Ready: copy the pictures and the prompt below.', 'ok');
   },
 
   // A set of images from one run (e.g. body sheet + face sheet) with one "Save as character".
@@ -1127,7 +1243,8 @@ const ToolUI = {
       window.scrollTo(0, 0);
     }
     showSection(toolId);
-    if (fresh && t.refs.request) t.refs.request.focus({ preventScroll: true });
+    // Open the screen with that picture; "Edit this picture" opens the "what to change" screen instead.
+    this.goStep(toolId, fresh && t.refs.request ? this.stepOf(toolId, 'request') : this.stepOf(toolId, key));
   },
 
   // "Save as character": a name box and a Save button under a result.

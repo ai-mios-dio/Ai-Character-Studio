@@ -332,3 +332,70 @@ button.danger { color: var(--danger); }
 .manual-pics { display: flex; flex-wrap: wrap; gap: 10px; }
 .manual-pics img { height: 72px; border-radius: 8px; background: #fff; }
 .manual-pics figcaption { max-width: 120px; text-align: center; word-break: break-word; }
+
+/* ================= Step-by-step tool pages (mobile first, one hand) ================= */
+/* A tool page fills the screen: header + progress at the top, the current step in the middle
+   (scrolls only if that one step is tall), and the action buttons at the bottom, under your thumb. */
+.section.wizard.active {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: calc(10px + env(safe-area-inset-top)) 14px 0;
+  background: var(--bg);
+  z-index: 1;
+}
+.section.wizard .page-head { margin-bottom: 8px; flex-shrink: 0; }
+.section.wizard .page-head h2 { font-size: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.section.wizard .page-head .back-btn { padding: 6px 12px; font-size: 14px; }
+
+.wiz-progress { flex-shrink: 0; margin-bottom: 10px; }
+.wiz-label { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: .02em; margin-bottom: 6px; }
+.wiz-track { height: 6px; border-radius: 99px; background: rgba(5, 48, 59, .18); overflow: hidden; }
+.wiz-fill { height: 100%; border-radius: 99px; background: var(--pill); transition: width .25s ease; }
+
+.wiz-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding-bottom: 12px; }
+.wiz-step[hidden] { display: none; }
+.wiz-step .card { margin-bottom: 12px; box-shadow: 0 6px 18px rgba(0, 40, 50, .18); }
+.wiz-step > .intro { color: var(--ink); margin: 0 0 10px; font-size: 15px; }
+/* Bigger touch targets inside steps */
+.wizard select, .wizard input[type=text], .wizard textarea { min-height: 48px; font-size: 16px; }
+.wizard .dropzone { padding: 34px 16px; }
+
+.wiz-bar {
+  flex-shrink: 0;
+  padding: 8px 0 calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 75%, rgba(102, 160, 173, 0));
+}
+.wiz-bar .status { margin: 0 0 6px; min-height: 0; }
+.wiz-bar .status:empty { display: none; }
+.wiz-buttons { display: flex; gap: 10px; }
+.wiz-buttons button { margin: 0; min-height: 56px; font-size: 17px; font-weight: 700; }
+.wiz-back { flex: 0 0 34%; background: rgba(5, 48, 59, .16); border: 2px solid var(--pill); color: var(--ink); }
+.wiz-next { flex: 1; }
+.wiz-buttons [hidden] { display: none; }
+
+/* Review: one row per step, with Edit */
+.review-list { display: grid; gap: 8px; }
+.review-row { display: flex; align-items: center; gap: 10px; background: var(--field); border-radius: 14px; padding: 10px 12px; }
+.review-row.needed { box-shadow: inset 0 0 0 2px var(--warn); }
+.review-text { flex: 1; min-width: 0; }
+.review-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.review-sum { font-size: 15px; overflow-wrap: anywhere; }
+.review-row .small-btn { margin: 0; flex-shrink: 0; min-height: 36px; padding: 6px 14px; }
+.review-extra { display: grid; gap: 8px; }
+.review-extra .clear-btn { margin: 0; min-height: 48px; }
+
+/* ================= Menus as tile grids (fit on one screen) ================= */
+#home.active { min-height: calc(100dvh - 72px); display: flex; flex-direction: column; justify-content: flex-end; }
+#home .logo { font-size: 30px; letter-spacing: .01em; margin: 0 0 auto; padding-top: 12vh; }
+[id$="-hub"] .home-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+[id$="-hub"] .home-btn { min-height: 76px; border-radius: 22px; font-size: 16px; padding: 12px; }
+.menu-btn { flex-direction: column; gap: 4px; }
+.menu-title { font-size: 19px; }
+.menu-sub { font-size: 13px; font-weight: 400; opacity: .85; }
+[id$="-menu"] .home-btn { border-radius: 26px; }
+.wiz-bar .status:not(:empty) { background: var(--card); border-radius: 12px; padding: 8px 12px; font-size: 14px; }
+.wiz-buttons button { white-space: nowrap; }
