@@ -150,6 +150,11 @@ const ROOM_DESCRIPTION_REQUEST = {
   aiPrompt: ROOM_DESCRIBE_PROMPT,
 };
 
+// Create a Scene, "Words only": turns a pose photo into a description, so the person in it is never sent.
+const POSE_DESCRIBE_PROMPT =
+`Describe ONLY the body pose in this photo, precisely enough that an artist could recreate it with a completely different person. For each person in the photo (if there are two, describe the one on the left first, and how they touch or hold each other): which way the body faces and the camera angle to them; standing, sitting, kneeling or lying; head tilt and turn and where the eyes look; the facial expression; torso lean and twist; each arm, elbow, wrist and hand (what the hands rest on or hold); each leg, knee and foot; where the weight is. Say left and right from the viewer's side.
+Do NOT describe the person themselves: no face, hair, skin, body shape, age, clothing, shoes, accessories, background, props or lighting. Plain text, one short paragraph per person, no headings or lists.`;
+
 const TOOLS = [
   {
     id: 'builder',
@@ -875,30 +880,39 @@ Photorealistic, natural lighting that matches the time of day. ${EMPTY_PLACE}`,
       { key: 'char1', type: 'library', library: 'characters', label: 'Character 1', tag: 'CHARACTER 1', outfits: true, poses: true, missing: 'Choose Character 1 first (save characters in Characters → Saved Characters).' },
       { key: 'char2', type: 'library', library: 'characters', label: 'Character 2 (optional)', tag: 'CHARACTER 2', outfits: true, poses: true, optional: true },
       { key: 'place', type: 'library', library: 'places', label: 'Place', tag: 'PLACE', optional: true, hint: 'Pick a saved place so it looks the same in every scene. Without one, the setting comes from your description.' },
-      { key: 'poseRef', label: 'Pose picture (optional)', tag: 'POSE REFERENCE', optional: true, sendLabel: 'Pose picture', hint: 'A photo of someone in the pose you want. Only the pose is copied, never their face, body, clothes or background. Choose who it is for under "Pose picture is for".' },
+      {
+        key: 'poseRef', label: 'Pose picture (optional)', tag: 'POSE REFERENCE', optional: true, sendLabel: 'Pose picture',
+        hint: 'A photo of someone in the pose you want. Only the pose is copied, never their face, body, clothes or background. Choose who it is for, and how it is sent, under "Camera & poses".',
+        sendFirst: true, // sent before the characters, so their own pictures are the last (strongest) people the AI sees
+        afterText: 'The person in this POSE REFERENCE is a STRANGER who does NOT appear in the scene. Use only their pose. Do not copy their face, hair, skin, body shape, height, weight or anything they wear.',
+        // "Words only": the AI first describes the pose in words and only the words are sent, so the stranger can't leak in.
+        describe: { field: 'poseMode', value: 'Words only (the pose person can\'t leak in)', prompt: POSE_DESCRIBE_PROMPT },
+      },
     ],
     fieldsTitle: 'Camera & poses',
     fields: [
       { key: 'shot', label: 'Shot', wide: true, options: ['Wide shot (whole room)', 'Full body', 'Medium shot (waist up)', 'Close-up'] },
       { key: 'together', label: 'Pose together (with 2 characters)', wide: true, options: DUO_POSES.map((p) => p.name), describe: (v) => DUO_POSES.find((p) => p.name === v)?.desc || '' },
       { key: 'poseFor', label: 'Pose picture is for', wide: true, options: ['Character 1', 'Character 2', 'Both (copy the two people in it)'] },
+      { key: 'poseMode', label: 'Pose picture sends', wide: true, options: ['Photo (most exact pose)', 'Words only (the pose person can\'t leak in)'], describe: (v) => v.startsWith('Words') ? 'The AI first describes the pose in words; only the words are sent, never the photo. Use this if the person from the pose picture shows up in your scene.' : 'The photo is sent. Most exact pose, but sometimes the person in it leaks into the scene.' },
     ],
     request: { label: "What's happening?", placeholder: 'e.g. Mara sits on the edge of her bed reading a letter, evening lamp light. Leo leans in the doorway, arms crossed.' },
     runLabel: 'Create scene',
     defaultOptions: { aspectRatio: '16:9' },
-    defaultFields: { poseFor: 'Character 1' },
-    fill: ({ has, fields }) => {
+    defaultFields: { poseFor: 'Character 1', poseMode: 'Photo (most exact pose)' },
+    fill: ({ has, fields, described }) => {
+      const words = described.poseRef; // the pose in words, when "Words only" is chosen
       const two = !!fields.char2;
       const poseFor = fields.poseFor || 'Character 1';
       const lines = [];
-      if (has.poseRef && poseFor.startsWith('Both')) lines.push('BOTH CHARACTERS: copy the poses of the two people in the POSE REFERENCE picture (the left person\'s pose goes to whichever character stands on that side), including how they touch or hold each other.');
+      if (has.poseRef && poseFor.startsWith('Both')) lines.push(words ? `BOTH CHARACTERS take this pose for two people (described from a reference photo; the first person described goes to Character 1): ${words}` : 'BOTH CHARACTERS: copy the poses of the two people in the POSE REFERENCE picture (the left person\'s pose goes to whichever character stands on that side), including how they touch or hold each other.');
       else if (two && fields.together) {
         const duo = DUO_POSES.find((p) => p.name === fields.together);
         if (duo) lines.push(`TOGETHER: ${duo.desc}`);
       }
       (two ? ['1', '2'] : ['1']).forEach((n) => {
         if (has.poseRef && (poseFor === `Character ${n}` || poseFor.startsWith('Both'))) {
-          if (!poseFor.startsWith('Both')) lines.push(`CHARACTER ${n}: copy the body pose and facial expression of the person in the POSE REFERENCE picture.`);
+          if (!poseFor.startsWith('Both')) lines.push(words ? `CHARACTER ${n} takes this pose (described from a reference photo): ${words}` : `CHARACTER ${n}: copy the body pose and facial expression of the person in the POSE REFERENCE picture, performed by CHARACTER ${n} with their own face and body.`);
           return;
         }
         const pose = POSES.find((p) => p.id === fields[`char${n}Pose`]);
@@ -929,7 +943,8 @@ CHARACTERS: ${IDENTITY_LOCK} This applies to EACH character separately: each one
 
 OUTFITS: if a character comes with an OUTFIT SHEET, that sheet is their full-body reference: it decides their height, build, body proportions AND their clothing. They wear EXACTLY that outfit: every garment, colour, pattern, fabric, fit, length, the shoes, and the accessories, bag and jewelry shown on it. Their FACE SHEET decides the face in close detail; if the small faces on the outfit sheet differ slightly, follow the FACE SHEET. Ignore any clothing visible on the face sheet. A character without an outfit sheet keeps the outfit from their sheets unless the scene says otherwise.
 
-POSE REFERENCE (if included): take ONLY the pose from it: body position, head angle, arms, hands, legs, feet, weight and facial expression, matching left and right as shown. Never copy the face, body shape, skin, hair, clothes, shoes, accessories, background, props, lighting or camera style of the person in it, and never change a character's body proportions to fit it. Each character keeps their own face, body, outfit and shoes.
+POSE REFERENCE (if included): the person in it is a STRANGER, not one of the characters, and must NOT appear in the image. Take ONLY the pose from it: body position, head angle, arms, hands, legs, feet, weight and facial expression, matching left and right as shown. Never copy the face, hair, skin, body shape, height, weight, clothes, shoes, accessories, background, props, lighting or camera style of the person in it, and never change a character's body proportions to fit it. Think of it as a stick-figure diagram: the character performs the pose with their OWN face, hair, body and outfit.
+IDENTITY CHECK (when a POSE REFERENCE is included): look at the finished face and body. If they resemble the person in the POSE REFERENCE more than the character's own FACE sheet and body/outfit sheet, redo them as the character.
 
 PLACE (if included): the scene happens in THIS exact place: the same architecture, layout, furniture pieces and their positions, materials, colours, decor and windows as in the PLACE references. Use a camera position that makes sense for the room's layout (as if standing where one of its views was taken) and show only what would be visible from there. Do not add, remove or rearrange furniture unless the scene asks for it. Lighting and time of day follow the scene; otherwise match the place references. If no PLACE references are included, create a fitting setting from the scene description.
 

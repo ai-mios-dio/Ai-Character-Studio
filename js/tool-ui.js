@@ -752,7 +752,7 @@ const ToolUI = {
     // Tool-specific sections written fresh for each Run, e.g. {parts} in the Character Builder.
     if (def.fill) {
       const has = Object.fromEntries(def.inputs.map((i) => [i.key, state.inputs[i.key].length > 0]));
-      for (const [key, value] of Object.entries(def.fill({ has, closeness: state.closeness, fields: state.fields }))) text = text.replaceAll(`{${key}}`, value);
+      for (const [key, value] of Object.entries(def.fill({ has, closeness: state.closeness, fields: state.fields, described: state.described || {} }))) text = text.replaceAll(`{${key}}`, value);
     }
     if (!def.request) return text;
     const request = refs.request.value.trim() || (def.request.optional ? 'None.' : '');
@@ -792,6 +792,17 @@ const ToolUI = {
       return setStatus(refs.status, `Fill in "${def.request.label}" first.`, 'error');
     }
 
+    // Pictures sent as words instead (Create a Scene "Words only"): describe them first.
+    state.described = {};
+    for (const inp of def.inputs.filter((i) => i.describe && state.inputs[i.key].length && state.fields[i.describe.field] === i.describe.value)) {
+      setStatus(refs.status, 'Describing the pose picture in words…');
+      try {
+        state.described[inp.key] = await Gemini.describe({ apiKey, images: state.inputs[inp.key], prompt: inp.describe.prompt });
+      } catch (err) {
+        return setStatus(refs.status, 'Could not describe the pose picture: ' + err.message, 'error');
+      }
+    }
+
     // Work out which images go under which label.
     //   Reference + sheet -> reference is CHARACTER, sheet is CHARACTER SHEET.
     //   Sheet only        -> the sheet becomes the CHARACTER image itself.
@@ -819,8 +830,9 @@ const ToolUI = {
         if (imgs.length) groups.push({ tag: inp.tag, imgs });
         if (imgs.length && sheetImgs.length) groups.push({ tag: sheetTag, imgs: sheetImgs });
         if (!imgs.length) groups.push({ tag: inp.tag, imgs: sheetImgs });
-      } else if (imgs.length) {
-        groups.push({ tag: inp.tag, imgs });
+      } else if (imgs.length && !state.described[inp.key]) {
+        const g = { tag: inp.tag, imgs, after: inp.afterText };
+        if (inp.sendFirst) groups.unshift(g); else groups.push(g);
       }
     }
     const totalRefs = groups.reduce((n, g) => n + g.imgs.length, 0);
@@ -833,6 +845,7 @@ const ToolUI = {
     for (const g of groups) {
       parts.push({ text: `${g.tag} image${g.imgs.length > 1 ? 's' : ''}:` });
       g.imgs.forEach((blob) => parts.push({ blob }));
+      if (g.after) parts.push({ text: g.after });
       if (g.note) parts.push({ text: `${g.tag} written description (follow it for layout and details): ${g.note}` });
       if (g.height) parts.push({ text: `${g.tag.replace(/ OUTFIT SHEET .*/, '')} real height: ${g.height} (use exactly this height, measured against the room).` });
     }
