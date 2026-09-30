@@ -224,6 +224,21 @@ Each panel should be clearly separated with consistent lighting and the same neu
 
 ${NO_TATTOOS}`;
 
+// Swap an Item: what can be swapped, plus rules specific to each kind of item.
+const SWAP_ITEMS = [
+  { name: 'Shoes', what: 'shoes', hint: 'Both feet get the new pair.', rules: 'Both feet wear the new shoes as a matching pair. Keep socks or bare feet as they were unless the notes say otherwise; the heel height changes only as much as the new shoes require, and the stance stays natural.' },
+  { name: 'Bag', what: 'bag', hint: 'Held or worn the same way as before (or naturally, if they had none).', rules: 'Carry the new bag the same way as the old one (in the hand, on the shoulder, crossbody). If there was no bag, add it in the most natural way for the pose.' },
+  { name: 'Jacket or coat', what: 'jacket or coat', hint: 'Worn over the rest of the outfit.', rules: 'Wear it over the existing top the same way (open or closed) the reference shows; the clothes underneath stay the same where visible.' },
+  { name: 'Top', what: 'top (shirt, blouse, sweater or T-shirt)', hint: 'Only the upper garment changes.', rules: 'Only the upper-body garment changes; bottoms, shoes and outer layers stay. Keep the tuck (tucked in or out) as the reference shows it.' },
+  { name: 'Bottoms', what: 'bottoms (trousers, jeans, skirt or shorts)', hint: 'Only the lower garment changes.', rules: 'Only the lower-body garment changes; the top, shoes and outer layers stay.' },
+  { name: 'Dress', what: 'dress', hint: 'Replaces the top and bottoms.', rules: 'The new dress replaces the current top and bottoms; shoes, outer layers and accessories stay unless the notes say otherwise.' },
+  { name: 'Hat', what: 'hat or headwear', hint: 'Sits naturally on their own hair.', rules: 'Place it on the character\'s own head and hair at a natural angle; the hairstyle stays, adjusted only where the hat sits.' },
+  { name: 'Glasses', what: 'glasses or sunglasses', hint: 'Fitted to their own face.', rules: 'Fit them to the character\'s own face and eyes; never change the face to fit the glasses.' },
+  { name: 'Jewelry', what: 'jewelry (necklace, earrings, bracelet, rings or watch shown in the reference)', hint: 'Only the pieces shown in the picture.', rules: 'Add or replace only the pieces shown in the reference, in the matching place on the body (neck, ears, wrist, fingers).' },
+  { name: 'Hairstyle', what: 'hairstyle', hint: 'Cut, length, colour and styling; the face stays theirs.', rules: 'Copy the haircut, length, volume, texture, parting, colour and styling. The face, hairline shape, skin and all facial features stay exactly the character\'s own.' },
+  { name: 'Other', what: 'item shown in the ITEM REFERENCE (see the notes for what it is)', hint: 'Say what it is in the notes.', rules: 'Work out which item it is from the reference and the notes, and replace only that.' },
+];
+
 const TOOLS = [
   {
     id: 'builder',
@@ -462,9 +477,9 @@ ${NO_TATTOOS}`,
 
   {
     id: 'background',
-    title: 'Background from Picture',
-    group: 'background',
-    menuText: 'Put your character into the setting from a picture',
+    title: 'Swap Background',
+    group: 'swap',
+    menuText: 'Same character, new background from a picture',
     intro: 'Put your character into a new setting. Add the background, pick or upload your character, tap Run.',
     inputs: [
       { key: 'background', label: 'Background', tag: 'BACKGROUND' },
@@ -498,9 +513,9 @@ ${SINGLE_OUTPUT}`,
 
   {
     id: 'replace-person',
-    title: 'Replace Person in Scene',
-    group: 'background',
-    menuText: 'Swap the person in a picture for your character',
+    title: 'Swap into a Photo',
+    group: 'swap',
+    menuText: 'Your character takes the place of the person in a photo',
     intro: 'Upload a scene with a person in it, pick or upload your character, and tap Run. Your character takes that person\'s place, pose and expression.',
     inputs: [
       { key: 'scene', label: 'Scene with a person', tag: 'SCENE', missing: 'Add the scene picture (the one with the person to replace) first.' },
@@ -546,6 +561,53 @@ INTEGRATION: match the scene's lighting direction, shadows, reflections, perspec
 ${NO_TATTOOS}
 
 Output one single image: the SCENE with only that one person replaced by the character. The character appears exactly once; any other people stay as they were. No text, labels, borders or watermark.`,
+  },
+
+  {
+    id: 'swap-item',
+    title: 'Swap an Item',
+    group: 'swap',
+    menuText: 'Change one thing (shoes, bag, jacket, hair…) to the one in a picture',
+    intro: 'Pick your character, choose what to swap, and add a picture of the new item. Only that item changes; everything else stays the same.',
+    inputs: [
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
+      SAVED_CHARACTER,
+      { key: 'item', label: 'New item', tag: 'ITEM REFERENCE', sendLabel: 'New item', hint: 'A picture of the item on its own, or someone wearing it. Only the item is copied.', missing: 'Add a picture of the new item.' },
+    ],
+    fieldsTitle: 'What to swap',
+    fields: [
+      { key: 'itemType', label: 'Item', required: true, wide: true, options: SWAP_ITEMS.map((i) => i.name), describe: (v) => SWAP_ITEMS.find((i) => i.name === v)?.hint || '' },
+    ],
+    request: { label: 'Notes', optional: true, placeholder: 'e.g. the left pair in the picture; keep my socks; make it black instead' },
+    runLabel: 'Swap item',
+    fill: ({ fields }) => {
+      const it = SWAP_ITEMS.find((i) => i.name === fields.itemType) || SWAP_ITEMS.at(-1);
+      return { item: it.what, itemRules: it.rules };
+    },
+    prompt:
+`${FICTIONAL_CHARACTER}
+
+This is an EDIT of the CHARACTER image: replace ONLY the character's {item} with the one shown in the ITEM REFERENCE image. Everything else stays exactly the same.
+
+${CHARACTER_SOURCE}
+
+${IDENTITY_LOCK}
+
+${BODY_GUARD}
+
+THE NEW ITEM: copy it from the ITEM REFERENCE exactly: its shape and cut, colour, material and texture, pattern, hardware, stitching and small details. Fit it naturally to the character's own body, size and pose, with correct perspective, folds, shadows and lighting of the CHARACTER image. If the item is only partly visible in the reference, complete it in the same design.
+{itemRules}
+
+TAKE ONLY THE ITEM FROM THE ITEM REFERENCE. If a person is wearing it there, do NOT copy their face, hair (unless the item is the hairstyle), skin, body shape, pose, other clothes, background or lighting.
+
+KEEP EVERYTHING ELSE: the same face, expression, hair (unless the item is the hairstyle), body, pose, all other clothing and accessories, background, lighting, camera angle and framing. Remove the old {item} completely; nothing of it should show under or around the new one.
+- If CASE A (character sheet only): show the character once, full body, standing in a relaxed front or 3/4 view like the sheet's main view, on a plain background in the sheet's style, so the new item is clearly visible.
+
+NOTES (follow these if given): {request}
+
+${NO_TATTOOS}
+
+${SINGLE_OUTPUT}`,
   },
 
   {

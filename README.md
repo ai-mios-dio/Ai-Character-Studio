@@ -78,8 +78,9 @@ You can also upload an outfit sheet under **Outfits** on the character's card in
 | **Sheets → Character Sheet** | One or more pictures of the character (e.g. a face close-up + a full-body photo) | Two sheets: a **body sheet** (front, 3/4, side, back at 16:9) and a **face sheet** (12 close-ups and expressions at 4:3) |
 | **Sheets → Inspired Character Sheet** | Pictures of several people with the look you want, plus Face and Body proportions similarity (Loose / Balanced / Close) | A **new character** designed from what they have in common, then its body sheet and face sheet made from that design (3 images, one after the other), with **Save both as a character** |
 | **Sheets → Outfit Sheet** | A saved character + a picture of them in a new outfit | One full-body sheet of that outfit (no expressions), with **Save as an outfit** |
-| **Background → Background from Picture** | A background + a character (photo or sheet) | The same character placed in that setting |
-| **Background → Replace Person in Scene** | A scene with a person + your character (photo, sheet or saved), outfit choice, and optionally which person | The scene with that person replaced by your character, same pose and expression |
+| **Swap → Swap Background** | A background + a character (photo or sheet) | The same character placed in that setting |
+| **Swap → Swap into a Photo** | A photo with a person + your character (photo, sheet or saved), outfit choice, and optionally which person | The photo with that person replaced by your character, same pose and expression |
+| **Swap → Swap an Item** | A character + a picture of one item, and what it is (Shoes, Bag, Jacket or coat, Top, Bottoms, Dress, Hat, Glasses, Jewelry, Hairstyle, Other), plus optional notes | The same picture with only that item changed |
 | **Outfit → Outfit from Picture** | A character (photo or sheet) + an outfit picture, plus optional Outfit notes | The same character wearing that exact outfit |
 | **Outfit → Outfit Gallery** | A character + a tap on one of 34 ready-made outfit tiles (8 categories) | The same character in that outfit |
 | **Outfit → Outfit from Description** | A character + your own description of an outfit or style | The same character in the outfit you described |
@@ -104,7 +105,7 @@ Background, Outfit, Pose and Character Scene have one **Character** box with a s
 - **Character reference** on its own: that photo is the character.
 - **Both:** the reference gives the outfit and look, and the sheet keeps the face and body exact.
 
-Under the saved character there's an **Outfit** dropdown (Background, Replace Person, Pose, Makeup and Character Scene): pick one of their saved outfits and its sheet is used instead of their body sheet, together with their face sheet. The Outfit tools and Outfit Sheet don't have it, because they change the outfit themselves.
+Under the saved character there's an **Outfit** dropdown (the Swap tools, Pose, Makeup and Character Scene): pick one of their saved outfits and its sheet is used instead of their body sheet, together with their face sheet. The Outfit tools and Outfit Sheet don't have it, because they change the outfit themselves.
 
 Every AI tool works **step by step**, one screen at a time, made for using a phone with one hand: **Model** first, then each picture or choice, then your text, then **Review**. The big **Back / Next** buttons sit at the bottom of the screen. Review lists every step with an **Edit** button, plus **Do it in AI Studio** and **Clear**; the Run button (e.g. *Match pose*) is at the bottom right. After a run, the **Results** screen shows the pictures, with **← Review** to change something and **Start new**.
 

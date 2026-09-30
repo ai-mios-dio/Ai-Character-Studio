@@ -45,11 +45,11 @@ const SECTIONS = {
     extra: [['places', 'Saved Places']],
   },
 };
-const GROUPS = { builder: 'Character Builder', sheets: 'Sheets', background: 'Background', outfit: 'Outfit' };
+const GROUPS = { builder: 'Character Builder', sheets: 'Sheets', swap: 'Swap', outfit: 'Outfit' };
 const GROUP_QUESTIONS = {
   builder: 'How do you want to design your character?',
   sheets: 'Which sheet do you want to make?',
-  background: 'What do you want to do?',
+  swap: 'What do you want to swap?',
   outfit: 'How do you want to choose the outfit?',
 };
 const sectionOf = (t) => t.section || 'characters';
@@ -82,17 +82,19 @@ const ICONS = {
   saved: '<path d="M6 3h12v18l-6-4-6 4z"/>',
   cutter: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/>',
   video: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/>',
+  swap: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  shoe: '<path d="M3 16v-5l4-1 3 3 5 1 5 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><path d="M3 19h18"/>',
   sparkle: '<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>',
 };
 // Which icon each page uses.
 const ICON_FOR = {
   'characters-hub': 'characters', 'places-hub': 'places', 'create-scene': 'scene', settings: 'settings',
-  'builder-menu': 'builder', 'sheets-menu': 'sheets', 'background-menu': 'background', 'outfit-menu': 'outfit',
+  'builder-menu': 'builder', 'sheets-menu': 'sheets', 'swap-menu': 'swap', 'outfit-menu': 'outfit',
   pose: 'pose', makeup: 'makeup', edit: 'edit', scene: 'character-scene', characters: 'saved', places: 'saved',
   cutter: 'cutter', 'place-builder': 'builder', 'place-sheet': 'sheets', 'place-video': 'video',
   // tools inside the menus
   builder: 'builder', blend: 'characters', describe: 'edit', sheet: 'sheets', 'sheet-inspired': 'builder',
-  'outfit-sheet': 'outfit', 'replace-person': 'characters', outfit: 'background', 'outfit-gallery': 'sheets', 'outfit-describe': 'edit',
+  'outfit-sheet': 'outfit', 'replace-person': 'characters', background: 'background', 'swap-item': 'shoe', outfit: 'background', 'outfit-gallery': 'sheets', 'outfit-describe': 'edit',
 };
 function iconEl(pageId) {
   return el('span', { className: 'btn-icon', 'aria-hidden': 'true',
