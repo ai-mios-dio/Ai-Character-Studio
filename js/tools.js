@@ -379,6 +379,7 @@ ${NO_TATTOOS}`,
 
   {
     id: 'outfit-sheet',
+    noOutfitPick: true, // this tool changes or makes the outfit, so no saved-outfit choice
     title: 'Outfit Sheet',
     group: 'sheets',
     menuText: 'A saved character in a new outfit: full-body views only, saved as one of their outfits',
@@ -509,6 +510,7 @@ Output one single image: the SCENE with only that one person replaced by the cha
 
   {
     id: 'outfit',
+    noOutfitPick: true, // this tool changes or makes the outfit, so no saved-outfit choice
     title: 'Outfit from Picture',
     group: 'outfit',
     menuText: 'Copy an outfit from a picture you upload',
@@ -546,6 +548,7 @@ ${SINGLE_OUTPUT}`,
 
   {
     id: 'outfit-gallery',
+    noOutfitPick: true, // this tool changes or makes the outfit, so no saved-outfit choice
     title: 'Outfit Gallery',
     group: 'outfit',
     menuText: 'Tap a ready-made outfit from a board of tiles',
@@ -596,6 +599,7 @@ ${SINGLE_OUTPUT}`,
 
   {
     id: 'outfit-describe',
+    noOutfitPick: true, // this tool changes or makes the outfit, so no saved-outfit choice
     title: 'Outfit from Description',
     group: 'outfit',
     menuText: 'Describe any outfit or style in your own words',

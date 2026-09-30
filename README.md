@@ -103,12 +103,14 @@ Background, Outfit, Pose and Character Scene have one **Character** box with a s
 - **Character reference** on its own: that photo is the character.
 - **Both:** the reference gives the outfit and look, and the sheet keeps the face and body exact.
 
+Under the saved character there's an **Outfit** dropdown (Background, Replace Person, Pose, Makeup and Character Scene): pick one of their saved outfits and its sheet is used instead of their body sheet, together with their face sheet. The Outfit tools and Outfit Sheet don't have it, because they change the outfit themselves.
+
 Every AI tool has:
 
 - **Model**: a dropdown of the image models your key can use, with quick settings underneath (Ratio, Size, Thinking; only the ones the model supports). The ⚙ gear opens the rest: images per run, temperature, seed, Google Search and more. Anything left on *Auto*/*Default* isn't sent, so the model uses its own default.
 - **Hidden prompt**: the prompt sent with your images. All of them are in **Settings → Hidden prompts**: tap one, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
 - **Clear & start fresh** empties the uploads, text and results, and resets dropdowns and the chosen tile (your model and options stay).
-- **Leaving a page** clears its uploads, typed text and results automatically, so pages don't fill up. Your choices (model, settings, dropdowns, chosen outfit tile) are kept. Download or save anything you want to keep before leaving.
+- **Leaving a page** (or reloading) resets it completely: uploads, typed text, results, picked characters, places, outfits, poses, dropdowns and tiles. Only the model and its settings are kept. Download or save anything you want to keep before leaving.
 - **Edit this picture** on each result opens it in the Edit tool, ready for the next change. On the Edit page this chains edits: each result can be edited again.
 - **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter). It replaces whatever was in that box.
 

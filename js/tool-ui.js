@@ -490,7 +490,15 @@ const ToolUI = {
   // The Character card: saved-character dropdown on top, reference + sheet uploads side by side.
   buildCharacterCard(def, charInp, sheetInp, state, refs) {
     refs.saved = el('select', { id: `${def.id}-saved`, 'aria-label': 'Saved character' });
-    refs.saved.addEventListener('change', () => this.pickSaved(def.id, refs.saved.value));
+    refs.saved.addEventListener('change', () => { state.savedOutfit = ''; this.pickSaved(def.id, refs.saved.value); });
+    // Which of the saved character's outfits to use (tools that don't change the outfit themselves).
+    let outfitRow = '';
+    if (!def.noOutfitPick) {
+      refs.savedOutfit = el('select', { id: `${def.id}-saved-outfit`, 'aria-label': 'Outfit' });
+      refs.savedOutfit.addEventListener('change', () => { state.savedOutfit = refs.savedOutfit.value; this.pickSaved(def.id, refs.saved.value); });
+      outfitRow = el('label', { className: 'field wide pick-extra' }, el('span', { className: 'quick-caption' }, 'Outfit'), refs.savedOutfit);
+      this.fillOutfitPicker(refs, null);
+    }
     const ref = this.uploadBox(def, charInp.key, 'Upload character reference');
     const sheet = this.uploadBox(def, sheetInp.key, 'Upload character sheet');
     refs['thumbs-' + charInp.key] = ref.thumbs;
@@ -499,6 +507,7 @@ const ToolUI = {
     return el('div', { className: 'card' },
       el('div', { className: 'label' }, 'Character'),
       refs.saved,
+      outfitRow,
       el('div', { className: 'upload-pair' }, ref.box, sheet.box),
       el('p', { className: 'hint small' },
         'Pick a saved character or upload a reference, a sheet, or both. With both, the reference gives the outfit and look, and the sheet keeps the face and body exact. Tap a picture to remove it.'),
@@ -685,20 +694,37 @@ const ToolUI = {
     if (shown.length) box.append(el('p', { className: 'hint small pick-sends' }, `Sends ${shown.length} picture${shown.length > 1 ? 's' : ''}: ${shown.map((x) => x.label.replace(/^Outfit: .*/, 'outfit sheet').toLowerCase()).join(' + ')}.`));
   },
 
-  // Picking a saved character puts its sheet into the Character sheet box.
+  // Picking a saved character puts its sheets into the Character sheet box.
+  // With one of their outfits picked, the outfit sheet takes the place of their body sheet (face sheet stays).
   async pickSaved(id, charId) {
-    const { state } = this.tools[id];
+    const { state, refs } = this.tools[id];
     state.savedCharacter = charId;
     if (state.sheetFromSaved) { state.inputs.sheet = []; state.sheetFromSaved = false; }
-    if (charId) {
-      const c = await Characters.get(charId);
-      if (c && c.images.length) {
-        // Put all of this character's sheets (body + face) into the sheet box.
-        state.inputs.sheet = c.images.map((img) => new File([img.blob], `${c.name}-${img.kind}.png`, { type: img.blob.type || 'image/png' }));
-        state.sheetFromSaved = true;
-      }
+    const c = charId ? await Characters.get(charId) : null;
+    if (refs.savedOutfit) this.fillOutfitPicker(refs, c, state);
+    const outfit = c && c.outfits.find((o) => o.id === state.savedOutfit);
+    const file = (blob, name) => new File([blob], name, { type: blob.type || 'image/png' });
+    if (c && outfit) {
+      state.inputs.sheet = [file(outfit.blob, `${c.name}-outfit-${outfit.name}-body.png`),
+        ...c.images.filter((img) => img.kind === 'face').map((img) => file(img.blob, `${c.name}-face.png`))];
+      state.sheetFromSaved = true;
+    } else if (c && c.images.length) {
+      state.inputs.sheet = c.images.map((img) => file(img.blob, `${c.name}-${img.kind}.png`));
+      state.sheetFromSaved = true;
     }
     this.renderThumbs(id, 'sheet');
+  },
+
+  // The Outfit dropdown under a saved character: "As on their body sheet" plus their outfits.
+  fillOutfitPicker(refs, c, state = {}) {
+    const sel = refs.savedOutfit;
+    const outfits = c?.outfits || [];
+    sel.innerHTML = '';
+    sel.add(new Option(!c ? 'Pick a saved character first' : outfits.length ? 'As on their body sheet' : 'As on their body sheet (no saved outfits yet)', ''));
+    for (const o of outfits) sel.add(new Option(o.name, o.id));
+    sel.disabled = !outfits.length;
+    if (!outfits.some((o) => o.id === state.savedOutfit)) state.savedOutfit = '';
+    sel.value = state.savedOutfit || '';
   },
 
   async fillSavedPicker(id, refs = this.tools[id]?.refs) {
@@ -711,11 +737,12 @@ const ToolUI = {
     const stillThere = list.some((c) => c.id === keep);
     refs.saved.value = stillThere ? keep : '';
     if (this.tools[id] && keep && !stillThere) this.pickSaved(id, ''); // it was deleted
+    else if (this.tools[id] && keep && refs.savedOutfit) this.pickSaved(id, keep); // its outfits may have changed
   },
 
   // Empties uploads, text box and results so the tool is fresh. Model and options stay.
   // quiet: no "Cleared." message (used when you leave the page).
-  // keepChoices: keep dropdowns and the chosen tile (used when you leave the page).
+  // keepChoices: keep dropdowns and the chosen tile (used by "Edit this picture").
   clear(id, { quiet = false, keepChoices = false } = {}) {
     const { def, state, refs } = this.tools[id];
     state.runId = (state.runId || 0) + 1; // any run still in progress is ignored when it finishes
@@ -738,6 +765,8 @@ const ToolUI = {
       }
     }
     if (refs.saved) refs.saved.value = '';
+    state.savedOutfit = '';
+    if (refs.savedOutfit) this.fillOutfitPicker(refs, null, state);
     state.savedCharacter = '';
     state.sheetFromSaved = false;
     refs.results.innerHTML = '';
@@ -942,7 +971,10 @@ const ToolUI = {
     const t = this.tools[toolId];
     if (fresh) this.clear(toolId, { quiet: true, keepChoices: true });
     // A saved character's sheet counts as the sheet box; replacing it means that pick no longer applies.
-    if (key === 'sheet' && t.refs.saved) { t.refs.saved.value = ''; t.state.savedCharacter = ''; t.state.sheetFromSaved = false; }
+    if (key === 'sheet' && t.refs.saved) {
+      t.refs.saved.value = ''; t.state.savedCharacter = ''; t.state.sheetFromSaved = false; t.state.savedOutfit = '';
+      if (t.refs.savedOutfit) this.fillOutfitPicker(t.refs, null, t.state);
+    }
     t.state.inputs[key] = [];
     this.addInputs(toolId, key, [file]);
     if (fresh || toolId === location.hash.slice(1)) {

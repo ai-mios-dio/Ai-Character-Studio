@@ -125,10 +125,10 @@ function route() {
 }
 window.addEventListener('hashchange', route);
 
-// Leaving a page clears its uploads, typed text and results so nothing piles up.
-// Choices like model, settings, dropdowns and the chosen outfit tile are kept.
+// Leaving a page resets it completely: uploads, typed text, results, picked characters, places,
+// outfits, poses, dropdowns and tiles. Only the model and its settings are kept.
 function leavePage(id) {
-  if (ToolUI.tools[id]) ToolUI.clear(id, { quiet: true, keepChoices: true });
+  if (ToolUI.tools[id]) ToolUI.clear(id, { quiet: true });
   if (id === 'cutter') clearCutter(true);
 }
 
@@ -461,6 +461,8 @@ for (const def of TOOLS) {
   $('content').insertBefore(ToolUI.build(def), cutterSection);
   $('promptEditors').append(...ToolUI.buildPromptEditors(def.id));
 }
+// Every tool starts fresh after a reload too (older versions remembered picks between visits).
+for (const id of Object.keys(ToolUI.tools)) ToolUI.clear(id, { quiet: true });
 $('apiKey').value = Store.getApiKey();
 renderModelsTable();
 route();
