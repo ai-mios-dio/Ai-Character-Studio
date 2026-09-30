@@ -534,3 +534,8 @@ button.danger, .small-btn.danger { color: var(--danger); }
   .home-card { min-height: 74px; padding: 10px 16px; }
   .settings-btn { min-height: 50px; }
 }
+
+/* Extra space under the page title on every page except home, so the options sit a bit lower
+   (easier to reach with one hand). Scales with the screen height, within limits. */
+.section:not(#home):not(.wizard) > .page-head { margin-bottom: clamp(28px, 8vh, 80px); }
+.wiz-body { padding-top: clamp(16px, 6vh, 60px); }
