@@ -165,11 +165,7 @@ Do NOT describe the person themselves: no face, hair, skin, body shape, age, clo
 
 // Character Sheet: more than one reference picture of the same person.
 const MULTI_REFERENCE =
-`IF MORE THAN ONE CHARACTER REFERENCE IMAGE IS ATTACHED (labelled 1 of N, 2 of N…): they all show the SAME ONE person, and they are ALL equally important. Picture 1 is NOT the main one; the order means nothing.
-- Build the character from ALL of them together. The person's true features are the ones that stay the same across the pictures (face shape, eyes, nose, lips, jawline, skin tone, hair, body proportions). Differences caused by one photo's angle, lighting, lens, expression, makeup or filter are NOT features: do not copy them from any single picture.
-- Face: combine every view of the face; use the clearest, sharpest views for fine detail. Body: combine every view of the body; use the pictures that show the most of the body for proportions.
-- Outfit, hair styling and makeup: use the ones shown most completely (usually in the full-body picture). Never mix pieces of different outfits.
-- Do NOT recreate or trace any one reference photo (not its pose, crop, angle, lighting or background). The result is a new clean sheet of this one person, drawn from everything the pictures show. Never create two different people.`;
+`SEVERAL REFERENCE IMAGES (labelled 1 of N, 2 of N…): they all show this same one fictional character. Treat them as equally important (the order does not matter) and combine them into one consistent design: details that stay the same across the images define the character. Use the outfit from the image that shows it most completely. Do not reproduce any single reference photo's pose, crop, lighting or background.`;
 
 // Build from People (and Inspired Character Sheet, step 1): a new character from what several people share.
 const blendFill = ({ closeness }) => {
@@ -205,9 +201,7 @@ ${BUILD_OUTPUT}`;
 const SHEET_BODY_PROMPT =
 `${FICTIONAL_CHARACTER}
 
-${MULTI_REFERENCE}
-
-Using the attached image(s) as the character reference, generate a single full-body character turnaround sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
+{multiRef}Using the attached image(s) as the character reference, generate a single full-body character turnaround sheet on a plain white background. Keep the character's face, hair, outfit, and proportions exactly consistent across every view. Photorealistic. No tattoos, no jewelery.
 Layout: one row of 4 full-body views, evenly spaced, left to right:
 Front view, facing camera
 3/4 front view
@@ -221,9 +215,7 @@ ${NO_TATTOOS}`;
 const SHEET_FACE_PROMPT =
 `${FICTIONAL_CHARACTER}
 
-${MULTI_REFERENCE}
-
-Using the attached image(s) as the character reference, generate a single face and expression reference sheet on a plain white background. Keep the character's face, facial features, skin, hair, and proportions exactly consistent across every panel. Photorealistic. No tattoos, no jewelery.
+{multiRef}Using the attached image(s) as the character reference, generate a single face and expression reference sheet on a plain white background. Keep the character's face, facial features, skin, hair, and proportions exactly consistent across every panel. Photorealistic. No tattoos, no jewelery.
 Layout as a grid of 12 equal square panels, 4 across and 3 down, each showing the head and shoulders at the same size:
 Row 1: close-up of face, front angle (neutral expression); 3/4 view facing right; right side profile; back of the head (showing the hairstyle)
 Row 2: 3/4 view facing left; close-up of face, low angle (looking up at character); close-up of face, high angle (looking down at character); smiling
@@ -380,6 +372,8 @@ ${BUILD_OUTPUT}`,
     inputs: [{ key: 'character', label: 'Character reference', tag: 'CHARACTER REFERENCE', labelEach: true }],
     runLabel: 'Create character sheets',
     saveAsCharacter: true,
+    // The note about several reference pictures is only added when there IS more than one.
+    fill: ({ count }) => ({ multiRef: count.character > 1 ? MULTI_REFERENCE + '\n\n' : '' }),
     // One Run makes both sheets. Each has its own prompt (editable in Settings) and a fixed ratio.
     outputs: [
       {
@@ -414,7 +408,7 @@ ${BUILD_OUTPUT}`,
     request: { label: 'Extra details', optional: true, placeholder: 'e.g. early 30s, taller than average, friendly look' },
     runLabel: 'Design character & make sheets',
     saveAsCharacter: true,
-    fill: blendFill,
+    fill: (a) => ({ ...blendFill(a), multiRef: '' }), // the sheets are made from ONE design picture
     outputs: [
       // first: made before the others; the sheets are then made from this picture instead of the inspiration people.
       { key: 'design', title: 'New character', first: true, aspectRatio: '2:3', prompt: BLEND_PROMPT },

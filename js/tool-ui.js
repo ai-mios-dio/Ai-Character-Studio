@@ -781,7 +781,8 @@ const ToolUI = {
     // Tool-specific sections written fresh for each Run, e.g. {parts} in the Character Builder.
     if (def.fill) {
       const has = Object.fromEntries(def.inputs.map((i) => [i.key, state.inputs[i.key].length > 0]));
-      for (const [key, value] of Object.entries(def.fill({ has, closeness: state.closeness, fields: state.fields, described: state.described || {} }))) text = text.replaceAll(`{${key}}`, value);
+      const count = Object.fromEntries(def.inputs.map((i) => [i.key, state.inputs[i.key].length]));
+      for (const [key, value] of Object.entries(def.fill({ has, count, closeness: state.closeness, fields: state.fields, described: state.described || {} }))) text = text.replaceAll(`{${key}}`, value);
     }
     if (!def.request) return text;
     const request = refs.request.value.trim() || (def.request.optional ? 'None.' : '');
