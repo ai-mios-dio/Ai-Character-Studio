@@ -271,6 +271,9 @@ const ToolUI = {
     refs.body = el('div', { className: 'wiz-body' }, ...refs.stepEls);
     refs.back = el('button', { className: 'wiz-back' });
     refs.next = el('button', { className: 'primary wiz-next' });
+    // Results screen only: Done goes back to the main page (leaving the tool clears it).
+    refs.done = el('button', { className: 'primary wiz-next wiz-done', textContent: 'Done ✓' });
+    refs.done.addEventListener('click', () => { location.hash = 'home'; });
     refs.back.addEventListener('click', () => this.stepBack(def.id));
     refs.next.addEventListener('click', () => this.stepNext(def.id));
     refs.run.classList.add('wiz-next');
@@ -279,7 +282,7 @@ const ToolUI = {
       pageHeader(def.title),
       refs.progress,
       refs.body,
-      el('div', { className: 'wiz-bar' }, refs.status, el('div', { className: 'wiz-buttons' }, refs.back, refs.next, refs.run)),
+      el('div', { className: 'wiz-bar' }, refs.status, el('div', { className: 'wiz-buttons' }, refs.back, refs.next, refs.run, refs.done)),
     );
 
     this.tools[def.id] = { def, state, refs, save };
@@ -311,6 +314,8 @@ const ToolUI = {
     refs.next.hidden = onReview;
     refs.run.hidden = !onReview;
     refs.next.textContent = onResults ? 'Start new' : at === n - 1 ? 'Review →' : 'Next →';
+    refs.next.classList.toggle('secondary', onResults); // on Results, Done is the main button
+    refs.done.hidden = !onResults;
     if (!onReview && !onResults) setStatus(refs.status, '');
     void def;
   },

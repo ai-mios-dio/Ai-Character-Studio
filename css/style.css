@@ -620,3 +620,7 @@ body.loading { overflow: hidden; }
 .height-box span { color: var(--muted); font-weight: 600; }
 .char-info .height-picker { margin-top: 6px; }
 .char-info .height-box input { min-height: 40px; font-size: 16px; }
+/* Results: ← Review | Start new | Done ✓ */
+.wiz-buttons .wiz-next.secondary { background: rgba(255, 255, 255, .08); border: 1px solid var(--border); box-shadow: none; }
+.wiz-buttons:has(.wiz-done:not([hidden])) .wiz-back { flex: 0 0 auto; padding: 0 14px; }
+.wiz-buttons:has(.wiz-done:not([hidden])) button { font-size: 16px; }
