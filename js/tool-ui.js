@@ -657,6 +657,7 @@ const ToolUI = {
     const t = this.tools[id];
     const box = t.refs.libPreviews[inp.key];
     const pick = t.state.fields[inp.key];
+    const token = (t.previewTokens = t.previewTokens || {})[inp.key] = {};
     const item = pick ? await LIBRARIES[inp.library].get(pick) : null;
     // Outfit dropdown: "From their sheet" plus this character's own outfits.
     let outfit = null;
@@ -672,9 +673,16 @@ const ToolUI = {
       outfitSel.value = outfit ? outfit.id : '';
       if (!outfit) delete t.state.fields[inp.key + 'Outfit'];
     }
+    // Show exactly what Run will send for this pick.
+    //   With an outfit: the outfit sheet + their face sheet (their old body sheet is left out).
+    const shown = !item ? [] : outfit
+      ? [{ blob: outfit.blob, label: `Outfit: ${outfit.name}` }, ...item.images.filter((i) => i.kind === 'face').map((i) => ({ blob: i.blob, label: 'Face sheet' }))]
+      : item.images.map((i) => ({ blob: i.blob, label: { body: 'Body sheet', face: 'Face sheet', views: 'Views sheet', details: 'Details sheet' }[i.kind] || 'Sheet' }));
+    if (t.previewTokens[inp.key] !== token) return; // a newer pick is already being shown
+    const urls = shown.map((x) => URL.createObjectURL(x.blob));
     box.innerHTML = '';
-    if (item) box.append(el('img', { src: item.thumb, alt: item.name }));
-    if (outfit) box.append(el('img', { src: outfit.thumb, alt: outfit.name }));
+    shown.forEach((x, n) => box.append(el('figure', { className: 'pick-thumb' }, el('img', { src: urls[n], alt: x.label }), el('figcaption', {}, x.label))));
+    if (shown.length) box.append(el('p', { className: 'hint small pick-sends' }, `Sends ${shown.length} picture${shown.length > 1 ? 's' : ''}: ${shown.map((x) => x.label.replace(/^Outfit: .*/, 'outfit sheet').toLowerCase()).join(' + ')}.`));
   },
 
   // Picking a saved character puts its sheet into the Character sheet box.

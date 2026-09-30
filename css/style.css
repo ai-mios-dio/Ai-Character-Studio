@@ -322,3 +322,6 @@ button.danger { color: var(--danger); }
 .outfit-name { font-size: 13px; word-break: break-word; }
 .pick-extra { margin-top: 10px; }
 .save-outfit { margin-top: 10px; }
+.pick-thumb { margin: 0; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+.pick-thumb figcaption { font-size: 12px; }
+.pick-sends { flex-basis: 100%; margin: 4px 0 0; }
