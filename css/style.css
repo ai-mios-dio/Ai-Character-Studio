@@ -589,3 +589,25 @@ body.loading { overflow: hidden; }
   .loader-halo, .loader-logo, .loader-flow { animation-duration: 12s; }
   .loader-logo, .loader-flow { animation: none; }
 }
+
+/* Loader v2: smaller logo inside a spinning gradient ring */
+.loader-stage { width: min(62vw, 250px); }
+.loader-halo { inset: 4%; filter: blur(28px); opacity: .45; }
+.loader-ring {
+  position: absolute; inset: 6%; border-radius: 50%;
+  /* a gradient arc that fades out at its tail, cut into a ring */
+  background: conic-gradient(from 0deg, rgba(34, 211, 238, 0) 0deg, #22d3ee 90deg, #4f6bff 180deg, #a855f7 250deg, #f472b6 330deg, rgba(244, 114, 182, 0) 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+  filter: drop-shadow(0 0 8px rgba(79, 107, 255, .8));
+  animation: loader-spin 1.4s linear infinite;
+}
+.loader-ticks {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px dotted rgba(169, 178, 214, .45);
+  animation: loader-spin 9s linear infinite reverse;
+}
+.loader-core { position: absolute; inset: 22%; animation: loader-float 3s ease-in-out infinite; }
+.loader-core .loader-logo, .loader-core .loader-flow { animation-name: none; }
+.loader-core .loader-flow { animation: loader-flow 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .loader-ring { animation-duration: 4s; } .loader-core { animation: none; } }

@@ -23,8 +23,11 @@ const Loader = {
     this.el = el('div', { className: 'loader', hidden: true, role: 'status', 'aria-live': 'polite' },
       el('div', { className: 'loader-stage' },
         el('div', { className: 'loader-halo' }),
-        el('img', { className: 'loader-logo', src: 'img/logo.png', alt: '' }),
-        el('div', { className: 'loader-flow' })),
+        el('div', { className: 'loader-ring' }),       // spinning gradient ring
+        el('div', { className: 'loader-ticks' }),      // dotted outer ring turning the other way
+        el('div', { className: 'loader-core' },
+          el('img', { className: 'loader-logo', src: 'img/logo.png', alt: '' }),
+          el('div', { className: 'loader-flow' }))),
       el('div', { className: 'loader-title' }),
       msg, time, cancel);
     this.parts = { title: this.el.querySelector('.loader-title'), msg, time, cancel };
@@ -965,9 +968,10 @@ const ToolUI = {
       const count = Object.fromEntries(def.inputs.map((i) => [i.key, state.inputs[i.key].length]));
       for (const [key, value] of Object.entries(def.fill({ has, count, closeness: state.closeness, fields: state.fields, described: state.described || {} }))) text = text.replaceAll(`{${key}}`, value);
     }
-    if (!def.request) return text;
+    const extras = def.allowExtras ? '' : `\n\n${NO_EXTRAS}`; // shared rule, added to every prompt
+    if (!def.request) return text + extras;
     const request = refs.request.value.trim() || (def.request.optional ? 'None.' : '');
-    return text.includes('{request}') ? text.replaceAll('{request}', request) : `${text}\n\n${request}`;
+    return (text.includes('{request}') ? text.replaceAll('{request}', request) : `${text}\n\n${request}`) + extras;
   },
 
   // manual: don't generate; show the prompt and pictures to use in Google AI Studio instead.

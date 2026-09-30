@@ -266,6 +266,12 @@ NOTES (follow these if given): {request}
 
 ${NO_TATTOOS}`;
 
+// Added to the end of EVERY prompt when it is sent (see buildPrompt in tool-ui.js), including prompts
+// edited in Settings. Stops the model inventing small props and duplicates (e.g. two coffee cups on
+// a table that wasn't in view). Tools that design a place from a description set allowExtras.
+const NO_EXTRAS =
+`NO INVENTED EXTRAS: do not add objects, props, animals or people that are not in the reference images and not asked for in these instructions (including the request). In particular, no small props such as cups, mugs, drinks, food, plates, phones, books, magazines, bags, bottles, candles, plants, flowers, vases, pillows, decorations or clutter. Never duplicate an object or show two of something where the references show one. If the image must show an area the references do not show (for example from a new camera angle), fill it with the simplest plausible continuation of the place: plain walls and floor, and only furniture that matches the place, with its surfaces left clear and empty.`;
+
 const TOOLS = [
   {
     id: 'builder',
@@ -932,6 +938,7 @@ REQUEST:
   },
   {
     id: 'place-builder',
+    allowExtras: true, // designs a whole place from a description, so it may add fitting decor
     title: 'Place Builder',
     section: 'places',
     intro: 'Design a new place (a room or location). Describe it, add reference photos, or both, and tap Run. You get one wide, empty shot of the place.',

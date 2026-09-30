@@ -115,6 +115,7 @@ Every AI tool works **step by step**, one screen at a time, made for using a pho
 Every AI tool has:
 
 - **Model**: a dropdown of the image models your key can use, with quick settings underneath (Ratio, Size, Thinking; only the ones the model supports). The ⚙ gear opens the rest: images per run, temperature, seed, Google Search and more. Anything left on *Auto*/*Default* isn't sent, so the model uses its own default.
+- **No invented extras**: every prompt (except Place Builder, which designs a room from your words) ends with a shared rule: don't add objects, props or people that aren't in the references or asked for (no stray cups, food, phones, plants, clutter), never duplicate things, and fill newly visible areas plainly with surfaces left clear. It is added when a prompt is sent, so it also applies to prompts you edited.
 - **Hidden prompt**: the prompt sent with your images. All of them are in **Settings → Hidden prompts**: tap one, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
 - **Clear & start fresh** empties the uploads, text and results, and resets dropdowns and the chosen tile (your model and options stay).
 - **Leaving a page** (or reloading) resets it completely: uploads, typed text, results, picked characters, places, outfits, poses, dropdowns and tiles. Only the model and its settings are kept. Download or save anything you want to keep before leaving.
