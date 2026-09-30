@@ -42,7 +42,7 @@ The main page has three big buttons:
 
 Workflow: **Place Builder → Send to… → Place Sheet → Save both as a place → Create a Scene**, or for a real room: **Place from Video → Save both as a place → Create a Scene**.
 
-**Room descriptions** (wall by wall: what's on each wall, colours, materials, lighting) are saved with the place and sent with it in every Create a Scene, which helps keep things in the same positions. Filming tips: walk slowly around the edge of the room facing inward, film each wall and corner at chest height, good light, no people, 30–60 seconds. On-screen captions and stickers are ignored. If an iPhone video won't open, set **Settings → Camera → Formats → Most Compatible**.
+**Room descriptions** (wall by wall: what's on each wall, colours, materials, lighting) are saved with the place and sent with it in every Create a Scene, which helps keep things in the same positions. Adding rough sizes helps with scale too (e.g. "queen bed, 2 m long; door 2.1 m tall"). Filming tips: walk slowly around the edge of the room facing inward, film each wall and corner at chest height, good light, no people, 30–60 seconds. On-screen captions and stickers are ignored. If an iPhone video won't open, set **Settings → Camera → Formats → Most Compatible**.
 
 ## Create a Scene
 
