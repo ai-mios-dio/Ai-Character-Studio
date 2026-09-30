@@ -668,6 +668,34 @@ const ToolUI = {
     return el('div', { className: 'result-group' }, ...cards, def.saveAsCharacter ? this.saveCharacterForm(images) : '');
   },
 
+  // Puts a result picture into another tool's box (or the Pose Cutter) and opens that page.
+  // The picture REPLACES whatever was in that box, so old pictures don't pile up.
+  //   fresh: also empty the rest of that tool (text, other pictures, results), e.g. "Edit this picture".
+  async sendTo(src, name, target, { fresh = false } = {}) {
+    const blob = await (await fetch(src)).blob();
+    const file = new File([blob], name, { type: blob.type });
+    if (target === 'cutter') {
+      clearCutter(true);
+      addCutSources([file]);
+      showSection('cutter');
+      return;
+    }
+    const [toolId, key] = target.split(':');
+    const t = this.tools[toolId];
+    if (fresh) this.clear(toolId, { quiet: true, keepChoices: true });
+    // A saved character's sheet counts as the sheet box; replacing it means that pick no longer applies.
+    if (key === 'sheet' && t.refs.saved) { t.refs.saved.value = ''; t.state.savedCharacter = ''; t.state.sheetFromSaved = false; }
+    t.state.inputs[key] = [];
+    this.addInputs(toolId, key, [file]);
+    if (fresh || toolId === location.hash.slice(1)) {
+      // Staying on the same page (e.g. editing an edit): start clean below the picture.
+      if (!fresh) { t.refs.results.innerHTML = ''; setStatus(t.refs.status, ''); }
+      window.scrollTo(0, 0);
+    }
+    showSection(toolId);
+    if (fresh && t.refs.request) t.refs.request.focus({ preventScroll: true });
+  },
+
   // "Save as character": a name box and a Save button under a result.
   saveCharacterForm(images) {
     const name = el('input', { type: 'text', placeholder: 'Character name' });
@@ -701,25 +729,19 @@ const ToolUI = {
     for (const t of Object.values(this.tools)) {
       for (const inp of t.def.inputs) send.add(new Option(`${t.def.title} › ${inp.sendLabel || inp.label.replace(/\s*\(.*\)/, '')}`, `${t.def.id}:${inp.key}`));
     }
-    send.addEventListener('change', async () => {
+    send.addEventListener('change', () => {
       const target = send.value;
       send.value = '';
-      if (!target) return;
-      const blob = await (await fetch(src)).blob();
-      const file = new File([blob], name, { type: blob.type });
-      if (target === 'cutter') {
-        addCutSources([file]);
-        showSection('cutter');
-      } else {
-        const [toolId, key] = target.split(':');
-        this.addInputs(toolId, key, [file]);
-        showSection(toolId);
-      }
+      if (target) this.sendTo(src, name, target);
     });
+
+    // One tap: open this picture in the Edit tool, ready for the next change.
+    const editBtn = el('button', { className: 'primary', textContent: 'Edit this picture' });
+    editBtn.addEventListener('click', () => this.sendTo(src, name, 'edit:image', { fresh: true }));
 
     return el('div', { className: 'result-item' },
       el('img', { src, alt: 'Generated image' }),
-      el('div', { className: 'row' }, download, send),
+      el('div', { className: 'row' }, this.tools.edit ? editBtn : '', download, send),
       el('p', { className: 'hint small' }, 'Tip: on a phone you can also press and hold the image to save it.'),
     );
   },

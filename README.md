@@ -63,7 +63,8 @@ Every AI tool has:
 - **Hidden prompt**: the prompt sent with your images. All of them are in **Settings → Hidden prompts**: tap one, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
 - **Clear & start fresh** empties the uploads, text and results, and resets dropdowns and the chosen tile (your model and options stay).
 - **Leaving a page** clears its uploads, typed text and results automatically, so pages don't fill up. Your choices (model, settings, dropdowns, chosen outfit tile) are kept. Download or save anything you want to keep before leaving.
-- **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter).
+- **Edit this picture** on each result opens it in the Edit tool, ready for the next change. On the Edit page this chains edits: each result can be edited again.
+- **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter). It replaces whatever was in that box.
 
 ## When a picture is blocked
 
