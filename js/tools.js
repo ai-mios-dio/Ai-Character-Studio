@@ -828,18 +828,43 @@ Photorealistic, natural lighting that matches the time of day. ${EMPTY_PLACE}`,
     menuText: 'Put your saved characters in your saved places',
     intro: 'Pick your characters and a place, describe what is happening, and tap Run.',
     inputs: [
-      { key: 'char1', type: 'library', library: 'characters', label: 'Character 1', tag: 'CHARACTER 1', missing: 'Choose Character 1 first (save characters in Characters → Saved Characters).' },
-      { key: 'char2', type: 'library', library: 'characters', label: 'Character 2 (optional)', tag: 'CHARACTER 2', optional: true },
+      { key: 'char1', type: 'library', library: 'characters', label: 'Character 1', tag: 'CHARACTER 1', outfits: true, poses: true, missing: 'Choose Character 1 first (save characters in Characters → Saved Characters).' },
+      { key: 'char2', type: 'library', library: 'characters', label: 'Character 2 (optional)', tag: 'CHARACTER 2', outfits: true, poses: true, optional: true },
       { key: 'place', type: 'library', library: 'places', label: 'Place', tag: 'PLACE', optional: true, hint: 'Pick a saved place so it looks the same in every scene. Without one, the setting comes from your description.' },
+      { key: 'poseRef', label: 'Pose picture (optional)', tag: 'POSE REFERENCE', optional: true, sendLabel: 'Pose picture', hint: 'A photo of someone in the pose you want. Only the pose is copied, never their face, body, clothes or background. Choose who it is for under "Pose picture is for".' },
     ],
-    fieldsTitle: 'Camera',
+    fieldsTitle: 'Camera & poses',
     fields: [
       { key: 'shot', label: 'Shot', wide: true, options: ['Wide shot (whole room)', 'Full body', 'Medium shot (waist up)', 'Close-up'] },
+      { key: 'together', label: 'Pose together (with 2 characters)', wide: true, options: DUO_POSES.map((p) => p.name), describe: (v) => DUO_POSES.find((p) => p.name === v)?.desc || '' },
+      { key: 'poseFor', label: 'Pose picture is for', wide: true, options: ['Character 1', 'Character 2', 'Both (copy the two people in it)'] },
     ],
     request: { label: "What's happening?", placeholder: 'e.g. Mara sits on the edge of her bed reading a letter, evening lamp light. Leo leans in the doorway, arms crossed.' },
     runLabel: 'Create scene',
     defaultOptions: { aspectRatio: '16:9' },
-    fill: ({ fields }) => ({ shot: fields.shot || 'Your choice, whatever tells the scene best.' }),
+    defaultFields: { poseFor: 'Character 1' },
+    fill: ({ has, fields }) => {
+      const two = !!fields.char2;
+      const poseFor = fields.poseFor || 'Character 1';
+      const lines = [];
+      if (has.poseRef && poseFor.startsWith('Both')) lines.push('BOTH CHARACTERS: copy the poses of the two people in the POSE REFERENCE picture (the left person\'s pose goes to whichever character stands on that side), including how they touch or hold each other.');
+      else if (two && fields.together) {
+        const duo = DUO_POSES.find((p) => p.name === fields.together);
+        if (duo) lines.push(`TOGETHER: ${duo.desc}`);
+      }
+      (two ? ['1', '2'] : ['1']).forEach((n) => {
+        if (has.poseRef && (poseFor === `Character ${n}` || poseFor.startsWith('Both'))) {
+          if (!poseFor.startsWith('Both')) lines.push(`CHARACTER ${n}: copy the body pose and facial expression of the person in the POSE REFERENCE picture.`);
+          return;
+        }
+        const pose = POSES.find((p) => p.id === fields[`char${n}Pose`]);
+        if (pose) lines.push(`CHARACTER ${n}: ${pose.desc}`);
+      });
+      return {
+        shot: fields.shot || 'Your choice, whatever tells the scene best.',
+        poses: lines.length ? lines.join('\n') : 'Whatever fits the scene description naturally.',
+      };
+    },
     prompt:
 `${FICTIONAL_CHARACTER} The place is a fictional set.
 
@@ -847,12 +872,20 @@ Create ONE new image of the scene described below, using the saved references.
 
 REFERENCES (each group is labelled with its name):
 - CHARACTER 1, and CHARACTER 2 if included: character sheets (a full-body BODY sheet and/or a close-up FACE sheet). Each sheet shows ONE person from several angles; it is not a group, and its grid layout is not the output format.
+- CHARACTER 1 OUTFIT SHEET / CHARACTER 2 OUTFIT SHEET, if included: a full-body sheet of that same character wearing the outfit for this scene.
 - PLACE, if included: location sheets of one place: a VIEWS sheet (the same room from several camera positions) and/or a DETAILS sheet (close-ups of its furniture, objects and materials). It may also come with a written description of the room; follow it for where things are.
+- POSE REFERENCE, if included: a photo that shows ONLY the pose to use (see POSES).
 
 SCENE: {request}
 SHOT: {shot}
+POSES:
+{poses}
 
-CHARACTERS: ${IDENTITY_LOCK} This applies to EACH character separately: each one must look exactly like their own references (the face sheet decides the face, the body sheet decides height, build and proportions). Never mix features between characters; they stay clearly different people. Their relative heights must match their sheets. Keep each character's outfit from their sheets unless the scene says otherwise.
+CHARACTERS: ${IDENTITY_LOCK} This applies to EACH character separately: each one must look exactly like their own references (the face sheet decides the face, the body sheet decides height, build and proportions). Never mix features between characters; they stay clearly different people. Their relative heights must match their sheets.
+
+OUTFITS: if a character has an OUTFIT SHEET, they wear EXACTLY that outfit: every garment, colour, pattern, fabric, fit, length, the shoes, and the accessories, bag and jewelry shown on it. The outfit sheet decides ONLY the clothing; their face still comes from their FACE sheet and their body proportions from their BODY sheet, and the clothes are fitted to their own body. Ignore whatever they wear on their other sheets. A character without an outfit sheet keeps the outfit from their sheets unless the scene says otherwise.
+
+POSE REFERENCE (if included): take ONLY the pose from it: body position, head angle, arms, hands, legs, feet, weight and facial expression, matching left and right as shown. Never copy the face, body shape, skin, hair, clothes, shoes, accessories, background, props, lighting or camera style of the person in it, and never change a character's body proportions to fit it. Each character keeps their own face, body, outfit and shoes.
 
 PLACE (if included): the scene happens in THIS exact place: the same architecture, layout, furniture pieces and their positions, materials, colours, decor and windows as in the PLACE references. Use a camera position that makes sense for the room's layout (as if standing where one of its views was taken) and show only what would be visible from there. Do not add, remove or rearrange furniture unless the scene asks for it. Lighting and time of day follow the scene; otherwise match the place references. If no PLACE references are included, create a fitting setting from the scene description.
 

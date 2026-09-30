@@ -48,6 +48,19 @@ Workflow: **Place Builder → Send to… → Place Sheet → Save both as a plac
 
 Pick **Character 1**, optionally **Character 2**, and a **Place** from your saved ones, choose a **Shot** (optional) and describe **What's happening?**. Each saved item's sheets are sent under its own name, and the prompt keeps each character's identity separate and the place's layout, furniture and decor exactly the same.
 
+For each character you can also pick:
+
+- **Outfit**: *As on their body sheet*, or one of that character's saved outfits. The outfit sheet decides only the clothes; the face and body still come from their own sheets.
+- **Pose**: one of 23 ready-made poses (Standing, Walking & candid, Sitting, Lying down, Low poses, Selfies & close-ups), with its description shown under the dropdown.
+
+With two characters, **Pose together** offers 11 poses for two people (walking holding hands, hug from behind, foreheads touching…). An optional **Pose picture** copies the pose from a photo, and **Pose picture is for** says whether it applies to Character 1, Character 2 or both people. A pose picture overrides the pose dropdown for that character. Only the pose is copied from it: never the face, body, clothes or background.
+
+The poses come from Instagram posing guides and photographers' tips (Shotkit, Clipping World, Photo Technolabs, PhotoWorkout, Madeline Hegedus, The Next Trip, The Knot, Jasmine Alley). They live in `js/catalog.js` (`POSES` and `DUO_POSES`), so you can add your own.
+
+### Outfits
+
+Each saved character can have any number of outfits, and each outfit is its own full-body sheet of that character wearing it. To make one: **Outfit** tool → **Send to… → Character Sheet** → run it → **Add as an outfit** (choose the character and type the outfit name). You can also upload an outfit sheet under **Outfits** on the character's card in **Saved Characters**, where you can delete outfits too.
+
 ## Character tools
 
 | Tool | You upload | What you get |
@@ -129,7 +142,7 @@ Works best when figures sit on a plain background with a little space between th
 - `index.html`: the page layout
 - `css/style.css`: colors and styling
 - `js/tools.js`: **the AI tools and their hidden prompts**. Add a new tool by copying a block here.
-- `js/catalog.js`: makeup styles and Outfit Gallery outfits
+- `js/catalog.js`: makeup styles, Outfit Gallery outfits and Create a Scene poses
 - `js/models.js`: loads the model list and knows each model's image options
 - `js/tool-ui.js`: builds each tool's section on the page
 - `js/gemini.js`: sends requests to the Gemini API

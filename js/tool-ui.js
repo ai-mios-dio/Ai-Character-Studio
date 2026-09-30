@@ -594,10 +594,46 @@ const ToolUI = {
     });
     const manage = el('a', { href: '#' + inp.library, className: 'small-link', textContent: inp.library === 'places' ? 'Add or manage places' : 'Add or manage characters' });
     setTimeout(() => this.fillLibraryPickers(def.id));
+
+    // Characters in Create a Scene: which of their outfits to wear, and a ready-made pose.
+    const extras = [];
+    if (inp.outfits) {
+      const outfit = el('select', { id: `${def.id}-${inp.key}-outfit` });
+      refs.outfitPicks = refs.outfitPicks || {};
+      refs.outfitPicks[inp.key] = outfit;
+      outfit.addEventListener('change', () => {
+        if (outfit.value) state.fields[inp.key + 'Outfit'] = outfit.value; else delete state.fields[inp.key + 'Outfit'];
+        this.tools[def.id]?.save();
+        this.showLibraryPreview(def.id, inp);
+      });
+      extras.push(el('label', { className: 'field wide pick-extra' }, el('span', { className: 'quick-caption' }, 'Outfit'), outfit));
+    }
+    if (inp.poses) {
+      const key = inp.key + 'Pose';
+      const pose = el('select', { id: `${def.id}-${key}` });
+      pose.add(new Option('Pose: whatever fits the scene', ''));
+      const cats = [...new Set(POSES.map((p) => p.cat))];
+      for (const cat of cats) {
+        const group = el('optgroup', { label: cat });
+        POSES.filter((p) => p.cat === cat).forEach((p) => group.append(new Option(p.name, p.id)));
+        pose.append(group);
+      }
+      pose.value = state.fields[key] || '';
+      const about = el('p', { className: 'hint small field-about' });
+      const showAbout = () => { about.textContent = POSES.find((p) => p.id === pose.value)?.desc || ''; };
+      pose.addEventListener('change', () => {
+        if (pose.value) state.fields[key] = pose.value; else delete state.fields[key];
+        this.tools[def.id]?.save();
+        showAbout();
+      });
+      showAbout();
+      refs.fields[key] = pose;
+      extras.push(el('label', { className: 'field wide pick-extra' }, el('span', { className: 'quick-caption' }, 'Pose'), pose, about));
+    }
     return el('div', { className: 'card' },
       el('label', { className: 'label', htmlFor: sel.id }, inp.label),
       inp.hint ? el('p', { className: 'hint small input-hint' }, inp.hint) : '',
-      sel, preview, manage);
+      sel, ...extras, preview, manage);
   },
 
   async fillLibraryPickers(id) {
@@ -620,11 +656,25 @@ const ToolUI = {
   async showLibraryPreview(id, inp) {
     const t = this.tools[id];
     const box = t.refs.libPreviews[inp.key];
-    box.innerHTML = '';
     const pick = t.state.fields[inp.key];
-    if (!pick) return;
-    const item = await LIBRARIES[inp.library].get(pick);
+    const item = pick ? await LIBRARIES[inp.library].get(pick) : null;
+    // Outfit dropdown: "From their sheet" plus this character's own outfits.
+    let outfit = null;
+    const outfitSel = t.refs.outfitPicks?.[inp.key];
+    if (outfitSel) {
+      const outfits = item?.outfits || [];
+      const keep = t.state.fields[inp.key + 'Outfit'];
+      outfitSel.innerHTML = '';
+      outfitSel.add(new Option(!item ? 'Choose a character first' : outfits.length ? 'As on their body sheet' : 'As on their body sheet (no saved outfits yet)', ''));
+      for (const o of outfits) outfitSel.add(new Option(o.name, o.id));
+      outfitSel.disabled = !outfits.length;
+      outfit = outfits.find((o) => o.id === keep) || null;
+      outfitSel.value = outfit ? outfit.id : '';
+      if (!outfit) delete t.state.fields[inp.key + 'Outfit'];
+    }
+    box.innerHTML = '';
     if (item) box.append(el('img', { src: item.thumb, alt: item.name }));
+    if (outfit) box.append(el('img', { src: outfit.thumb, alt: outfit.name }));
   },
 
   // Picking a saved character puts its sheet into the Character sheet box.
@@ -744,6 +794,9 @@ const ToolUI = {
         // A saved character or place: send all of its sheets, labelled with its name.
         const item = state.fields[inp.key] && await LIBRARIES[inp.library].get(state.fields[inp.key]);
         if (item && item.images.length) groups.push({ tag: `${inp.tag} "${item.name}"`, imgs: item.images.map((i) => i.blob), note: item.notes });
+        // The chosen outfit is its own sheet, sent right after the character's sheets.
+        const outfit = item && inp.outfits && item.outfits.find((o) => o.id === state.fields[inp.key + 'Outfit']);
+        if (outfit) groups.push({ tag: `${inp.tag} OUTFIT SHEET "${outfit.name}"`, imgs: [outfit.blob] });
         continue;
       }
       const imgs = state.inputs[inp.key];
@@ -812,7 +865,37 @@ const ToolUI = {
     const saveTo = def.saveAs || (def.saveAsCharacter ? 'characters' : null);
     // Tools with `saveNotes` also save the typed description with the item (e.g. a room description).
     const notes = def.saveNotes && this.tools[def.id].refs.request ? this.tools[def.id].refs.request.value.trim() : '';
-    return el('div', { className: 'result-group' }, ...cards, saveTo ? this.saveCharacterForm(images, saveTo, notes) : '');
+    const body = saveTo === 'characters' && images.find((i) => i.kind === 'body');
+    return el('div', { className: 'result-group' }, ...cards,
+      saveTo ? this.saveCharacterForm(images, saveTo, notes) : '',
+      body ? this.saveOutfitForm(body) : '');
+  },
+
+  // "Add as an outfit of…": saves the body sheet as one outfit of a saved character.
+  saveOutfitForm(body) {
+    const who = el('select', { 'aria-label': 'Character' });
+    const name = el('input', { type: 'text', placeholder: 'Outfit name (e.g. Red dress)' });
+    const btn = el('button', { textContent: 'Add as an outfit' });
+    const status = el('div', { className: 'status' });
+    Characters.list().then((list) => {
+      who.add(new Option(list.length ? 'Outfit of which character?' : 'No saved characters yet', ''));
+      for (const c of list) who.add(new Option(c.name, c.id));
+    });
+    btn.addEventListener('click', async () => {
+      if (!who.value) return setStatus(status, 'Choose the character first.', 'error');
+      if (!name.value.trim()) { name.focus(); return setStatus(status, 'Type an outfit name first.', 'error'); }
+      btn.disabled = true;
+      try {
+        await Characters.addOutfit(who.value, name.value, await (await fetch(body.src)).blob());
+        setStatus(status, `Added "${name.value.trim()}" to ${who.selectedOptions[0].text}. Pick it under Outfit in Create a Scene.`, 'ok');
+      } catch (err) {
+        btn.disabled = false;
+        setStatus(status, 'Could not save: ' + err.message, 'error');
+      }
+    });
+    return el('div', { className: 'save-character save-outfit' },
+      el('p', { className: 'hint small' }, 'Or, if this is a saved character in a new outfit, keep the body sheet as one of their outfits:'),
+      who, name, btn, status);
   },
 
   // Puts a result picture into another tool's box (or the Pose Cutter) and opens that page.

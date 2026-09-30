@@ -206,7 +206,7 @@ $('safetyLevel').addEventListener('change', () => {
 // Both pages are built from this description, so they work the same way.
 const LIBRARY_PAGES = [
   {
-    id: 'characters', title: 'Saved Characters', library: Characters, prefix: 'char', parent: 'characters-hub', noun: 'character',
+    id: 'characters', title: 'Saved Characters', library: Characters, prefix: 'char', parent: 'characters-hub', noun: 'character', outfits: true,
     slots: [['body', 'Body sheet'], ['face', 'Face sheet']],
     intro: 'Your saved characters. Pick them in the Character box of the character tools and in Create a Scene. They are stored on this device only.',
     addHint: 'Give them a name and add their body sheet, face sheet, or both. You can also tap "Save both as a character" under a Character Sheet result.',
@@ -295,8 +295,46 @@ async function renderLibrary(cfg) {
     const has = item.images.map((img) => kinds[img.kind] || img.kind).join(' + ');
     box.append(el('div', { className: 'char-card' },
       el('img', { src: item.thumb, alt: item.name }),
-      el('div', { className: 'char-info' }, name, el('div', { className: 'hint small' }, has), notes || '', el('div', { className: 'row' }, rename, del))));
+      el('div', { className: 'char-info' }, name, el('div', { className: 'hint small' }, has), notes || '', el('div', { className: 'row' }, rename, del)),
+      cfg.outfits ? outfitsBox(cfg, item) : ''));
   }
+}
+
+// A character's outfits: each one is a full-body sheet of them wearing it, picked in Create a Scene.
+function outfitsBox(cfg, item) {
+  const list = el('div', { className: 'outfit-list' });
+  for (const o of item.outfits) {
+    const del = el('button', { className: 'small-btn danger', textContent: 'Delete' });
+    del.addEventListener('click', () => {
+      if (del.dataset.armed) return cfg.library.removeOutfit(item.id, o.id);
+      del.dataset.armed = '1';
+      del.textContent = 'Tap again';
+      setTimeout(() => { delete del.dataset.armed; del.textContent = 'Delete'; }, 4000);
+    });
+    list.append(el('div', { className: 'outfit-item' }, el('img', { src: o.thumb, alt: o.name }), el('div', { className: 'outfit-name' }, o.name), del));
+  }
+  let file = null;
+  const name = el('input', { type: 'text', placeholder: 'Outfit name (e.g. Red dress)', 'aria-label': 'Outfit name' });
+  const input = el('input', { type: 'file', accept: 'image/*', 'aria-label': 'Outfit body sheet' });
+  const text = el('span', {}, 'Outfit body sheet');
+  const zone = el('div', { className: 'dropzone mini' }, input, text);
+  setupDropzone(zone, input, (files) => { file = files[0] || null; text.textContent = file ? 'Outfit body sheet ✓' : 'Outfit body sheet'; });
+  const add = el('button', { className: 'small-btn', textContent: 'Add outfit' });
+  const status = el('div', { className: 'status' });
+  add.addEventListener('click', async () => {
+    if (!name.value.trim()) { name.focus(); return setStatus(status, 'Type an outfit name first.', 'error'); }
+    if (!file) return setStatus(status, 'Add the body sheet of them wearing this outfit.', 'error');
+    try { await cfg.library.addOutfit(item.id, name.value, file); } catch (err) { setStatus(status, 'Could not save: ' + err.message, 'error'); }
+  });
+  // Stay open after the list redraws (e.g. right after adding an outfit).
+  cfg.openOutfits = cfg.openOutfits || new Set();
+  const box = el('details', { className: 'outfits', open: cfg.openOutfits.has(item.id) });
+  box.addEventListener('toggle', () => { if (box.open) cfg.openOutfits.add(item.id); else cfg.openOutfits.delete(item.id); });
+  box.append(
+    el('summary', {}, `Outfits (${item.outfits.length})`),
+    el('p', { className: 'hint small' }, 'Each outfit is its own body sheet of this character wearing it. Make one with Outfit → Send to Character Sheet → "Add as an outfit", or upload one here.'),
+    list, name, zone, add, status);
+  return box;
 }
 
 // Keep every tool's dropdowns up to date when characters or places change.

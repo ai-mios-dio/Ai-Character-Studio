@@ -1,5 +1,6 @@
 // Saved libraries: Characters and Places. Each item is a name plus its sheets:
-//   Characters: a full-body 'body' sheet and a close-up 'face' sheet (older saves have one 'sheet').
+//   Characters: a full-body 'body' sheet and a close-up 'face' sheet (older saves have one 'sheet'),
+//               plus any number of outfits, each its own full-body sheet.
 //   Places:     a 'views' sheet (the room from several camera spots) and a 'details' sheet (close-ups).
 // Stored in IndexedDB, the browser's built-in database, because images are too big
 // for localStorage. Like everything else, it stays on this device only.
@@ -44,6 +45,7 @@ function makeLibrary(storeName, idPrefix) {
     // Older character saves kept one image in `sheet`; newer ones keep a list in `images`.
     _normalise(item) {
       if (item && !item.images) item.images = item.sheet ? [{ kind: 'sheet', blob: item.sheet }] : [];
+      if (item && !item.outfits) item.outfits = [];
       return item;
     },
 
@@ -80,6 +82,27 @@ function makeLibrary(storeName, idPrefix) {
       if (!item) return;
       item.name = name.trim() || item.name;
       if (notes !== undefined) item.notes = notes.trim();
+      await this._do('readwrite', (store) => store.put(item));
+      this._changed();
+    },
+
+    // Outfits (characters only): each outfit is its own full-body sheet of the character wearing it.
+    //   item.outfits = [{ id, name, blob, thumb }]
+    async addOutfit(id, name, blob) {
+      const item = await this.get(id);
+      if (!item) throw new Error('That character is no longer saved.');
+      item.outfits = item.outfits || [];
+      const outfit = { id: 'o' + Date.now(), name: name.trim() || 'Outfit', blob, thumb: await this.makeThumb(blob) };
+      item.outfits.push(outfit);
+      await this._do('readwrite', (store) => store.put(item));
+      this._changed();
+      return outfit;
+    },
+
+    async removeOutfit(id, outfitId) {
+      const item = await this.get(id);
+      if (!item) return;
+      item.outfits = (item.outfits || []).filter((o) => o.id !== outfitId);
       await this._do('readwrite', (store) => store.put(item));
       this._changed();
     },

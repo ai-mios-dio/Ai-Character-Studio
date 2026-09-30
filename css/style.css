@@ -309,3 +309,16 @@ button.danger { color: var(--danger); }
 .frame.on { opacity: 1; border-color: #fff; }
 .frame img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
 .char-info textarea { font-size: 13px; }
+
+/* Outfits on a saved character */
+.char-card { flex-wrap: wrap; }
+.char-card .outfits { flex-basis: 100%; }
+.outfits summary { font-weight: 600; cursor: pointer; padding: 4px 0; }
+.outfits input[type=text] { margin-top: 8px; }
+.outfits .dropzone.mini { margin: 8px 0; }
+.outfit-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin: 8px 0; }
+.outfit-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.char-card .outfit-item img { width: 96px; height: 72px; }
+.outfit-name { font-size: 13px; word-break: break-word; }
+.pick-extra { margin-top: 10px; }
+.save-outfit { margin-top: 10px; }
