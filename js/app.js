@@ -47,7 +47,7 @@ const SECTIONS = {
 };
 const GROUPS = { builder: 'Character Builder', sheets: 'Sheets', swap: 'Swap', outfit: 'Outfit', scenes: 'Scenes' };
 // Subtitle for groups shown as a card on the main page.
-const GROUP_SUBS = { scenes: 'Put characters in places, or see one moment from every angle' };
+const GROUP_SUBS = { scenes: 'Put characters in places, make scene sheets, change camera angles' };
 const GROUP_QUESTIONS = {
   builder: 'How do you want to design your character?',
   sheets: 'Which sheet do you want to make?',
@@ -93,7 +93,7 @@ const ICONS = {
 // Which icon each page uses.
 const ICON_FOR = {
   'characters-hub': 'characters', 'places-hub': 'places', 'create-scene': 'scene', settings: 'settings',
-  'builder-menu': 'builder', 'sheets-menu': 'sheets', 'scenes-menu': 'scene', 'scene-angles': 'angles', 'swap-menu': 'swap', 'outfit-menu': 'outfit',
+  'builder-menu': 'builder', 'sheets-menu': 'sheets', 'scenes-menu': 'scene', 'scene-angles': 'sheets', 'camera-angle': 'angles', 'create-scene': 'scene', 'swap-menu': 'swap', 'outfit-menu': 'outfit',
   pose: 'pose', makeup: 'makeup', edit: 'edit', scene: 'character-scene', characters: 'saved', places: 'saved',
   cutter: 'cutter', 'place-builder': 'builder', 'place-sheet': 'sheets', 'place-video': 'video',
   // tools inside the menus

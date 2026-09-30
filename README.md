@@ -31,7 +31,8 @@ The main page has three big buttons:
 - **Places**: Place Builder, Place Sheet and Saved Places. A place is like a character for locations (a bedroom, a café…), so it looks the same every time.
 - **Scenes**:
   - **Create a Scene**: pick up to two saved characters and a saved place, describe what's happening, and get one image with everyone and everything consistent.
-  - **Scene Angles**: upload one picture of your character posed in a place (and optionally pick the saved character) and get one image with 4 views of that exact moment from different camera positions: around them (front, 3/4, side, back) or camera styles (eye level, high, low, close-up), as one row of 4 or a 2 x 2 grid.
+  - **Scene Sheet**: upload one picture of your character posed in a place (and optionally pick the saved character) and get one image with 3 views of that exact moment: front, side, back (or front, 3/4, back, or 3/4 left, front, 3/4 right).
+  - **Camera Angle**: upload a scene picture and pick one of 20 popular social media camera angles (eye level, slightly above, low angle "long legs", floor level, high angle, top-down, Dutch angle, over the shoulder, their POV, selfie, mirror selfie, candid long lens, through a frame, wide, full body, waist up, close-up, detail shot…) to re-shoot the same moment from that angle. Defaults to 4:5 (Instagram); use 9:16 for Reels/TikTok.
 
 ## Places
 
@@ -159,7 +160,7 @@ Works best when figures sit on a plain background with a little space between th
 - `index.html`: the page layout
 - `css/style.css`: colors and styling
 - `js/tools.js`: **the AI tools and their hidden prompts**. Add a new tool by copying a block here.
-- `js/catalog.js`: makeup styles, Outfit Gallery outfits and Create a Scene poses
+- `js/catalog.js`: makeup styles, Outfit Gallery outfits, Create a Scene poses and Camera Angle angles
 - `js/models.js`: loads the model list and knows each model's image options
 - `js/tool-ui.js`: builds each tool's section on the page
 - `js/gemini.js`: sends requests to the Gemini API

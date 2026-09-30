@@ -83,7 +83,16 @@ const ToolUI = {
       const rows = def.fields.map((f) => {
         const sel = el('select', { id: `${def.id}-field-${f.key}` });
         sel.add(new Option(f.required ? `Choose ${f.label.toLowerCase()}…` : 'Any', ''));
-        for (const o of f.options) sel.add(new Option(o, o));
+        if (f.groups) {
+          // Options in categories: f.groups = [{ cat, name }]
+          for (const cat of [...new Set(f.groups.map((g) => g.cat))]) {
+            const og = el('optgroup', { label: cat });
+            f.groups.filter((g) => g.cat === cat).forEach((g) => og.append(new Option(g.name, g.name)));
+            sel.append(og);
+          }
+        } else {
+          for (const o of f.options) sel.add(new Option(o, o));
+        }
         sel.value = state.fields[f.key] || '';
         const about = el('p', { className: 'hint small field-about' });
         const showAbout = () => { about.textContent = f.describe && sel.value ? f.describe(sel.value) : ''; };

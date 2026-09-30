@@ -197,3 +197,36 @@ const DUO_POSES = [
   { id: 'dancing', name: 'Dancing', desc: 'Dancing together: one twirls the other under a raised arm, or they hold each other close swaying, laughing, hair and clothes moving.' },
   { id: 'friends-mirror', name: 'Mirror selfie together', desc: 'Both standing close in front of a mirror, one holding the phone at chest height, the other posing beside them with a hand on the hip or arm around them. The image shows the reflection in the mirror.' },
 ];
+
+// Camera angles for Camera Angle (Scenes), from creator and social media shooting guides
+// (usetwirl.com, aminsocials.com, insta360.com, postplanner.com, Instagram @instagramcreators tips).
+// `desc` is what the AI is told: where the camera goes and how the shot is framed.
+const CAMERA_ANGLES = [
+  // Classic
+  { cat: 'Classic', name: 'Eye level', desc: 'Camera at the character\'s eye height, straight on, natural and relatable. Medium-full framing with some of the place around them.' },
+  { cat: 'Classic', name: 'Slightly above (flattering)', desc: 'Camera a little above eye level, tilted slightly down, the classic flattering social media angle; face and upper body favoured, full body still visible.' },
+  { cat: 'Classic', name: 'Side profile (45°)', desc: 'Camera about 45 degrees to the side of the character at chest height, showing the face in three-quarter/profile and the body line.' },
+  { cat: 'Classic', name: 'From behind', desc: 'Camera behind the character at chest height, showing their back and what they are facing beyond them (the pose stays; the face is hidden or a hint of profile).' },
+
+  // Dramatic
+  { cat: 'Dramatic', name: 'Low angle (long legs)', desc: 'Camera low, around knee or hip height, tilted up at the character: the popular full-body angle that makes legs look longer and the character taller and confident.' },
+  { cat: 'Dramatic', name: 'Floor level (worm\'s eye)', desc: 'Camera almost on the floor looking up, very dramatic and cinematic, with the floor in the foreground and ceiling or sky visible behind the character.' },
+  { cat: 'Dramatic', name: 'High angle', desc: 'Camera well above the character looking down at about 45 degrees, making the scene feel open; the floor and surroundings are visible around them.' },
+  { cat: 'Dramatic', name: 'Top-down (bird\'s eye)', desc: 'Camera directly above, looking straight down at the character and the floor around them (best for sitting or lying poses).' },
+  { cat: 'Dramatic', name: 'Dutch angle (tilted)', desc: 'Camera tilted about 15-20 degrees so the horizon is slanted, energetic and edgy, at eye level.' },
+
+  // Creator / POV
+  { cat: 'Creator / POV', name: 'Over the shoulder', desc: 'Camera just behind and to one side of the character\'s shoulder, looking past them at the place, with the shoulder and side of the head in the near foreground.' },
+  { cat: 'Creator / POV', name: 'Their POV', desc: 'The view through the character\'s own eyes: we see what they see, with their own hands, arms, legs or feet visible at the bottom of the frame in the same positions as the pose.' },
+  { cat: 'Creator / POV', name: 'Selfie (arm\'s length)', desc: 'Front-camera selfie from the character\'s outstretched arm, slightly above eye level. The arm holding the phone may extend toward the camera (only the phone arm changes).' },
+  { cat: 'Creator / POV', name: 'Mirror selfie', desc: 'The scene as seen in a mirror in front of the character, who holds a phone at chest height. Only the phone arm changes to hold the phone; the rest of the pose stays. The place is shown mirrored behind them.' },
+  { cat: 'Creator / POV', name: 'Candid from afar (long lens)', desc: 'Camera far away across the place, zoomed in with a long lens, as if a friend secretly snapped the moment; slight background blur and compression.' },
+  { cat: 'Creator / POV', name: 'Through a frame', desc: 'Camera further back, shooting through a doorway, window, plant or furniture edge in the soft-focus foreground that frames the character.' },
+
+  // Framing
+  { cat: 'Framing', name: 'Wide establishing', desc: 'Camera far back with a wide lens: the whole place is visible and the character is small within it, placed on a rule-of-thirds line.' },
+  { cat: 'Framing', name: 'Full body', desc: 'Head-to-feet framing with a little space above and below, at eye level.' },
+  { cat: 'Framing', name: 'Medium (waist up)', desc: 'Framed from the waist up at eye level, the place softly visible behind.' },
+  { cat: 'Framing', name: 'Close-up (face)', desc: 'Head and shoulders close-up, slightly off-centre, background softly blurred.' },
+  { cat: 'Framing', name: 'Detail shot (outfit)', desc: 'Close detail of the outfit, shoes or accessories from the pose (for example hands and bag, or shoes on the floor), with shallow depth of field.' },
+];
