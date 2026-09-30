@@ -520,3 +520,17 @@ button.danger, .small-btn.danger { color: var(--danger); }
 .result-item img { border-radius: 16px; }
 .result-title { font-weight: 700; }
 .segmented button.on { background: var(--grad); box-shadow: var(--glow); }
+
+/* Home: the option cards sit centred between the title and Settings (Settings stays at the bottom). */
+#home .brand { margin: 0; }
+#home.active .home-buttons { flex: 1; display: flex; flex-direction: column; margin-top: 0; }
+#home .home-card:first-child { margin-top: auto; }
+#home .settings-btn { margin-top: auto; }
+#home .brand { padding-bottom: 12px; }   /* matches the gap above Settings, so the cards sit exactly in the middle */
+@media (max-height: 740px) {
+  .brand { padding-top: 1vh; }
+  .brand-logo { width: min(32vw, 150px); }
+  #home .logo { font-size: 28px; }
+  .home-card { min-height: 74px; padding: 10px 16px; }
+  .settings-btn { min-height: 50px; }
+}
