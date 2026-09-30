@@ -12,6 +12,54 @@ function el(tag, props = {}, ...children) {
   return node;
 }
 
+// Full-screen "generating" page: the logo with the app's colours flowing through it, a message,
+// a timer and Cancel. Loader.show() while images are being made, Loader.hide() when done.
+const Loader = {
+  el: null,
+  build() {
+    const msg = el('div', { className: 'loader-msg' });
+    const time = el('div', { className: 'loader-time' });
+    const cancel = el('button', { className: 'loader-cancel', textContent: 'Cancel' });
+    this.el = el('div', { className: 'loader', hidden: true, role: 'status', 'aria-live': 'polite' },
+      el('div', { className: 'loader-stage' },
+        el('div', { className: 'loader-halo' }),
+        el('img', { className: 'loader-logo', src: 'img/logo.png', alt: '' }),
+        el('div', { className: 'loader-flow' })),
+      el('div', { className: 'loader-title' }),
+      msg, time, cancel);
+    this.parts = { title: this.el.querySelector('.loader-title'), msg, time, cancel };
+    cancel.addEventListener('click', () => { const fn = this.onCancel; this.hide(); fn?.(); });
+    document.body.append(this.el);
+  },
+  // Little messages that rotate while waiting.
+  lines: ['Reading your references…', 'Studying the face and body…', 'Setting up the camera…', 'Matching the lighting…', 'Adding the details…', 'Almost there…'],
+  show(title, onCancel) {
+    if (!this.el) this.build();
+    this.onCancel = onCancel;
+    this.parts.title.textContent = title;
+    if (!this.el.hidden) return; // already showing: just update the title
+    this.el.hidden = false;
+    document.body.classList.add('loading');
+    const start = Date.now();
+    let n = 0;
+    this.parts.msg.textContent = this.lines[0];
+    const tick = () => {
+      const s = Math.floor((Date.now() - start) / 1000);
+      this.parts.time.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+      if (s > 0 && s % 5 === 0) this.parts.msg.textContent = this.lines[Math.min(++n, this.lines.length - 1)];
+    };
+    tick();
+    this.timer = setInterval(tick, 1000);
+  },
+  hide() {
+    if (!this.el || this.el.hidden) return;
+    clearInterval(this.timer);
+    this.el.hidden = true;
+    document.body.classList.remove('loading');
+    this.onCancel = null;
+  },
+};
+
 const ToolUI = {
   tools: {},        // id -> { def, state, refs }
 
@@ -877,6 +925,7 @@ const ToolUI = {
   clear(id, { quiet = false, keepChoices = false } = {}) {
     const { def, state, refs } = this.tools[id];
     state.runId = (state.runId || 0) + 1; // any run still in progress is ignored when it finishes
+    Loader.hide();
     refs.run.disabled = false;
     for (const inp of def.inputs) {
       state.inputs[inp.key] = [];
@@ -959,11 +1008,15 @@ const ToolUI = {
     state.described = {};
     for (const inp of def.inputs.filter((i) => i.describe && state.inputs[i.key].length && state.fields[i.describe.field] === i.describe.value)) {
       setStatus(refs.status, 'Describing the pose picture in words…');
+      const descId = state.runId = (state.runId || 0) + 1;
+      Loader.show('Reading the pose…', () => { state.runId = (state.runId || 0) + 1; refs.run.disabled = false; setStatus(refs.status, 'Cancelled. Nothing was changed.'); });
       try {
         state.described[inp.key] = await Gemini.describe({ apiKey, images: state.inputs[inp.key], prompt: inp.describe.prompt });
       } catch (err) {
+        Loader.hide();
         return setStatus(refs.status, 'Could not describe the pose picture: ' + err.message, 'error');
       }
+      if (descId !== state.runId) return; // cancelled
     }
 
     // Work out which images go under which label.
@@ -1046,8 +1099,11 @@ const ToolUI = {
     };
     const ordered = first ? [first, ...rest] : rest; // matches the order of each set's results
     const runId = state.runId = (state.runId || 0) + 1;
+    const n = count * outputs.length;
+    Loader.show(twoSteps ? 'Designing your character…' : `Creating your ${n > 1 ? n + ' images' : 'image'}…`, () => { state.runId = (state.runId || 0) + 1; refs.run.disabled = false; setStatus(refs.status, 'Cancelled. Nothing was changed.'); });
     const sets = await Promise.all(Array.from({ length: count }, makeSet));
-    if (runId !== state.runId) return; // the page was cleared (or left) while this was running
+    if (runId !== state.runId) return; // cancelled, or the page was cleared/left while this was running
+    Loader.hide();
     refs.run.disabled = false;
 
     let made = 0;

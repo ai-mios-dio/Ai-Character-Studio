@@ -539,3 +539,53 @@ button.danger, .small-btn.danger { color: var(--danger); }
    (easier to reach with one hand). Scales with the screen height, within limits. */
 .section:not(#home):not(.wizard) > .page-head { margin-bottom: clamp(28px, 8vh, 80px); }
 .wiz-body { padding-top: clamp(16px, 6vh, 60px); }
+
+/* ================= Generating screen ================= */
+.loader {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 24px;
+  background:
+    radial-gradient(60% 40% at 20% 10%, rgba(34, 211, 238, .18), transparent 70%),
+    radial-gradient(60% 45% at 90% 80%, rgba(168, 85, 247, .22), transparent 70%),
+    rgba(11, 16, 36, .97);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  animation: loader-in .25s ease;
+}
+.loader[hidden] { display: none; }
+body.loading { overflow: hidden; }
+@keyframes loader-in { from { opacity: 0; } to { opacity: 1; } }
+
+.loader-stage { position: relative; width: min(56vw, 230px); aspect-ratio: 1; margin-bottom: 18px; }
+/* Soft rotating colour ring behind the logo */
+.loader-halo {
+  position: absolute; inset: -14%; border-radius: 50%;
+  background: conic-gradient(from 0deg, #22d3ee, #4f6bff, #a855f7, #f472b6, #22d3ee);
+  filter: blur(34px); opacity: .55;
+  animation: loader-spin 6s linear infinite, loader-breathe 3s ease-in-out infinite;
+}
+.loader-logo { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .9; animation: loader-float 3s ease-in-out infinite; }
+/* The gradient that flows THROUGH the logo: a moving gradient cut to the logo's shape */
+.loader-flow {
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 20%, rgba(34, 211, 238, .95) 35%, rgba(168, 85, 247, .95) 50%, rgba(244, 114, 182, .95) 62%, transparent 78%);
+  background-size: 300% 300%;
+  -webkit-mask: url(../img/logo.png) center / contain no-repeat;
+  mask: url(../img/logo.png) center / contain no-repeat;
+  mix-blend-mode: screen;
+  animation: loader-flow 2.4s ease-in-out infinite, loader-float 3s ease-in-out infinite;
+}
+@keyframes loader-flow { 0% { background-position: 100% 100%; } 100% { background-position: 0% 0%; } }
+@keyframes loader-spin { to { transform: rotate(360deg); } }
+@keyframes loader-breathe { 0%, 100% { opacity: .4; } 50% { opacity: .7; } }
+@keyframes loader-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+.loader-title { font-size: 22px; font-weight: 800; text-align: center; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.loader-msg { color: var(--text); font-size: 15px; min-height: 22px; text-align: center; }
+.loader-time { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.loader-cancel { position: absolute; bottom: calc(24px + env(safe-area-inset-bottom)); left: 16px; right: 16px; margin: 0; min-height: 52px; background: rgba(255, 255, 255, .07); border: 1px solid var(--border); font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-halo, .loader-logo, .loader-flow { animation-duration: 12s; }
+  .loader-logo, .loader-flow { animation: none; }
+}
