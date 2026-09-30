@@ -860,7 +860,7 @@ const ToolUI = {
         if (imgs.length && sheetImgs.length) groups.push({ tag: sheetTag, imgs: sheetImgs });
         if (!imgs.length) groups.push({ tag: inp.tag, imgs: sheetImgs });
       } else if (imgs.length && !state.described[inp.key]) {
-        const g = { tag: inp.tag, imgs, after: inp.afterText };
+        const g = { tag: inp.tag, imgs, after: inp.afterText, labelEach: inp.labelEach };
         if (inp.sendFirst) groups.unshift(g); else groups.push(g);
       }
     }
@@ -872,8 +872,14 @@ const ToolUI = {
     // Each group of images gets a label first, so the prompt can refer to it by name.
     const parts = [];
     for (const g of groups) {
-      parts.push({ text: `${g.tag} image${g.imgs.length > 1 ? 's' : ''}:` });
-      g.imgs.forEach((blob) => parts.push({ blob }));
+      // labelEach: every picture gets its own label ("1 of 3"), so the model treats them as equals
+      // instead of copying the first one.
+      if (g.labelEach && g.imgs.length > 1) {
+        g.imgs.forEach((blob, n) => parts.push({ text: `${g.tag} image ${n + 1} of ${g.imgs.length}:` }, { blob }));
+      } else {
+        parts.push({ text: `${g.tag} image${g.imgs.length > 1 ? 's' : ''}:` });
+        g.imgs.forEach((blob) => parts.push({ blob }));
+      }
       if (g.after) parts.push({ text: g.after });
       if (g.note) parts.push({ text: `${g.tag} written description (follow it for layout and details): ${g.note}` });
       if (g.height) parts.push({ text: `${g.tag.replace(/ OUTFIT SHEET .*/, '')} real height: ${g.height} (use exactly this height, measured against the room).` });

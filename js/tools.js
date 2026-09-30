@@ -165,7 +165,11 @@ Do NOT describe the person themselves: no face, hair, skin, body shape, age, clo
 
 // Character Sheet: more than one reference picture of the same person.
 const MULTI_REFERENCE =
-`If more than one CHARACTER REFERENCE image is attached, they all show the SAME ONE person (for example a face close-up and a full-body photo). Combine them into one consistent character: take the face and facial features from the clearest, closest view of the face; take height, build and body proportions from the image that shows the most of the body; take the outfit, hair styling and makeup from the full-body image (if the images show different outfits, use the one in the first image). Never blend in a second person and never create two characters.`;
+`IF MORE THAN ONE CHARACTER REFERENCE IMAGE IS ATTACHED (labelled 1 of N, 2 of N…): they all show the SAME ONE person, and they are ALL equally important. Picture 1 is NOT the main one; the order means nothing.
+- Build the character from ALL of them together. The person's true features are the ones that stay the same across the pictures (face shape, eyes, nose, lips, jawline, skin tone, hair, body proportions). Differences caused by one photo's angle, lighting, lens, expression, makeup or filter are NOT features: do not copy them from any single picture.
+- Face: combine every view of the face; use the clearest, sharpest views for fine detail. Body: combine every view of the body; use the pictures that show the most of the body for proportions.
+- Outfit, hair styling and makeup: use the ones shown most completely (usually in the full-body picture). Never mix pieces of different outfits.
+- Do NOT recreate or trace any one reference photo (not its pose, crop, angle, lighting or background). The result is a new clean sheet of this one person, drawn from everything the pictures show. Never create two different people.`;
 
 // Build from People (and Inspired Character Sheet, step 1): a new character from what several people share.
 const blendFill = ({ closeness }) => {
@@ -181,7 +185,7 @@ const BLEND_PROMPT =
 
 Design ONE new, original character and show them in a single full-body image.
 
-The INSPIRATION PEOPLE images show several DIFFERENT people who share the kind of look wanted. Study them together and work out what they have in COMMON, then create a new person who clearly belongs to the same type.
+The INSPIRATION PEOPLE images show several DIFFERENT people who share the kind of look wanted. Study them together and work out what they have in COMMON, then create a new person who clearly belongs to the same type. They are labelled 1 of N, 2 of N…; all are equally important and the order means nothing, so do not favour image 1.
 
 FACE: {faceHow}
 Look at the shared face shape, eye shape and spacing, eyebrows, nose, lips, jawline, cheekbones, skin tone and complexion, and apparent age range.
@@ -290,7 +294,7 @@ ${BUILD_OUTPUT}`,
     menuText: 'Several pictures of people with the look you want',
     intro: 'Add pictures of a few people with the kind of look you want. A new character is designed with the features and proportions they have in common.',
     inputs: [
-      { key: 'people', label: 'Inspiration people', tag: 'INSPIRATION PEOPLE', optional: true, hint: 'Add 2 to 5 pictures for the best results. Full-body pictures help with body proportions.' },
+      { key: 'people', label: 'Inspiration people', tag: 'INSPIRATION PEOPLE', labelEach: true, optional: true, hint: 'Add 2 to 5 pictures for the best results. Full-body pictures help with body proportions.' },
     ],
     requireAny: 'Add pictures of the people you want to use as inspiration (2 to 5 works best).',
     // Two switches that aren't tied to one upload box.
@@ -373,7 +377,7 @@ ${BUILD_OUTPUT}`,
     group: 'sheets',
     menuText: 'From picture(s) of ONE character: body sheet + face sheet',
     intro: 'Upload one or more pictures of your character (for example a face close-up and a full-body photo) and tap Run. You get two sheets: a full-body sheet and a face sheet.',
-    inputs: [{ key: 'character', label: 'Character reference', tag: 'CHARACTER REFERENCE' }],
+    inputs: [{ key: 'character', label: 'Character reference', tag: 'CHARACTER REFERENCE', labelEach: true }],
     runLabel: 'Create character sheets',
     saveAsCharacter: true,
     // One Run makes both sheets. Each has its own prompt (editable in Settings) and a fixed ratio.
@@ -400,7 +404,7 @@ ${BUILD_OUTPUT}`,
     menuText: 'A NEW character inspired by several people: body sheet + face sheet',
     intro: 'Add pictures of a few people with the kind of look you want. First a new character is designed from what they have in common, then their body and face sheets are made from that design, so both sheets show the same new person.',
     inputs: [
-      { key: 'people', label: 'Inspiration people', tag: 'INSPIRATION PEOPLE', optional: true, hint: 'Add 2 to 5 pictures for the best results. Full-body pictures help with body proportions.' },
+      { key: 'people', label: 'Inspiration people', tag: 'INSPIRATION PEOPLE', labelEach: true, optional: true, hint: 'Add 2 to 5 pictures for the best results. Full-body pictures help with body proportions.' },
     ],
     requireAny: 'Add pictures of the people you want to use as inspiration (2 to 5 works best).',
     closenessControls: [
