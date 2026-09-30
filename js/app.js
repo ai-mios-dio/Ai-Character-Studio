@@ -45,9 +45,10 @@ const SECTIONS = {
     extra: [['places', 'Saved Places']],
   },
 };
-const GROUPS = { builder: 'Character Builder', background: 'Background', outfit: 'Outfit' };
+const GROUPS = { builder: 'Character Builder', sheets: 'Sheets', background: 'Background', outfit: 'Outfit' };
 const GROUP_QUESTIONS = {
   builder: 'How do you want to design your character?',
+  sheets: 'Which sheet do you want to make?',
   background: 'What do you want to do?',
   outfit: 'How do you want to choose the outfit?',
 };
@@ -332,7 +333,7 @@ function outfitsBox(cfg, item) {
   box.addEventListener('toggle', () => { if (box.open) cfg.openOutfits.add(item.id); else cfg.openOutfits.delete(item.id); });
   box.append(
     el('summary', {}, `Outfits (${item.outfits.length})`),
-    el('p', { className: 'hint small' }, 'Each outfit is its own body sheet of this character wearing it. Make one with Outfit → Send to Character Sheet → "Add as an outfit", or upload one here.'),
+    el('p', { className: 'hint small' }, 'Each outfit is its own body sheet of this character wearing it. Make one with Sheets → Outfit Sheet, or upload one here.'),
     list, name, zone, add, status);
   return box;
 }

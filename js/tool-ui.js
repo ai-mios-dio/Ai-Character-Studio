@@ -771,7 +771,7 @@ const ToolUI = {
     }
     for (const inp of def.inputs) {
       if (inp.optional || inp.type === 'saved' || inp.type === 'library') continue;
-      if (inp.orSaved && sheetImgs.length) continue; // a sheet alone is enough for the character
+      if (inp.orSaved && sheetImgs.length && !inp.required) continue; // a sheet alone is enough for the character
       if (!state.inputs[inp.key].length) {
         const name = inp.label.replace(/\s*\(.*\)/, '').toLowerCase();
         if (inp.missing) return setStatus(refs.status, inp.missing, 'error');
@@ -871,21 +871,23 @@ const ToolUI = {
     const saveTo = def.saveAs || (def.saveAsCharacter ? 'characters' : null);
     // Tools with `saveNotes` also save the typed description with the item (e.g. a room description).
     const notes = def.saveNotes && this.tools[def.id].refs.request ? this.tools[def.id].refs.request.value.trim() : '';
-    const body = saveTo === 'characters' && images.find((i) => i.kind === 'body');
+    // Outfit Sheet: save the sheet as one outfit of the saved character that was picked.
+    const body = def.saveAsOutfit && images.find((i) => i.kind === 'body');
     return el('div', { className: 'result-group' }, ...cards,
       saveTo ? this.saveCharacterForm(images, saveTo, notes) : '',
-      body ? this.saveOutfitForm(body) : '');
+      body ? this.saveOutfitForm(body, this.tools[def.id].state.savedCharacter) : '');
   },
 
-  // "Add as an outfit of…": saves the body sheet as one outfit of a saved character.
-  saveOutfitForm(body) {
+  // "Save as an outfit of…": saves the sheet as one outfit of a saved character.
+  saveOutfitForm(body, charId = '') {
     const who = el('select', { 'aria-label': 'Character' });
     const name = el('input', { type: 'text', placeholder: 'Outfit name (e.g. Red dress)' });
-    const btn = el('button', { textContent: 'Add as an outfit' });
+    const btn = el('button', { className: 'primary', textContent: 'Save as an outfit' });
     const status = el('div', { className: 'status' });
     Characters.list().then((list) => {
       who.add(new Option(list.length ? 'Outfit of which character?' : 'No saved characters yet', ''));
       for (const c of list) who.add(new Option(c.name, c.id));
+      if (list.some((c) => c.id === charId)) who.value = charId;
     });
     btn.addEventListener('click', async () => {
       if (!who.value) return setStatus(status, 'Choose the character first.', 'error');
@@ -899,9 +901,7 @@ const ToolUI = {
         setStatus(status, 'Could not save: ' + err.message, 'error');
       }
     });
-    return el('div', { className: 'save-character save-outfit' },
-      el('p', { className: 'hint small' }, 'Or, if this is a saved character in a new outfit, keep the body sheet as one of their outfits:'),
-      who, name, btn, status);
+    return el('div', { className: 'save-character save-outfit' }, who, name, btn, status);
   },
 
   // Puts a result picture into another tool's box (or the Pose Cutter) and opens that page.

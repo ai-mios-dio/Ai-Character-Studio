@@ -318,6 +318,8 @@ ${BUILD_OUTPUT}`,
   {
     id: 'sheet',
     title: 'Character Sheet',
+    group: 'sheets',
+    menuText: 'A new character: body sheet + face sheet with expressions',
     intro: 'Upload a character reference and tap Run. You get two sheets: a full-body sheet and a face sheet.',
     inputs: [{ key: 'character', label: 'Character reference', tag: 'CHARACTER REFERENCE' }],
     runLabel: 'Create character sheets',
@@ -356,6 +358,48 @@ Row 1: close-up of face, front angle (neutral expression); 3/4 view facing right
 Row 2: 3/4 view facing left; close-up of face, low angle (looking up at character); close-up of face, high angle (looking down at character); smiling
 Row 3: angry; crying; shocked; smug/smirking
 Each panel should be clearly separated with consistent lighting and the same neutral background. Only this one character. No text or labels.
+
+${NO_TATTOOS}`,
+      },
+    ],
+  },
+
+  {
+    id: 'outfit-sheet',
+    title: 'Outfit Sheet',
+    group: 'sheets',
+    menuText: 'A saved character in a new outfit: full-body views only, saved as one of their outfits',
+    intro: 'Pick the saved character and add a picture of them wearing the outfit (e.g. an Outfit result: Send to… → Outfit Sheet). You get a full-body sheet of that outfit, no expressions. Then save it as one of their outfits.',
+    inputs: [
+      { key: 'character', label: 'Character in the outfit', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character in the outfit', required: true, missing: 'Add a picture of the character wearing the outfit.' },
+      SAVED_CHARACTER,
+    ],
+    runLabel: 'Create outfit sheet',
+    saveAsOutfit: true,
+    outputs: [
+      {
+        key: 'body',
+        title: 'Outfit sheet',
+        aspectRatio: '16:9',
+        prompt:
+`${FICTIONAL_CHARACTER}
+
+Generate a single full-body character turnaround sheet of the CHARACTER wearing the outfit shown in the CHARACTER image, on a plain white background. Photorealistic.
+
+${CHARACTER_SOURCE}
+
+OUTFIT: copy the outfit from the CHARACTER image exactly: every garment, colour, pattern, fabric, fit and length, the shoes, and any accessories, bag, hat or glasses. Where a view shows a side of the outfit that is hidden in the CHARACTER image (for example the back), continue it in the same style, colour and fabric. The outfit is identical in all four views.
+
+${IDENTITY_LOCK}
+
+Layout: one row of 4 full-body views, evenly spaced, left to right:
+Front view, facing camera
+3/4 front view
+Right side profile
+Back view
+In every view: standing upright in a relaxed neutral pose, arms relaxed and held slightly away from the body so the body outline and the outfit are clearly visible, neutral expression, whole body from head to feet in frame with nothing cropped.
+All four figures at exactly the same scale: feet on the same ground line and the top of the head at the same height, so body proportions can be compared between views.
+Each view should be clearly separated with consistent lighting and the same neutral background. Only this one character. No face close-ups, no expressions panels, no text or labels.
 
 ${NO_TATTOOS}`,
       },

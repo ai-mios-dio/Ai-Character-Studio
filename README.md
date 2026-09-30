@@ -27,7 +27,7 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 
 The main page has three big buttons:
 
-- **Characters**: every character tool (builders, sheets, background, outfit, pose, makeup, edit, character scene), Saved Characters and the Pose Cutter.
+- **Characters**: every character tool (builders, Sheets (Character Sheet and Outfit Sheet), background, outfit, pose, makeup, edit, character scene), Saved Characters and the Pose Cutter.
 - **Places**: Place Builder, Place Sheet and Saved Places. A place is like a character for locations (a bedroom, a café…), so it looks the same every time.
 - **Create a Scene**: pick up to two saved characters and a saved place, describe what's happening, and get one image with everyone and everything consistent.
 
@@ -59,7 +59,14 @@ The poses come from Instagram posing guides and photographers' tips (Shotkit, Cl
 
 ### Outfits
 
-Each saved character can have any number of outfits, and each outfit is its own full-body sheet of that character wearing it. To make one: **Outfit** tool → **Send to… → Character Sheet** → run it → **Add as an outfit** (choose the character and type the outfit name). You can also upload an outfit sheet under **Outfits** on the character's card in **Saved Characters**, where you can delete outfits too.
+Each saved character can have any number of outfits, and each outfit is its own full-body sheet of that character wearing it. To make one:
+
+1. **Outfit** tool: put the character in the new outfit.
+2. **Send to… → Outfit Sheet › Character in the outfit**.
+3. In **Outfit Sheet**, pick the saved character (their sheets keep the face and body exact) and tap Run. You get one full-body sheet (front, 3/4, side, back), with no face close-ups or expressions.
+4. **Save as an outfit**: the character is already chosen; type the outfit name.
+
+You can also upload an outfit sheet under **Outfits** on the character's card in **Saved Characters**, where you can delete outfits too.
 
 ## Character tools
 
@@ -68,7 +75,8 @@ Each saved character can have any number of outfits, and each outfit is its own 
 | **Character Builder → Build from Parts** | Inspiration pictures for face, upper body, lower body and/or hair, each with its own Loose / Balanced / Close setting | One new, original full-body character that blends them naturally |
 | **Character Builder → Build from People** | Several pictures of people with the look you want, plus Face and Body proportions similarity (Loose / Balanced / Close) | One new character with the features and proportions they have in common |
 | **Character Builder → Build from Description** | No pictures: pick gender, age, body type, height, ethnicity and skin tone (or leave on Any), plus optional extra details | One new character matching your choices |
-| **Character Sheet** | A character reference | Two sheets: a **body sheet** (front, 3/4, side, back at 16:9) and a **face sheet** (12 close-ups and expressions at 4:3) |
+| **Sheets → Character Sheet** | A character reference | Two sheets: a **body sheet** (front, 3/4, side, back at 16:9) and a **face sheet** (12 close-ups and expressions at 4:3) |
+| **Sheets → Outfit Sheet** | A saved character + a picture of them in a new outfit | One full-body sheet of that outfit (no expressions), with **Save as an outfit** |
 | **Background → Background from Picture** | A background + a character (photo or sheet) | The same character placed in that setting |
 | **Background → Replace Person in Scene** | A scene with a person + your character (photo, sheet or saved), outfit choice, and optionally which person | The scene with that person replaced by your character, same pose and expression |
 | **Outfit → Outfit from Picture** | A character (photo or sheet) + an outfit picture, plus optional Outfit notes | The same character wearing that exact outfit |
