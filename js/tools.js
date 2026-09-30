@@ -92,6 +92,64 @@ POSE AND FRAMING:
 - If CASE A (character sheet): show the character full body, standing in a relaxed front or 3/4 view like the sheet's main full-body view, with a neutral expression, on the same plain background style as the sheet, so the whole outfit is visible.
 - If CASE B (single picture): keep the character's pose, facial expression, camera angle, framing, background and lighting from that picture, unless the outfit physically requires a tiny adjustment. If the picture does not show enough of the body for the outfit, widen the framing just enough to show it, extending the original background naturally.`;
 
+// Place sheets: the same two prompts for Place Sheet (pictures) and Place from Video (frames).
+// `source` says what the attached pictures are.
+const PLACE_SOURCE_RULES =
+`ROOM DESCRIPTION from the user (the source of truth for layout and details; follow it exactly if given): {request}
+
+IGNORE anything that is not part of the room itself: on-screen text, captions, stickers, emojis, watermarks, app buttons, and any people. The pictures may be blurry, tilted or stretched by a phone's wide lens: show the room straight and undistorted.`;
+
+const placeViewsPrompt = (source) =>
+`${FICTIONAL_PLACE}
+
+Using ${source}, generate a single location reference sheet (a set turnaround) of this exact place, on a white background.
+Layout: a 2 x 2 grid of 4 equal landscape panels separated by thin white gaps:
+Top left: wide view from the main entrance or doorway, looking into the space
+Top right: reverse view from the opposite side, looking back toward the entrance
+Bottom left: view toward the left wall
+Bottom right: view toward the right wall
+Every panel: eye level (about 1.5 m), wide-angle, the same lighting and time of day.
+
+CONSISTENCY: it is the SAME place in every panel: identical architecture, room size and shape, layout, furniture pieces and their positions and sizes, materials, colours, decor, windows, doors and light sources. Anything seen in more than one panel must match exactly and sit in a consistent position. Parts not visible in the pictures: design them to match the place's style, and keep them consistent between panels.
+
+${PLACE_SOURCE_RULES}
+
+Photorealistic. ${EMPTY_PLACE}`;
+
+const placeDetailsPrompt = (source) =>
+`${FICTIONAL_PLACE}
+
+Using ${source}, generate a single details reference sheet of this exact place, on a white background.
+Layout: a 3 x 3 grid of 9 equal square close-up panels separated by thin white gaps, showing the place's most recognisable elements:
+1. the main furniture piece (for example the bed or sofa), 2. a second furniture piece, 3. storage (wardrobe, shelves or cabinets),
+4. the main table, desk or work surface with its objects, 5. a window with its curtains or blinds (or a mirror or door), 6. a light fixture, lamp or light strip,
+7. decor (art, plants or personal objects), 8. textiles (bedding, rug or cushions), 9. a close-up of the floor and wall materials.
+Choose the nine that best fit this place.
+
+CONSISTENCY: every item must match the pictures exactly: same design, shape, colours, materials, pattern and condition. Consistent lighting in every panel.
+
+${PLACE_SOURCE_RULES}
+
+Photorealistic. ${EMPTY_PLACE}`;
+
+// Used by "Describe the room with AI" (a regular Gemini text model, not an image model).
+const ROOM_DESCRIBE_PROMPT =
+`These pictures show ONE room (they may be frames from a walk-around video). Write a precise description of the room so an artist could recreate it consistently from any angle. Use exactly these sections, one paragraph each:
+The Left Wall: ...
+The Back Wall: ...
+The Right Wall: ...
+The Entrance / Front Wall: ... (skip it if it is never visible)
+Architecture and Lighting: floor, walls, ceiling, windows, doors, and every light source with its colour.
+Treat "left", "back" and "right" as seen when standing at the entrance looking in. For every item give its position (which wall; left, centre or right; next to which other item), colour, material, size and style, and include small decor. Ignore people, on-screen text, captions, stickers and emojis. Plain text only: no introduction and no other headings.`;
+
+const ROOM_DESCRIPTION_REQUEST = {
+  label: 'Room description',
+  optional: true,
+  hint: 'Wall by wall: what is on each wall, colours, materials, lighting. It is saved with the place and used in every scene. Tap the button to let AI write it from the pictures, then fix anything wrong.',
+  placeholder: 'The Left Wall: a bed with a thick white blanket… The Back Wall: a white vanity desk with an LED mirror… The Right Wall: … Architecture and Lighting: …',
+  aiPrompt: ROOM_DESCRIBE_PROMPT,
+};
+
 const TOOLS = [
   {
     id: 'builder',
@@ -733,45 +791,33 @@ Photorealistic, natural lighting that matches the time of day. ${EMPTY_PLACE}`,
     inputs: [{ key: 'place', label: 'Place picture(s)', tag: 'PLACE', missing: 'Add a picture of the place first.', hint: 'One wide picture works; extra angles of the same place help.' }],
     runLabel: 'Create place sheets',
     saveAs: 'places',
-    // One Run makes both sheets. Each has its own prompt (editable in Settings) and a fixed ratio.
+    request: ROOM_DESCRIPTION_REQUEST,
+    saveNotes: true,
     outputs: [
+      { key: 'views', title: 'Views sheet', aspectRatio: '16:9', prompt: placeViewsPrompt('the attached PLACE image(s) of this place') },
+      { key: 'details', title: 'Details sheet', aspectRatio: '4:3', prompt: placeDetailsPrompt('the attached PLACE image(s) of this place') },
+    ],
+  },
+
+  {
+    id: 'place-video',
+    title: 'Place from Video',
+    section: 'places',
+    intro: 'Film a slow walk around a room, choose the video, keep the sharp frames, and tap Run. You get a views sheet and a details sheet of that room.',
+    inputs: [
       {
-        key: 'views',
-        title: 'Views sheet',
-        aspectRatio: '16:9', // a 2 x 2 grid of landscape panels
-        prompt:
-`${FICTIONAL_PLACE}
-
-Using the attached PLACE image(s), generate a single location reference sheet (a set turnaround) of this exact place, on a white background.
-Layout: a 2 x 2 grid of 4 equal landscape panels separated by thin white gaps:
-Top left: wide view from the main entrance or doorway, looking into the space
-Top right: reverse view from the opposite side, looking back toward the entrance
-Bottom left: view toward the left wall
-Bottom right: view toward the right wall
-Every panel: eye level (about 1.5 m), wide-angle, the same lighting and time of day.
-
-CONSISTENCY: it is the SAME place in every panel: identical architecture, room size and shape, layout, furniture pieces and their positions and sizes, materials, colours, decor, windows, doors and light sources. Anything seen in more than one panel must match exactly and sit in a consistent position. Parts not visible in the PLACE image: design them to match its style, and keep them consistent between panels.
-
-Photorealistic. ${EMPTY_PLACE}`,
+        key: 'frames', type: 'video', label: 'Room video', tag: 'VIDEO FRAMES', frameCount: 12, maxFrames: 10,
+        missing: 'Choose a video of the room first.',
+        hint: 'Walk slowly around the edge of the room facing inward, film each wall and corner at chest height, in good light, with no people. 30 to 60 seconds is plenty.',
       },
-      {
-        key: 'details',
-        title: 'Details sheet',
-        aspectRatio: '4:3', // a 3 x 3 grid of square panels
-        prompt:
-`${FICTIONAL_PLACE}
-
-Using the attached PLACE image(s), generate a single details reference sheet of this exact place, on a white background.
-Layout: a 3 x 3 grid of 9 equal square close-up panels separated by thin white gaps, showing the place's most recognisable elements:
-1. the main furniture piece (for example the bed or sofa), 2. a second furniture piece, 3. storage (wardrobe, shelves or cabinets),
-4. the main table, desk or work surface with its objects, 5. a window with its curtains or blinds, 6. a light fixture or lamp,
-7. decor (art, plants or personal objects), 8. textiles (bedding, rug or cushions), 9. a close-up of the floor and wall materials.
-Choose the nine that best fit this place.
-
-CONSISTENCY: every item must match the PLACE image exactly: same design, shape, colours, materials, pattern and condition. Consistent lighting in every panel.
-
-Photorealistic. ${EMPTY_PLACE}`,
-      },
+    ],
+    request: ROOM_DESCRIPTION_REQUEST,
+    saveNotes: true,
+    runLabel: 'Create place sheets',
+    saveAs: 'places',
+    outputs: [
+      { key: 'views', title: 'Views sheet', aspectRatio: '16:9', prompt: placeViewsPrompt('the attached VIDEO FRAMES, which are still frames from a walk-around video of ONE room (different angles of the same place)') },
+      { key: 'details', title: 'Details sheet', aspectRatio: '4:3', prompt: placeDetailsPrompt('the attached VIDEO FRAMES, which are still frames from a walk-around video of ONE room (different angles of the same place)') },
     ],
   },
 
@@ -801,7 +847,7 @@ Create ONE new image of the scene described below, using the saved references.
 
 REFERENCES (each group is labelled with its name):
 - CHARACTER 1, and CHARACTER 2 if included: character sheets (a full-body BODY sheet and/or a close-up FACE sheet). Each sheet shows ONE person from several angles; it is not a group, and its grid layout is not the output format.
-- PLACE, if included: location sheets of one place: a VIEWS sheet (the same room from several camera positions) and/or a DETAILS sheet (close-ups of its furniture, objects and materials).
+- PLACE, if included: location sheets of one place: a VIEWS sheet (the same room from several camera positions) and/or a DETAILS sheet (close-ups of its furniture, objects and materials). It may also come with a written description of the room; follow it for where things are.
 
 SCENE: {request}
 SHOT: {shot}

@@ -302,3 +302,10 @@ button.danger { color: var(--danger); }
 /* ---------- Quick-tap suggestions under a text box ---------- */
 .suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .suggestions button { margin: 0; padding: 6px 12px; font-size: 13px; background: var(--field); border: none; }
+
+/* ---------- Video frames (Place from Video) ---------- */
+.frame-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; margin-top: 8px; }
+.frame { margin: 0; padding: 0; border: 2px solid transparent; border-radius: 10px; overflow: hidden; background: var(--field); opacity: .45; }
+.frame.on { opacity: 1; border-color: #fff; }
+.frame img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
+.char-info textarea { font-size: 13px; }

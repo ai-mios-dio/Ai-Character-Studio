@@ -110,4 +110,27 @@ const Gemini = {
     if (!images.length) throw explainNoImage(data, text);
     return images;
   },
+
+  // Asks a regular Gemini TEXT model to describe pictures (used for "Describe the room with AI").
+  // Tries the newest Flash model first, then a fixed name in case the alias isn't available.
+  async describe({ apiKey, images, prompt }) {
+    const parts = [];
+    for (const blob of images) parts.push({ inline_data: { mime_type: blob.type || 'image/jpeg', data: await this.blobToBase64(blob) } });
+    parts.push({ text: prompt });
+    let lastError;
+    for (const model of ['gemini-flash-latest', 'gemini-2.5-flash']) {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({ contents: [{ parts }] }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 404) { lastError = explainApiError(res.status, data, model); continue; }
+      if (!res.ok) throw explainApiError(res.status, data, model);
+      const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('').trim();
+      if (!text) throw new Error('The AI did not return a description. Try again.');
+      return text;
+    }
+    throw lastError;
+  },
 };

@@ -213,6 +213,7 @@ const LIBRARY_PAGES = [
   },
   {
     id: 'places', title: 'Saved Places', library: Places, prefix: 'place', parent: 'places-hub', noun: 'place',
+    notes: 'Room description (optional): layout wall by wall, furniture, colours, lighting',
     slots: [['views', 'Views sheet'], ['details', 'Details sheet']],
     intro: 'Your saved places (rooms and locations). Pick them in Create a Scene so the same place looks the same every time. They are stored on this device only.',
     addHint: 'Give it a name and add its views sheet, details sheet, or both. You can also tap "Save both as a place" under a Place Sheet result.',
@@ -235,15 +236,17 @@ function buildLibraryPage(cfg) {
     });
     return el('div', { className: 'upload-col' }, zone);
   });
+  const notesInput = cfg.notes ? el('textarea', { id: P + 'Notes', rows: 3, placeholder: cfg.notes }) : null;
   const addBtn = el('button', { className: 'primary', id: P + 'Add', textContent: `Save ${cfg.noun}` });
   addBtn.addEventListener('click', async () => {
     if (!nameInput.value.trim()) return setStatus(status, 'Type a name first.', 'error');
     const images = cfg.slots.filter(([k]) => files[k]).map(([kind]) => ({ kind, blob: files[kind] }));
     if (!images.length) return setStatus(status, `Add a ${cfg.slots.map(([, l]) => l.toLowerCase()).join(', a ')}, or both.`, 'error');
     try {
-      await cfg.library.add(nameInput.value, images);
+      await cfg.library.add(nameInput.value, images, notesInput ? notesInput.value.trim() : '');
       setStatus(status, `Saved "${nameInput.value.trim()}".`, 'ok');
       nameInput.value = '';
+      if (notesInput) notesInput.value = '';
       cfg.slots.forEach(([kind, label]) => { files[kind] = null; $(`${P}${cap(kind)}Text`).textContent = label; });
     } catch (err) {
       setStatus(status, 'Could not save: ' + err.message, 'error');
@@ -259,6 +262,7 @@ function buildLibraryPage(cfg) {
         el('p', { className: 'hint small input-hint' }, cfg.addHint),
         nameInput,
         el('div', { className: 'upload-pair' }, ...cols),
+        notesInput || '',
         addBtn, status),
       cfg.list),
     $('cutter'));
@@ -277,8 +281,9 @@ async function renderLibrary(cfg) {
   const kinds = Object.fromEntries([...cfg.slots, ['sheet', 'Sheet']]);
   for (const item of list) {
     const name = el('input', { type: 'text', value: item.name, 'aria-label': `${cap(cfg.noun)} name` });
-    const rename = el('button', { className: 'small-btn', textContent: 'Rename' });
-    rename.addEventListener('click', () => cfg.library.rename(item.id, name.value));
+    const notes = cfg.notes ? el('textarea', { rows: 3, value: item.notes || '', placeholder: cfg.notes, 'aria-label': 'Description' }) : null;
+    const rename = el('button', { className: 'small-btn', textContent: cfg.notes ? 'Save changes' : 'Rename' });
+    rename.addEventListener('click', () => cfg.library.rename(item.id, name.value, notes ? notes.value : undefined));
     // Delete asks for a second tap instead of a pop-up.
     const del = el('button', { className: 'small-btn danger', textContent: 'Delete' });
     del.addEventListener('click', () => {
@@ -290,7 +295,7 @@ async function renderLibrary(cfg) {
     const has = item.images.map((img) => kinds[img.kind] || img.kind).join(' + ');
     box.append(el('div', { className: 'char-card' },
       el('img', { src: item.thumb, alt: item.name }),
-      el('div', { className: 'char-info' }, name, el('div', { className: 'hint small' }, has), el('div', { className: 'row' }, rename, del))));
+      el('div', { className: 'char-info' }, name, el('div', { className: 'hint small' }, has), notes || '', el('div', { className: 'row' }, rename, del))));
   }
 }
 

@@ -53,6 +53,7 @@ const ToolUI = {
     const inputCards = def.inputs.map((inp) => {
       if (inp.type === 'saved') return null; // drawn inside the Character card
       if (inp.type === 'library') return this.buildLibraryPicker(def, inp, state, refs);
+      if (inp.type === 'video') return this.buildVideoCard(def, inp, state, refs);
       if (inp.orSaved) return this.buildCharacterCard(def, inp, def.inputs.find((i) => i.type === 'saved'), state, refs);
       const thumbs = el('div', { className: 'thumbs' });
       refs['thumbs-' + inp.key] = thumbs;
@@ -123,9 +124,18 @@ const ToolUI = {
           return b;
         }));
       }
+      let aiRow = '';
+      if (def.request.aiPrompt) {
+        const aiBtn = el('button', { type: 'button', className: 'small-btn', textContent: 'Describe the room with AI' });
+        const aiStatus = el('div', { className: 'status' });
+        aiBtn.addEventListener('click', () => this.aiDescribe(def.id, aiBtn, aiStatus));
+        aiRow = el('div', {}, aiBtn, aiStatus);
+      }
       requestCard = el('div', { className: 'card' },
         el('label', { className: 'label', htmlFor: `${def.id}-request` }, def.request.label + (def.request.optional ? ' (optional)' : '')),
+        def.request.hint ? el('p', { className: 'hint small input-hint' }, def.request.hint) : '',
         refs.request,
+        aiRow,
         def.request.suggestions ? el('p', { className: 'hint small' }, 'Tap to add, then edit the words to fit:') : '',
         suggestions);
     }
@@ -496,6 +506,79 @@ const ToolUI = {
     );
   },
 
+  // A video box: pick a video, the app pulls frames, tap frames to keep or drop them.
+  // The kept frames become this input's pictures (state.inputs[inp.key]).
+  buildVideoCard(def, inp, state, refs) {
+    const fileInput = el('input', { type: 'file', accept: 'video/*', id: `${def.id}-${inp.key}-video`, 'aria-label': inp.label });
+    const zone = el('div', { className: 'dropzone' }, fileInput, el('span', {}, 'Tap to choose a video'));
+    const status = el('div', { className: 'status' });
+    const grid = el('div', { className: 'frame-grid' });
+    refs['thumbs-' + inp.key] = grid;
+    const max = inp.maxFrames || 10;
+    let frames = [], picked = new Set();
+
+    const apply = () => {
+      state.inputs[inp.key] = frames.filter((_, i) => picked.has(i)).map((f) => f.blob);
+      grid.querySelectorAll('.frame').forEach((node, i) => {
+        node.classList.toggle('on', picked.has(i));
+        node.setAttribute('aria-pressed', String(picked.has(i)));
+      });
+      setStatus(status, frames.length ? `${picked.size} of ${frames.length} frames kept (up to ${max}). Tap a frame to keep or drop it.` : '');
+    };
+    refs.videoReset = refs.videoReset || {};
+    refs.videoReset[inp.key] = () => { frames = []; picked = new Set(); grid.innerHTML = ''; setStatus(status, ''); };
+
+    setupDropzone(zone, fileInput, async ([file]) => {
+      if (!file) return;
+      refs.videoReset[inp.key]();
+      state.inputs[inp.key] = [];
+      setStatus(refs.status, ''); // clear any old "choose a video first" message
+      try {
+        frames = await VideoFrames.extract(file, {
+          count: inp.frameCount || 12,
+          onProgress: (n, total) => setStatus(status, `Reading the video… frame ${n} of ${total}`),
+        });
+      } catch (err) {
+        return setStatus(status, err.message, 'error');
+      }
+      picked = VideoFrames.autoPick(frames, max);
+      frames.forEach((f, i) => {
+        const node = el('button', { type: 'button', className: 'frame', title: `${f.time.toFixed(1)} s` }, el('img', { src: f.url, alt: `Frame at ${f.time.toFixed(1)} seconds` }));
+        node.addEventListener('click', () => {
+          if (picked.has(i)) picked.delete(i);
+          else if (picked.size < max) picked.add(i);
+          else return setStatus(status, `You can keep up to ${max} frames. Drop one first.`, 'error');
+          apply();
+        });
+        grid.append(node);
+      });
+      apply();
+    });
+
+    return el('div', { className: 'card' },
+      el('div', { className: 'label' }, inp.label),
+      inp.hint ? el('p', { className: 'hint small input-hint' }, inp.hint) : '',
+      zone, status, grid);
+  },
+
+  // "Describe the room with AI": a text model looks at the kept frames and writes a description.
+  async aiDescribe(id, btn, status) {
+    const { def, state, refs } = this.tools[id];
+    const apiKey = Store.getApiKey();
+    if (!apiKey) return setStatus(status, 'Add your Gemini API key in Settings first.', 'error');
+    const images = def.inputs.flatMap((i) => state.inputs[i.key] || []);
+    if (!images.length) return setStatus(status, 'Add the video (or pictures) first.', 'error');
+    btn.disabled = true;
+    setStatus(status, 'Looking at the room…');
+    try {
+      refs.request.value = await Gemini.describe({ apiKey, images, prompt: def.request.aiPrompt });
+      setStatus(status, 'Done. Check it and fix anything that is wrong before you tap Run.', 'ok');
+    } catch (err) {
+      setStatus(status, 'Error: ' + err.message, 'error');
+    }
+    btn.disabled = false;
+  },
+
   // A dropdown of saved characters or places (Create a Scene). The pick is kept like other choices.
   buildLibraryPicker(def, inp, state, refs) {
     refs.fields = refs.fields || {};
@@ -581,7 +664,8 @@ const ToolUI = {
     refs.run.disabled = false;
     for (const inp of def.inputs) {
       state.inputs[inp.key] = [];
-      this.renderThumbs(id, inp.key);
+      if (inp.type === 'video') refs.videoReset?.[inp.key]?.();
+      else this.renderThumbs(id, inp.key);
     }
     if (refs.request) refs.request.value = '';
     if (!keepChoices) {
@@ -659,7 +743,7 @@ const ToolUI = {
       if (inp.type === 'library') {
         // A saved character or place: send all of its sheets, labelled with its name.
         const item = state.fields[inp.key] && await LIBRARIES[inp.library].get(state.fields[inp.key]);
-        if (item && item.images.length) groups.push({ tag: `${inp.tag} "${item.name}"`, imgs: item.images.map((i) => i.blob) });
+        if (item && item.images.length) groups.push({ tag: `${inp.tag} "${item.name}"`, imgs: item.images.map((i) => i.blob), note: item.notes });
         continue;
       }
       const imgs = state.inputs[inp.key];
@@ -682,6 +766,7 @@ const ToolUI = {
     for (const g of groups) {
       parts.push({ text: `${g.tag} image${g.imgs.length > 1 ? 's' : ''}:` });
       g.imgs.forEach((blob) => parts.push({ blob }));
+      if (g.note) parts.push({ text: `${g.tag} written description (follow it for layout and details): ${g.note}` });
     }
     const count = Number(state.options.count || 1);
     refs.run.disabled = true;
@@ -725,7 +810,9 @@ const ToolUI = {
       return card;
     });
     const saveTo = def.saveAs || (def.saveAsCharacter ? 'characters' : null);
-    return el('div', { className: 'result-group' }, ...cards, saveTo ? this.saveCharacterForm(images, saveTo) : '');
+    // Tools with `saveNotes` also save the typed description with the item (e.g. a room description).
+    const notes = def.saveNotes && this.tools[def.id].refs.request ? this.tools[def.id].refs.request.value.trim() : '';
+    return el('div', { className: 'result-group' }, ...cards, saveTo ? this.saveCharacterForm(images, saveTo, notes) : '');
   },
 
   // Puts a result picture into another tool's box (or the Pose Cutter) and opens that page.
@@ -757,7 +844,7 @@ const ToolUI = {
   },
 
   // "Save as character": a name box and a Save button under a result.
-  saveCharacterForm(images, libName = 'characters') {
+  saveCharacterForm(images, libName = 'characters', notes = '') {
     const noun = libName === 'places' ? 'place' : 'character';
     const name = el('input', { type: 'text', placeholder: `${noun[0].toUpperCase() + noun.slice(1)} name` });
     const btn = el('button', { className: 'primary', textContent: images.length > 1 ? `Save both as a ${noun}` : `Save as ${noun}` });
@@ -768,7 +855,7 @@ const ToolUI = {
       try {
         const sheets = [];
         for (const img of images) sheets.push({ kind: img.kind || 'sheet', blob: await (await fetch(img.src)).blob() });
-        await LIBRARIES[libName].add(name.value, sheets);
+        await LIBRARIES[libName].add(name.value, sheets, notes);
         setStatus(status, `Saved "${name.value.trim()}". Pick it in ${libName === 'places' ? 'Create a Scene' : 'the Character box of any tool'}.`, 'ok');
       } catch (err) {
         btn.disabled = false;
@@ -788,7 +875,7 @@ const ToolUI = {
     send.add(new Option('Send to…', ''));
     send.add(new Option('Pose Cutter', 'cutter'));
     for (const t of Object.values(this.tools)) {
-      for (const inp of t.def.inputs.filter((i) => i.type !== 'library')) send.add(new Option(`${t.def.title} › ${inp.sendLabel || inp.label.replace(/\s*\(.*\)/, '')}`, `${t.def.id}:${inp.key}`));
+      for (const inp of t.def.inputs.filter((i) => i.type !== 'library' && i.type !== 'video')) send.add(new Option(`${t.def.title} › ${inp.sendLabel || inp.label.replace(/\s*\(.*\)/, '')}`, `${t.def.id}:${inp.key}`));
     }
     send.addEventListener('change', () => {
       const target = send.value;
