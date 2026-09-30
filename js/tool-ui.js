@@ -793,10 +793,16 @@ const ToolUI = {
       if (inp.type === 'library') {
         // A saved character or place: send all of its sheets, labelled with its name.
         const item = state.fields[inp.key] && await LIBRARIES[inp.library].get(state.fields[inp.key]);
-        if (item && item.images.length) groups.push({ tag: `${inp.tag} "${item.name}"`, imgs: item.images.map((i) => i.blob), note: item.notes });
-        // The chosen outfit is its own sheet, sent right after the character's sheets.
+        // With an outfit picked, the outfit sheet replaces their body sheet (it already shows the full body,
+        // in the right clothes). The face sheet still goes along: its close-ups keep the face exact.
         const outfit = item && inp.outfits && item.outfits.find((o) => o.id === state.fields[inp.key + 'Outfit']);
-        if (outfit) groups.push({ tag: `${inp.tag} OUTFIT SHEET "${outfit.name}"`, imgs: [outfit.blob] });
+        if (outfit) {
+          groups.push({ tag: `${inp.tag} "${item.name}" OUTFIT SHEET "${outfit.name}"`, imgs: [outfit.blob], note: item.notes });
+          const faces = item.images.filter((i) => i.kind === 'face');
+          if (faces.length) groups.push({ tag: `${inp.tag} "${item.name}" FACE SHEET`, imgs: faces.map((i) => i.blob) });
+        } else if (item && item.images.length) {
+          groups.push({ tag: `${inp.tag} "${item.name}"`, imgs: item.images.map((i) => i.blob), note: item.notes });
+        }
         continue;
       }
       const imgs = state.inputs[inp.key];

@@ -50,7 +50,7 @@ Pick **Character 1**, optionally **Character 2**, and a **Place** from your save
 
 For each character you can also pick:
 
-- **Outfit**: *As on their body sheet*, or one of that character's saved outfits. The outfit sheet decides only the clothes; the face and body still come from their own sheets.
+- **Outfit**: *As on their body sheet*, or one of that character's saved outfits. With an outfit picked, its sheet is sent instead of their body sheet (it already shows their body in the right clothes), together with their face sheet, which keeps the face exact because its close-ups show more detail than the small faces on a full-body sheet.
 - **Pose**: one of 23 ready-made poses (Standing, Walking & candid, Sitting, Lying down, Low poses, Selfies & close-ups), with its description shown under the dropdown.
 
 With two characters, **Pose together** offers 11 poses for two people (walking holding hands, hug from behind, foreheads touching…). An optional **Pose picture** copies the pose from a photo, and **Pose picture is for** says whether it applies to Character 1, Character 2 or both people. A pose picture overrides the pose dropdown for that character. Only the pose is copied from it: never the face, body, clothes or background.

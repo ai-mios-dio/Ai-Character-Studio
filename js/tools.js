@@ -872,7 +872,7 @@ Create ONE new image of the scene described below, using the saved references.
 
 REFERENCES (each group is labelled with its name):
 - CHARACTER 1, and CHARACTER 2 if included: character sheets (a full-body BODY sheet and/or a close-up FACE sheet). Each sheet shows ONE person from several angles; it is not a group, and its grid layout is not the output format.
-- CHARACTER 1 OUTFIT SHEET / CHARACTER 2 OUTFIT SHEET, if included: a full-body sheet of that same character wearing the outfit for this scene.
+- A character may instead come as an OUTFIT SHEET (a full-body sheet of that character already wearing the outfit for this scene) plus their FACE SHEET (close-ups of their face).
 - PLACE, if included: location sheets of one place: a VIEWS sheet (the same room from several camera positions) and/or a DETAILS sheet (close-ups of its furniture, objects and materials). It may also come with a written description of the room; follow it for where things are.
 - POSE REFERENCE, if included: a photo that shows ONLY the pose to use (see POSES).
 
@@ -883,7 +883,7 @@ POSES:
 
 CHARACTERS: ${IDENTITY_LOCK} This applies to EACH character separately: each one must look exactly like their own references (the face sheet decides the face, the body sheet decides height, build and proportions). Never mix features between characters; they stay clearly different people. Their relative heights must match their sheets.
 
-OUTFITS: if a character has an OUTFIT SHEET, they wear EXACTLY that outfit: every garment, colour, pattern, fabric, fit, length, the shoes, and the accessories, bag and jewelry shown on it. The outfit sheet decides ONLY the clothing; their face still comes from their FACE sheet and their body proportions from their BODY sheet, and the clothes are fitted to their own body. Ignore whatever they wear on their other sheets. A character without an outfit sheet keeps the outfit from their sheets unless the scene says otherwise.
+OUTFITS: if a character comes with an OUTFIT SHEET, that sheet is their full-body reference: it decides their height, build, body proportions AND their clothing. They wear EXACTLY that outfit: every garment, colour, pattern, fabric, fit, length, the shoes, and the accessories, bag and jewelry shown on it. Their FACE SHEET decides the face in close detail; if the small faces on the outfit sheet differ slightly, follow the FACE SHEET. Ignore any clothing visible on the face sheet. A character without an outfit sheet keeps the outfit from their sheets unless the scene says otherwise.
 
 POSE REFERENCE (if included): take ONLY the pose from it: body position, head angle, arms, hands, legs, feet, weight and facial expression, matching left and right as shown. Never copy the face, body shape, skin, hair, clothes, shoes, accessories, background, props, lighting or camera style of the person in it, and never change a character's body proportions to fit it. Each character keeps their own face, body, outfit and shoes.
 
