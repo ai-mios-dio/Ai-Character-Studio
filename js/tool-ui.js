@@ -23,7 +23,7 @@ const ToolUI = {
       prompt: saved.prompt || null,     // null = use the default prompt
       prompts: saved.prompts || {},     // tools with several outputs: one edited prompt per output
       closeness: saved.closeness || {}, // Character Builder: how closely to follow each part
-      fields: saved.fields || {},       // Build from Description: the chosen dropdown values
+      fields: saved.fields || { ...(def.defaultFields || {}) }, // dropdown choices (a tool can preset some)
       inputs: Object.fromEntries(def.inputs.map((i) => [i.key, []])),
       savedCharacter: '',               // id of the picked saved character, '' = none
     };
@@ -541,8 +541,8 @@ const ToolUI = {
         refs.tileChosen.textContent = '';
       }
       if (refs.fields || refs.tiles) {
-        state.fields = {};
-        Object.values(refs.fields || {}).forEach((sel) => { sel.value = ''; sel.dispatchEvent(new Event('change')); });
+        state.fields = { ...(def.defaultFields || {}) };
+        Object.entries(refs.fields || {}).forEach(([key, sel]) => { sel.value = state.fields[key] || ''; sel.dispatchEvent(new Event('change')); });
         this.tools[id].save();
       }
     }

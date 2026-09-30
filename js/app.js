@@ -32,8 +32,12 @@ function setupDropzone(zone, input, onFiles) {
 // ---------------- Pages ----------------
 // Each page has its own address (#sheet, #settings...), so the phone's back button works.
 // Tools with a `group` are reached through a small menu page (e.g. Character Builder).
-const GROUPS = { builder: 'Character Builder', outfit: 'Outfit' };
-const GROUP_QUESTIONS = { builder: 'How do you want to design your character?', outfit: 'How do you want to choose the outfit?' };
+const GROUPS = { builder: 'Character Builder', background: 'Background', outfit: 'Outfit' };
+const GROUP_QUESTIONS = {
+  builder: 'How do you want to design your character?',
+  background: 'What do you want to do?',
+  outfit: 'How do you want to choose the outfit?',
+};
 const PAGES = () => {
   const pages = [];
   for (const t of TOOLS) {

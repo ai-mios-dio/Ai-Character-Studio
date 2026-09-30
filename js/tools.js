@@ -299,7 +299,9 @@ ${NO_TATTOOS}`,
 
   {
     id: 'background',
-    title: 'Background',
+    title: 'Background from Picture',
+    group: 'background',
+    menuText: 'Put your character into the setting from a picture',
     intro: 'Put your character into a new setting. Add the background, pick or upload your character, tap Run.',
     inputs: [
       { key: 'background', label: 'Background', tag: 'BACKGROUND' },
@@ -329,6 +331,58 @@ INTEGRATION: match the background's lighting direction, colour temperature, shad
 ${NO_TATTOOS}
 
 ${SINGLE_OUTPUT}`,
+  },
+
+  {
+    id: 'replace-person',
+    title: 'Replace Person in Scene',
+    group: 'background',
+    menuText: 'Swap the person in a picture for your character',
+    intro: 'Upload a scene with a person in it, pick or upload your character, and tap Run. Your character takes that person\'s place, pose and expression.',
+    inputs: [
+      { key: 'scene', label: 'Scene with a person', tag: 'SCENE', missing: 'Add the scene picture (the one with the person to replace) first.' },
+      { key: 'character', label: 'Character (photo or character sheet)', tag: 'CHARACTER', orSaved: true, sendLabel: 'Character reference' },
+      SAVED_CHARACTER,
+    ],
+    fieldsTitle: 'Options',
+    fields: [
+      { key: 'outfit', label: 'Outfit', required: true, wide: true, options: ["Keep my character's outfit", "Use the scene person's outfit"] },
+    ],
+    defaultFields: { outfit: "Keep my character's outfit" },
+    request: { label: 'Which person?', optional: true, placeholder: 'Only needed if there are several people, e.g. the woman on the left in the red dress' },
+    runLabel: 'Replace person',
+    fill: ({ fields }) => ({
+      outfitRule: fields.outfit === "Use the scene person's outfit"
+        ? "The character wears the ORIGINAL person's outfit from the SCENE: the same garments, colours, shoes and accessories, re-fitted to the character's own body. Never change the character's body to fit the clothes."
+        : "The character wears their OWN outfit and shoes from the CHARACTER image (with only a character sheet, the outfit shown on the sheet), fitted naturally to the pose. Ignore the original person's clothing completely.",
+    }),
+    prompt:
+`${FICTIONAL_CHARACTER}
+
+The SCENE image shows a setting with a person in it. Replace that person with the character from the CHARACTER image(s), so the character is in the scene instead.
+
+WHICH PERSON TO REPLACE: {request} (if "None.", replace the main, most prominent person; if there is only one person, replace them).
+
+${CHARACTER_SOURCE}
+
+${IDENTITY_LOCK}
+
+${BODY_GUARD}
+
+REMOVE THE ORIGINAL PERSON COMPLETELY: none of their face, facial features, hair, skin tone, tattoos or body shape may remain. The result must clearly be the character, not a blend of the two.
+
+KEEP FROM THE SCENE:
+- the exact background, setting, objects and any other people (unchanged)
+- the composition, camera angle, framing, lighting, colour grading and image style
+- the replaced person's position, size in the frame, pose, gestures, what they hold or touch, and facial expression, performed by the character with their own face and body
+
+OUTFIT: {outfitRule}
+
+INTEGRATION: match the scene's lighting direction, shadows, reflections, perspective and depth of field, with natural contact where the character touches the ground or objects and clean, natural edges around the hair, so the character looks truly photographed in that scene.
+
+${NO_TATTOOS}
+
+Output one single image: the SCENE with only that one person replaced by the character. The character appears exactly once; any other people stay as they were. No text, labels, borders or watermark.`,
   },
 
   {

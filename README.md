@@ -31,7 +31,8 @@ The code contains no secrets: your API key is typed into the app and stays in yo
 | **Character Builder → Build from People** | Several pictures of people with the look you want, plus Face and Body proportions similarity (Loose / Balanced / Close) | One new character with the features and proportions they have in common |
 | **Character Builder → Build from Description** | No pictures: pick gender, age, body type, height, ethnicity and skin tone (or leave on Any), plus optional extra details | One new character matching your choices |
 | **Character Sheet** | A character reference | Two sheets: a **body sheet** (front, 3/4, side, back at 16:9) and a **face sheet** (12 close-ups and expressions at 4:3) |
-| **Background** | A background + a character (photo or sheet) | The same character placed in that setting |
+| **Background → Background from Picture** | A background + a character (photo or sheet) | The same character placed in that setting |
+| **Background → Replace Person in Scene** | A scene with a person + your character (photo, sheet or saved), outfit choice, and optionally which person | The scene with that person replaced by your character, same pose and expression |
 | **Outfit → Outfit from Picture** | A character (photo or sheet) + an outfit picture, plus optional Outfit notes | The same character wearing that exact outfit |
 | **Outfit → Outfit Gallery** | A character + a tap on one of 34 ready-made outfit tiles (8 categories) | The same character in that outfit |
 | **Outfit → Outfit from Description** | A character + your own description of an outfit or style | The same character in the outfit you described |
