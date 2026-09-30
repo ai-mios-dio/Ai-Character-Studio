@@ -256,6 +256,7 @@ SAME MOMENT IN EVERY PANEL:
 - LIGHT: the same light sources, direction, colour and time of day; shadows fall the same way in the world, so they look different from each camera position.
 
 CHARACTER SHEET (only if images labelled CHARACTER SHEET are included): they show this same character from other angles. Use them ONLY to get the face, hair (for example the back of the hairstyle) and body proportions right from the sides the SCENE REFERENCE does not show. Pose, outfit, props, place and lighting come from the SCENE REFERENCE, never from the sheet.
+THE RESULT IS BUILT FROM THE SCENE REFERENCE: every panel shows the moment and the place from the SCENE REFERENCE. Never copy the CHARACTER SHEET's plain white background, its standing neutral pose, its outfit (if it differs) or its layout; the sheets are only a guide to what the person looks like.
 
 ${IDENTITY_LOCK}
 
@@ -1178,6 +1179,7 @@ Only the camera changes. Everything in front of it stays the same:
 Correct perspective and real-world scale for the new camera position: people, furniture and room keep their true sizes.
 
 CHARACTER SHEET (only if images labelled CHARACTER SHEET are included): they show this same character from other angles. Use them ONLY to get the face, hair and body right from sides the SCENE REFERENCE does not show. Pose, outfit, props, place and lighting come from the SCENE REFERENCE.
+THE RESULT IS A RE-SHOOT OF THE SCENE REFERENCE: never copy the CHARACTER SHEET's plain white background, its standing neutral pose, its outfit (if it differs) or its grid layout. The output is one single photo of the scene.
 
 ${IDENTITY_LOCK}
 
