@@ -329,3 +329,6 @@ button.danger { color: var(--danger); }
 .manual-card { display: grid; gap: 10px; }
 .manual-step { display: grid; gap: 6px; border-top: 1px solid rgba(255,255,255,.15); padding-top: 10px; }
 .manual-prompt { font-size: 12px; font-family: ui-monospace, monospace; }
+.manual-pics { display: flex; flex-wrap: wrap; gap: 10px; }
+.manual-pics img { height: 72px; border-radius: 8px; background: #fff; }
+.manual-pics figcaption { max-width: 120px; text-align: center; word-break: break-word; }

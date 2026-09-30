@@ -957,16 +957,69 @@ const ToolUI = {
     const outputs = def.outputs || [{ key: null, title: def.title }];
     const hasFirst = outputs.some((o) => o.first);
 
+    const copyText = async (text, box) => {
+      try { await navigator.clipboard.writeText(text); } catch { box.select(); document.execCommand('copy'); }
+    };
+    // Pictures go on the clipboard as PNG (the type phones and browsers accept for pasting).
+    const toPng = async (blob) => {
+      if (blob.type === 'image/png') return blob;
+      const img = await Cutter.loadImage(URL.createObjectURL(blob));
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      return new Promise((r) => c.toBlob(r, 'image/png'));
+    };
+    // The PNG is handed over as a promise so the copy still counts as part of the tap (needed on iPhone).
+    const copyImage = (blob) => navigator.clipboard.write([new ClipboardItem({ 'image/png': toPng(blob) })]);
+    const copyFailed = 'This browser could not copy the picture. Use "Download the pictures" instead.';
+
     const copyBox = (text) => {
       const box = el('textarea', { rows: 6, readOnly: true, value: text, className: 'manual-prompt' });
-      const btn = el('button', { className: 'primary', textContent: 'Copy prompt' });
+      const btn = el('button', { textContent: 'Copy prompt only' });
       btn.addEventListener('click', async () => {
-        try { await navigator.clipboard.writeText(text); } catch { box.select(); document.execCommand('copy'); }
+        await copyText(text, box);
         btn.textContent = 'Copied ✓';
-        setTimeout(() => { btn.textContent = 'Copy prompt'; }, 2000);
+        setTimeout(() => { btn.textContent = 'Copy prompt only'; }, 2000);
       });
       return [box, btn];
     };
+
+    // One button that copies everything in order: picture 1, picture 2, … then the prompt.
+    // Tap, paste in AI Studio, come back, tap again.
+    const stepper = (pics, text, box) => {
+      const queue = [...pics.map((it, n) => ({ label: `picture ${n + 1} of ${pics.length}`, run: () => copyImage(it.blob) })),
+        { label: 'the prompt', run: () => copyText(text, box) }];
+      let at = 0;
+      const btn = el('button', { className: 'primary' });
+      const note = el('p', { className: 'hint small' });
+      const show = () => {
+        btn.textContent = at < queue.length ? `Copy ${queue[at].label}` : 'All copied ✓ (tap to start over)';
+      };
+      btn.addEventListener('click', async () => {
+        if (at >= queue.length) { at = 0; note.textContent = ''; return show(); }
+        try {
+          await queue[at].run();
+          note.textContent = at === queue.length - 1 ? 'Copied the prompt. Paste it in AI Studio and run.'
+            : `Copied ${queue[at].label}. Paste it in AI Studio, then come back and tap again.`;
+          at += 1;
+        } catch {
+          note.textContent = copyFailed;
+        }
+        show();
+      });
+      show();
+      return [btn, note];
+    };
+
+    // The numbered pictures, each with its own Copy button (to redo one).
+    const picRow = (pics) => el('div', { className: 'manual-pics' }, pics.map((it, n) => {
+      const b = el('button', { className: 'small-btn', textContent: `Copy ${n + 1}` });
+      b.addEventListener('click', async () => {
+        try { await copyImage(it.blob); b.textContent = `Copied ${n + 1} ✓`; } catch { b.textContent = 'Could not copy'; }
+        setTimeout(() => { b.textContent = `Copy ${n + 1}`; }, 2000);
+      });
+      return el('figure', { className: 'pick-thumb' }, el('img', { src: URL.createObjectURL(it.blob), alt: it.label }), el('figcaption', {}, `${n + 1}. ${it.label}`), b);
+    }));
 
     const ext = (b) => ({ 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/png': 'png' }[b.type] || 'png');
     const slug = (t) => t.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 40);
@@ -982,17 +1035,21 @@ const ToolUI = {
       const ratio = out.aspectRatio || state.options.aspectRatio;
       const later = hasFirst && !out.first;
       const text = (later ? list(['CHARACTER REFERENCE (the new character picture you made in step 1)']) : header) + '\n\n' + this.buildPrompt(id, out.key);
+      const pics = later ? [] : items;
+      const [box, promptBtn] = copyBox(text);
       return el('div', { className: 'manual-step' },
         el('div', { className: 'result-title' }, (outputs.length > 1 ? `${n + 1}. ` : '') + (out.title || def.title)),
         el('p', { className: 'hint small' },
-          (later ? 'New chat. Attach ONLY the picture from step 1. ' : items.length ? `New chat. Attach the ${items.length} picture${items.length === 1 ? '' : 's'} in number order (1 first). ` : 'New chat. ') +
-          `Set the aspect ratio to ${ratio || 'what you like'}${state.options.imageSize ? `, size ${state.options.imageSize}` : ''}. Paste the prompt and run.`),
-        ...copyBox(text));
+          (later ? 'New chat. Attach ONLY the picture from step 1 (save it from AI Studio, then attach it). ' : pics.length ? `New chat. Tap the button below: it copies picture 1, then picture 2… and finally the prompt. Paste each one into AI Studio in that order. ` : 'New chat. ') +
+          `Set the aspect ratio to ${ratio || 'what you like'}${state.options.imageSize ? `, size ${state.options.imageSize}` : ''}, then run.`),
+        ...stepper(pics, text, box),
+        pics.length ? picRow(pics) : '',
+        box, promptBtn);
     });
 
     refs.results.prepend(el('div', { className: 'result-item manual-card' },
       el('div', { className: 'result-title' }, 'Do it yourself in Google AI Studio'),
-      el('p', { className: 'hint small' }, 'Open aistudio.google.com, choose the image model (Nano Banana), then follow the steps. The pictures are numbered: attach them in that order, because the prompt refers to them by number.'),
+      el('p', { className: 'hint small' }, 'Open aistudio.google.com, choose the image model (Nano Banana), then follow the steps. The pictures are numbered: add them in that order, because the prompt refers to them by number. Copying or downloading both give the full-size pictures.'),
       items.length ? dl : '',
       ...steps));
     setStatus(refs.status, 'Ready: download the pictures and copy the prompt below.', 'ok');
