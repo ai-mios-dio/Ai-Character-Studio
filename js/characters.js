@@ -62,13 +62,15 @@ function makeLibrary(storeName, idPrefix) {
     async get(id) { return this._normalise(await this._do('readonly', (store) => store.get(id))); },
 
     // images: [{ kind, blob }]  (a single Blob also works)
-    async add(name, images, notes = '') {
+    // height: characters only, free text like 5'4" or 163 cm (optional).
+    async add(name, images, notes = '', height = '') {
       if (images instanceof Blob) images = [{ kind: 'sheet', blob: images }];
       const item = {
         id: idPrefix + Date.now(),
         name: name.trim() || 'Unnamed',
         images,
         notes: notes || '',
+        height: (height || '').trim(),
         thumb: await this.makeThumb(images[0].blob),
         created: Date.now(),
       };
@@ -77,11 +79,12 @@ function makeLibrary(storeName, idPrefix) {
       return item;
     },
 
-    async rename(id, name, notes) {
+    async rename(id, name, notes, height) {
       const item = await this.get(id);
       if (!item) return;
       item.name = name.trim() || item.name;
       if (notes !== undefined) item.notes = notes.trim();
+      if (height !== undefined) item.height = height.trim();
       await this._do('readwrite', (store) => store.put(item));
       this._changed();
     },

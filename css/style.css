@@ -325,3 +325,4 @@ button.danger { color: var(--danger); }
 .pick-thumb { margin: 0; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
 .pick-thumb figcaption { font-size: 12px; }
 .pick-sends { flex-basis: 100%; margin: 4px 0 0; }
+#charHeight, .char-info input + input { margin-top: 8px; }

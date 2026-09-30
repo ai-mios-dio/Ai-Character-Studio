@@ -805,11 +805,11 @@ const ToolUI = {
         // in the right clothes). The face sheet still goes along: its close-ups keep the face exact.
         const outfit = item && inp.outfits && item.outfits.find((o) => o.id === state.fields[inp.key + 'Outfit']);
         if (outfit) {
-          groups.push({ tag: `${inp.tag} "${item.name}" OUTFIT SHEET "${outfit.name}"`, imgs: [outfit.blob], note: item.notes });
+          groups.push({ tag: `${inp.tag} "${item.name}" OUTFIT SHEET "${outfit.name}"`, imgs: [outfit.blob], note: item.notes, height: item.height });
           const faces = item.images.filter((i) => i.kind === 'face');
           if (faces.length) groups.push({ tag: `${inp.tag} "${item.name}" FACE SHEET`, imgs: faces.map((i) => i.blob) });
         } else if (item && item.images.length) {
-          groups.push({ tag: `${inp.tag} "${item.name}"`, imgs: item.images.map((i) => i.blob), note: item.notes });
+          groups.push({ tag: `${inp.tag} "${item.name}"`, imgs: item.images.map((i) => i.blob), note: item.notes, height: item.height });
         }
         continue;
       }
@@ -834,6 +834,7 @@ const ToolUI = {
       parts.push({ text: `${g.tag} image${g.imgs.length > 1 ? 's' : ''}:` });
       g.imgs.forEach((blob) => parts.push({ blob }));
       if (g.note) parts.push({ text: `${g.tag} written description (follow it for layout and details): ${g.note}` });
+      if (g.height) parts.push({ text: `${g.tag.replace(/ OUTFIT SHEET .*/, '')} real height: ${g.height} (use exactly this height, measured against the room).` });
     }
     const count = Number(state.options.count || 1);
     refs.run.disabled = true;
@@ -944,6 +945,7 @@ const ToolUI = {
   saveCharacterForm(images, libName = 'characters', notes = '') {
     const noun = libName === 'places' ? 'place' : 'character';
     const name = el('input', { type: 'text', placeholder: `${noun[0].toUpperCase() + noun.slice(1)} name` });
+    const height = libName === 'characters' ? el('input', { type: 'text', placeholder: `Height (optional), e.g. 5'4" or 163 cm` }) : null;
     const btn = el('button', { className: 'primary', textContent: images.length > 1 ? `Save both as a ${noun}` : `Save as ${noun}` });
     const status = el('div', { className: 'status' });
     btn.addEventListener('click', async () => {
@@ -952,14 +954,14 @@ const ToolUI = {
       try {
         const sheets = [];
         for (const img of images) sheets.push({ kind: img.kind || 'sheet', blob: await (await fetch(img.src)).blob() });
-        await LIBRARIES[libName].add(name.value, sheets, notes);
+        await LIBRARIES[libName].add(name.value, sheets, notes, height ? height.value : '');
         setStatus(status, `Saved "${name.value.trim()}". Pick it in ${libName === 'places' ? 'Create a Scene' : 'the Character box of any tool'}.`, 'ok');
       } catch (err) {
         btn.disabled = false;
         setStatus(status, 'Could not save: ' + err.message, 'error');
       }
     });
-    return el('div', { className: 'save-character' }, name, btn, status);
+    return el('div', { className: 'save-character' }, name, height || '', btn, status);
   },
 
   // One generated image with Download and "Send to…" controls.
