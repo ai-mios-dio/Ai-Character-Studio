@@ -2,9 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>AI Image Studio</title>
-  <link rel="stylesheet" href="css/style.css?v=56">
+  <meta name="theme-color" content="#0b1024">
+  <link rel="icon" href="img/icon-192.png">
+  <link rel="apple-touch-icon" href="img/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/style.css?v=58">
 </head>
 <body>
   <div class="app">
@@ -12,7 +18,11 @@
       <!-- ============ HOME ============ -->
       <!-- One big button per tool. They're added automatically from js/tools.js. -->
       <section id="home" class="section">
-        <h1 class="logo">AI Image Studio</h1>
+        <div class="brand">
+          <img class="brand-logo" src="img/logo.png" alt="">
+          <h1 class="logo"><span class="logo-strong">AI Image</span> Studio</h1>
+          <p class="brand-sub">Consistent characters, places and scenes</p>
+        </div>
         <div class="home-buttons" id="homeButtons"></div>
       </section>
 
@@ -119,15 +129,15 @@
   <!-- The ?v= number makes phones download fresh files after each update. Bump it when you change CSS/JS. -->
   <!-- JSZip builds the "download all" zip file. Loaded from a public CDN. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="js/storage.js?v=56"></script>
-  <script src="js/models.js?v=56"></script>
-  <script src="js/gemini.js?v=56"></script>
-  <script src="js/characters.js?v=56"></script>
-  <script src="js/video.js?v=56"></script>
-  <script src="js/cutter.js?v=56"></script>
-  <script src="js/catalog.js?v=56"></script>
-  <script src="js/tools.js?v=56"></script>
-  <script src="js/tool-ui.js?v=56"></script>
-  <script src="js/app.js?v=56"></script>
+  <script src="js/storage.js?v=58"></script>
+  <script src="js/models.js?v=58"></script>
+  <script src="js/gemini.js?v=58"></script>
+  <script src="js/characters.js?v=58"></script>
+  <script src="js/video.js?v=58"></script>
+  <script src="js/cutter.js?v=58"></script>
+  <script src="js/catalog.js?v=58"></script>
+  <script src="js/tools.js?v=58"></script>
+  <script src="js/tool-ui.js?v=58"></script>
+  <script src="js/app.js?v=58"></script>
 </body>
 </html>

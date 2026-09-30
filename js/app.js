@@ -65,18 +65,50 @@ function hubPages(section) {
   return [...pages, ...(SECTIONS[section]?.extra || [])];
 }
 
-// Main page: one big button per hub, then tools that live on the main page, then Settings.
+// Simple line icons (24x24, drawn with strokes) for the menu buttons. Unknown ids get the sparkle.
+const ICONS = {
+  characters: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',
+  places: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  scene: '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 6l2 4M12 6l2 4M17 6l2 4"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+  builder: '<path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+  sheets: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
+  background: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
+  outfit: '<path d="M8 3l4 3 4-3 5 4-3 4-2-1v11H8V10l-2 1-3-4z"/>',
+  pose: '<circle cx="12" cy="4.5" r="2"/><path d="M12 7v7M6 9l6 2 6-2M9 21l3-7 3 7"/>',
+  makeup: '<path d="M14 3l7 7-9 9H5v-7z"/><path d="M5 19l-2 2"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
+  'character-scene': '<path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="4"/>',
+  saved: '<path d="M6 3h12v18l-6-4-6 4z"/>',
+  cutter: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/>',
+  video: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/>',
+  sparkle: '<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>',
+};
+// Which icon each page uses.
+const ICON_FOR = {
+  'characters-hub': 'characters', 'places-hub': 'places', 'create-scene': 'scene', settings: 'settings',
+  'builder-menu': 'builder', 'sheets-menu': 'sheets', 'background-menu': 'background', 'outfit-menu': 'outfit',
+  pose: 'pose', makeup: 'makeup', edit: 'edit', scene: 'character-scene', characters: 'saved', places: 'saved',
+  cutter: 'cutter', 'place-builder': 'builder', 'place-sheet': 'sheets', 'place-video': 'video',
+  // tools inside the menus
+  builder: 'builder', blend: 'characters', describe: 'edit', sheet: 'sheets', 'sheet-inspired': 'builder',
+  'outfit-sheet': 'outfit', 'replace-person': 'characters', outfit: 'background', 'outfit-gallery': 'sheets', 'outfit-describe': 'edit',
+};
+function iconEl(pageId) {
+  return el('span', { className: 'btn-icon', 'aria-hidden': 'true',
+    innerHTML: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[ICON_FOR[pageId]] || ICONS.sparkle}</svg>` });
+}
+
+// Main page: logo, one big card per hub, then tools that live on the main page, then Settings.
 function buildHome() {
   const box = $('homeButtons');
-  for (const [key, sec] of Object.entries(SECTIONS)) {
-    box.append(el('a', { className: 'home-btn menu-btn', href: `#${key}-hub` },
-      el('span', { className: 'menu-title' }, sec.title), el('span', { className: 'menu-sub' }, sec.sub)));
-  }
-  for (const t of TOOLS.filter((x) => sectionOf(x) === 'home')) {
-    box.append(el('a', { className: 'home-btn menu-btn', href: '#' + t.id },
-      el('span', { className: 'menu-title' }, t.title), el('span', { className: 'menu-sub' }, t.menuText || '')));
-  }
-  box.append(el('a', { className: 'home-btn settings-btn', href: '#settings', textContent: 'Settings' }));
+  const card = (href, title, sub) => el('a', { className: 'home-btn menu-btn home-card', href },
+    iconEl(href.slice(1)),
+    el('span', { className: 'menu-text' }, el('span', { className: 'menu-title' }, title), el('span', { className: 'menu-sub' }, sub)),
+    el('span', { className: 'chev', 'aria-hidden': 'true', textContent: '›' }));
+  for (const [key, sec] of Object.entries(SECTIONS)) box.append(card(`#${key}-hub`, sec.title, sec.sub));
+  for (const t of TOOLS.filter((x) => sectionOf(x) === 'home')) box.append(card('#' + t.id, t.title, t.menuText || ''));
+  box.append(el('a', { className: 'home-btn settings-btn', href: '#settings' }, iconEl('settings'), el('span', {}, 'Settings')));
 }
 
 // Hub pages (Characters, Places): a header and one button per tool or menu.
@@ -86,7 +118,7 @@ function buildHubs() {
       el('section', { id: key + '-hub', className: 'section', dataset: { parent: 'home' } },
         pageHeader(sec.title),
         el('div', { className: 'home-buttons' }, hubPages(key).map(([id, title]) =>
-          el('a', { className: 'home-btn', href: '#' + id, textContent: title })))),
+          el('a', { className: 'home-btn hub-tile', href: '#' + id }, iconEl(id), el('span', {}, title))))),
       $('cutter'));
   }
 }
@@ -97,6 +129,7 @@ function buildGroupMenus() {
     const tools = TOOLS.filter((t) => t.group === group);
     const buttons = tools.map((t) =>
       el('a', { className: 'home-btn menu-btn', href: '#' + t.id },
+        iconEl(t.id),
         el('span', { className: 'menu-title' }, t.title),
         el('span', { className: 'menu-sub' }, t.menuText || '')));
     $('content').insertBefore(

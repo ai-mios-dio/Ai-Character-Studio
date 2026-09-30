@@ -1,17 +1,21 @@
 /* Colours taken from the home screen sketch: light teal page, deep teal pill buttons. */
 :root {
-  --bg: #66a0ad;          /* page background */
-  --pill: #006885;        /* big home buttons, primary buttons */
-  --pill-press: #00546c;
-  --card: #0d5c72;        /* boxes on tool pages */
-  --field: #0a4a5c;       /* inputs, drop areas */
-  --border: #2d7d93;
-  --text: #ffffff;
-  --muted: #cfe5eb;
-  --danger: #ffd0d0;
-  --ok: #c9f5da;
-  --warn: #ffe29a;
-  --ink: #05303b;         /* text sitting directly on the page background */
+  /* Dark "glass" theme using the logo's colours: teal -> blue -> purple -> pink. */
+  --bg: #0b1024;          /* page background (deep navy) */
+  --pill: #4f6bff;        /* solid accent (used where a gradient can't be) */
+  --pill-press: #3f55d6;
+  --card: rgba(255, 255, 255, .06);   /* glass boxes */
+  --field: rgba(255, 255, 255, .07);  /* inputs, drop areas */
+  --border: rgba(255, 255, 255, .12);
+  --text: #f3f5ff;
+  --muted: #a9b2d6;
+  --danger: #ff9bb0;
+  --ok: #7ff0c4;
+  --warn: #ffd36e;
+  --ink: #f3f5ff;         /* text sitting directly on the page background */
+  --grad: linear-gradient(120deg, #22d3ee 0%, #4f6bff 45%, #a855f7 75%, #f472b6 100%);
+  --glow: 0 8px 28px rgba(79, 107, 255, .45);
+  --radius: 22px;
   color-scheme: dark;
 }
 
@@ -399,3 +403,120 @@ button.danger { color: var(--danger); }
 [id$="-menu"] .home-btn { border-radius: 26px; }
 .wiz-bar .status:not(:empty) { background: var(--card); border-radius: 12px; padding: 8px 12px; font-size: 14px; }
 .wiz-buttons button { white-space: nowrap; }
+
+/* ======================= Theme: dark glass + gradients ======================= */
+html { background: var(--bg); }
+body {
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(60% 40% at 0% 0%, rgba(34, 211, 238, .22), transparent 70%),
+    radial-gradient(55% 45% at 100% 30%, rgba(168, 85, 247, .22), transparent 70%),
+    radial-gradient(60% 40% at 30% 100%, rgba(244, 114, 182, .16), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+  min-height: 100dvh;
+}
+h2 { font-weight: 800; letter-spacing: -.01em; }
+
+/* Glass boxes */
+.card, .result-item, .char-card, .result-group .save-character {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+}
+.label { letter-spacing: .01em; }
+
+input[type=text], input[type=password], input[type=number], select, textarea {
+  background: var(--field); border: 1px solid var(--border); border-radius: 14px; color: var(--text);
+}
+select option, select optgroup { background: #151b36; color: var(--text); }
+input:focus, select:focus, textarea:focus { outline: none; border-color: #7c8cff; box-shadow: 0 0 0 3px rgba(79, 107, 255, .25); }
+
+button { background: var(--field); border: 1px solid var(--border); color: var(--text); }
+button.primary, .wiz-next {
+  background: var(--grad); border: none; color: #fff; box-shadow: var(--glow);
+}
+button.primary:active:not(:disabled) { background: var(--grad); filter: brightness(.9); transform: scale(.98); }
+button.small-btn { background: rgba(255, 255, 255, .08); }
+button.danger, .small-btn.danger { color: var(--danger); }
+
+.dropzone { background: rgba(255, 255, 255, .04); border: 2px dashed rgba(124, 140, 255, .45); border-radius: 18px; color: var(--muted); }
+.dropzone.drag { border-color: #22d3ee; }
+
+.status.error { color: var(--danger); }
+.status.ok { color: var(--ok); }
+
+/* Back button in page headers */
+.back-btn { background: rgba(255, 255, 255, .08); border: 1px solid var(--border); color: var(--text); }
+
+/* ---------- Home ---------- */
+.brand { text-align: center; margin: 0 0 auto; padding-top: 4vh; }
+.brand-logo { width: min(46vw, 210px); height: auto; display: block; margin: 0 auto -6px; filter: drop-shadow(0 10px 40px rgba(79, 107, 255, .45)); }
+#home .logo { padding: 0; margin: 0; font-size: 32px; font-weight: 500; letter-spacing: -.01em; color: var(--text); }
+.logo-strong { font-weight: 800; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand-sub { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+#home .home-buttons { gap: 12px; margin-top: 18px; }
+
+.home-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  color: var(--text);
+}
+.home-btn:active { background: rgba(255, 255, 255, .1); }
+.home-card { flex-direction: row; justify-content: flex-start; gap: 14px; text-align: left; min-height: 84px; border-radius: 24px; padding: 14px 18px; }
+.menu-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.home-card .menu-title { font-size: 18px; font-weight: 700; }
+.home-card .menu-sub { font-size: 13px; color: var(--muted); opacity: 1; }
+.chev { font-size: 28px; color: var(--muted); line-height: 1; }
+.settings-btn { min-height: 56px; margin-top: 4px; font-size: 16px; gap: 10px; background: transparent; box-shadow: none; }
+
+/* Icon badge: gradient square with a white line icon */
+.btn-icon {
+  flex-shrink: 0; width: 46px; height: 46px; border-radius: 14px;
+  display: grid; place-items: center;
+  background: var(--grad); color: #fff; box-shadow: var(--glow);
+}
+.btn-icon svg { width: 24px; height: 24px; }
+.settings-btn .btn-icon { width: 34px; height: 34px; border-radius: 10px; box-shadow: none; background: rgba(255, 255, 255, .1); }
+.settings-btn .btn-icon svg { width: 20px; height: 20px; }
+
+/* Hub tiles (2 columns) */
+[id$="-hub"] .home-btn.hub-tile { flex-direction: column; gap: 8px; min-height: 104px; border-radius: 22px; font-size: 15px; font-weight: 700; padding: 14px 8px; }
+[id$="-hub"] .hub-tile .btn-icon { width: 40px; height: 40px; border-radius: 12px; }
+[id$="-hub"] .hub-tile .btn-icon svg { width: 22px; height: 22px; }
+
+/* Menu pages (Character Builder, Sheets, …) */
+[id$="-menu"] .home-btn.menu-btn { flex-direction: row; justify-content: flex-start; text-align: left; gap: 14px; border-radius: 24px; min-height: 88px; padding: 14px 18px; flex-wrap: wrap; }
+[id$="-menu"] .menu-btn .menu-title { font-size: 18px; font-weight: 700; flex: 1; }
+[id$="-menu"] .menu-btn .menu-sub { flex-basis: 100%; padding-left: 60px; margin-top: -10px; color: var(--muted); }
+
+/* ---------- Step pages ---------- */
+.section.wizard.active { background: transparent; }
+.wiz-label { color: var(--muted); font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: .08em; }
+.wiz-track { background: rgba(255, 255, 255, .1); height: 5px; }
+.wiz-fill { background: var(--grad); box-shadow: 0 0 12px rgba(79, 107, 255, .8); }
+.wiz-step > .intro { color: var(--muted); }
+.wiz-bar {
+  background: linear-gradient(to top, rgba(11, 16, 36, .96) 70%, rgba(11, 16, 36, 0));
+}
+.wiz-back { background: rgba(255, 255, 255, .08); border: 1px solid var(--border); color: var(--text); }
+.wiz-bar .status:not(:empty) { background: rgba(255, 255, 255, .08); border: 1px solid var(--border); }
+.review-row { background: rgba(255, 255, 255, .05); border: 1px solid var(--border); }
+.review-row.needed { box-shadow: inset 0 0 0 1.5px var(--warn); }
+.review-extra .clear-btn, .clear-btn { background: rgba(255, 255, 255, .06); border: 1px solid var(--border); color: var(--text); }
+
+/* Quick option chips, tiles, closeness switches */
+.tile { background: rgba(255, 255, 255, .05); border: 1px solid var(--border); border-radius: 16px; }
+.tile.on { border-color: transparent; box-shadow: 0 0 0 2px #7c8cff, var(--glow); }
+.suggestions button { background: rgba(255, 255, 255, .07); }
+
+/* Results */
+.result-item img { border-radius: 16px; }
+.result-title { font-weight: 700; }
+.segmented button.on { background: var(--grad); box-shadow: var(--glow); }

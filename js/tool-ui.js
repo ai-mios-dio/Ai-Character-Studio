@@ -160,7 +160,12 @@ const ToolUI = {
       steps.push({ title, card: inputCards[n], keys: [inp.key, ...(inp.orSaved ? ['sheet'] : [])], sum: () => this.inputSummary(def.id, inp) });
     });
     if (controlsCard) steps.push({ title: 'Similarity', card: controlsCard, keys: [], sum: () => def.closenessControls.map((c) => `${c.label}: ${state.closeness[c.key] || 'balanced'}`).join(' · ') });
-    if (fieldsCard) steps.push({ title: def.fieldsTitle || 'Your character', card: fieldsCard, keys: [], sum: () => def.fields.map((f) => `${f.label}: ${state.fields[f.key] || 'Any'}`).join(' · ') });
+    if (fieldsCard) steps.push({ title: def.fieldsTitle || 'Your character', card: fieldsCard, keys: [], sum: () => {
+      // Only the choices that were actually set (defaults a tool presets count too).
+      const set = def.fields.filter((f) => state.fields[f.key]).map((f) => `${f.label}: ${state.fields[f.key]}`);
+      const missing = def.fields.filter((f) => f.required && !state.fields[f.key]).map((f) => f.label);
+      return missing.length ? `Needed: ${missing.join(', ')}` : set.join(' · ') || 'All on Any (the AI decides)';
+    } });
     if (tilesCard) steps.push({ title: def.tiles.title || 'Choose one', card: tilesCard, keys: [], sum: () => def.tiles.items.find((i) => i.id === state.fields[def.tiles.key])?.name || 'Needed: tap one' });
     if (requestCard) {
       steps.push({ title: def.request.label, card: requestCard, keys: ['request'], sum: () => {
