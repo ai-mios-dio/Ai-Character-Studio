@@ -534,19 +534,3 @@ button.danger, .small-btn.danger { color: var(--danger); }
   .home-card { min-height: 74px; padding: 10px 16px; }
   .settings-btn { min-height: 50px; }
 }
-
-/* ================= Centre page content vertically (like the home page) ================= */
-/* Menu, library and settings pages: the header stays at the top; everything under it sits in the
-   middle of the screen. Auto margins shrink to 0 when a page is taller than the screen, so long
-   pages still start at the top and scroll normally. */
-.section.active:not(.wizard):not(#home) { display: flex; flex-direction: column; min-height: calc(100dvh - 72px); }
-.section.active:not(.wizard):not(#home) > .page-head + * { margin-top: auto; }
-.section.active:not(.wizard):not(#home) > :last-child { margin-bottom: auto; }
-
-/* Step pages: the current step sits in the middle of the space between the progress bar and the
-   bottom buttons. */
-.wiz-body { display: flex; flex-direction: column; }
-.wiz-step:not([hidden]) { margin: auto 0; }
-/* Same space at the top and bottom of the page so "centred" really is centred. */
-.content { padding-bottom: 12px; }
-#home.active, .section.active:not(.wizard):not(#home) { min-height: calc(100dvh - 36px); }
