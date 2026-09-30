@@ -146,6 +146,9 @@ const ToolUI = {
     refs.run.addEventListener('click', () => this.run(def.id));
     const clearBtn = el('button', { className: 'clear-btn', textContent: 'Clear & start fresh' });
     clearBtn.addEventListener('click', () => this.clear(def.id));
+    // Same prompt and pictures, but for pasting into Google AI Studio by hand (no API credits used).
+    const manualBtn = el('button', { className: 'clear-btn', textContent: 'Do it in AI Studio (copy prompt)' });
+    manualBtn.addEventListener('click', () => this.run(def.id, { manual: true }));
 
     refs.results = el('div', { className: 'results' });
 
@@ -158,7 +161,7 @@ const ToolUI = {
       tilesCard,
       controlsCard,
       requestCard,
-      el('div', { className: 'run-row' }, refs.run, clearBtn, refs.status),
+      el('div', { className: 'run-row' }, refs.run, manualBtn, clearBtn, refs.status),
       refs.results,
     );
 
@@ -789,12 +792,13 @@ const ToolUI = {
     return text.includes('{request}') ? text.replaceAll('{request}', request) : `${text}\n\n${request}`;
   },
 
-  async run(id) {
+  // manual: don't generate; show the prompt and pictures to use in Google AI Studio instead.
+  async run(id, { manual = false } = {}) {
     const { def, state, refs } = this.tools[id];
     const apiKey = Store.getApiKey();
     const model = Models.get(state.model);
 
-    if (!apiKey) return setStatus(refs.status, 'Add your Gemini API key in Settings first.', 'error');
+    if (!apiKey && !manual) return setStatus(refs.status, 'Add your Gemini API key in Settings first.', 'error');
     const sheetImgs = state.inputs.sheet || [];
     for (const inp of def.inputs.filter((i) => i.type === 'library' && !i.optional)) {
       if (!state.fields[inp.key]) return setStatus(refs.status, inp.missing || `Choose ${inp.label.toLowerCase()} first.`, 'error');
@@ -869,6 +873,7 @@ const ToolUI = {
     if (totalRefs > model.maxRefs) {
       return setStatus(refs.status, `${model.label} takes up to ${model.maxRefs} images; you added ${totalRefs}. Remove some or pick another model.`, 'error');
     }
+    if (manual) return this.showManual(id, groups);
 
     // Each group of images gets a label first, so the prompt can refer to it by name.
     const parts = [];
@@ -932,6 +937,66 @@ const ToolUI = {
     if (!made) setStatus(refs.status, 'Error: ' + errors[0], 'error');
     else setStatus(refs.status, `Done: ${made} image${made > 1 ? 's' : ''}.` +
       (errors.length ? ` ${errors.length} failed: ${errors[0]}` : ''), errors.length ? 'error' : 'ok');
+  },
+
+  // "Do it in AI Studio": numbered pictures to download and a ready-to-paste prompt for each output.
+  // AI Studio can't put a label before each picture, so the prompt starts with a numbered list
+  // saying what each attached picture is; attach them in that order.
+  showManual(id, groups) {
+    const { def, state, refs } = this.tools[id];
+    const items = [];
+    const notes = [];
+    for (const g of groups) {
+      g.imgs.forEach((blob, n) => items.push({ blob, label: g.tag + (g.imgs.length > 1 ? ` (${n + 1} of ${g.imgs.length})` : '') }));
+      if (g.after) notes.push(`About the ${g.tag} image: ${g.after}`);
+      if (g.note) notes.push(`${g.tag} written description (follow it for layout and details): ${g.note}`);
+      if (g.height) notes.push(`${g.tag.replace(/ OUTFIT SHEET .*/, '')} real height: ${g.height} (use exactly this height, measured against the room).`);
+    }
+    const list = (entries) => `ATTACHED IMAGES (in this order):\n${entries.map((e, n) => `Image ${n + 1}: ${e}`).join('\n')}`;
+    const header = [items.length ? list(items.map((i) => i.label)) : 'No images attached.', ...notes].join('\n');
+    const outputs = def.outputs || [{ key: null, title: def.title }];
+    const hasFirst = outputs.some((o) => o.first);
+
+    const copyBox = (text) => {
+      const box = el('textarea', { rows: 6, readOnly: true, value: text, className: 'manual-prompt' });
+      const btn = el('button', { className: 'primary', textContent: 'Copy prompt' });
+      btn.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(text); } catch { box.select(); document.execCommand('copy'); }
+        btn.textContent = 'Copied ✓';
+        setTimeout(() => { btn.textContent = 'Copy prompt'; }, 2000);
+      });
+      return [box, btn];
+    };
+
+    const ext = (b) => ({ 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/png': 'png' }[b.type] || 'png');
+    const slug = (t) => t.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 40);
+    const dl = el('button', { textContent: `Download the ${items.length} picture${items.length === 1 ? '' : 's'}` });
+    dl.addEventListener('click', async () => {
+      for (const [n, it] of items.entries()) {
+        downloadUrl(URL.createObjectURL(it.blob), `${String(n + 1).padStart(2, '0')}-${slug(it.label)}.${ext(it.blob)}`);
+        await new Promise((r) => setTimeout(r, 500)); // phones block downloads that come too fast
+      }
+    });
+
+    const steps = outputs.map((out, n) => {
+      const ratio = out.aspectRatio || state.options.aspectRatio;
+      const later = hasFirst && !out.first;
+      const text = (later ? list(['CHARACTER REFERENCE (the new character picture you made in step 1)']) : header) + '\n\n' + this.buildPrompt(id, out.key);
+      return el('div', { className: 'manual-step' },
+        el('div', { className: 'result-title' }, (outputs.length > 1 ? `${n + 1}. ` : '') + (out.title || def.title)),
+        el('p', { className: 'hint small' },
+          (later ? 'New chat. Attach ONLY the picture from step 1. ' : items.length ? `New chat. Attach the ${items.length} picture${items.length === 1 ? '' : 's'} in number order (1 first). ` : 'New chat. ') +
+          `Set the aspect ratio to ${ratio || 'what you like'}${state.options.imageSize ? `, size ${state.options.imageSize}` : ''}. Paste the prompt and run.`),
+        ...copyBox(text));
+    });
+
+    refs.results.prepend(el('div', { className: 'result-item manual-card' },
+      el('div', { className: 'result-title' }, 'Do it yourself in Google AI Studio'),
+      el('p', { className: 'hint small' }, 'Open aistudio.google.com, choose the image model (Nano Banana), then follow the steps. The pictures are numbered: attach them in that order, because the prompt refers to them by number.'),
+      items.length ? dl : '',
+      ...steps));
+    setStatus(refs.status, 'Ready: download the pictures and copy the prompt below.', 'ok');
+    window.scrollTo(0, refs.results.offsetTop - 20);
   },
 
   // A set of images from one run (e.g. body sheet + face sheet) with one "Save as character".

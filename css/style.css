@@ -326,3 +326,6 @@ button.danger { color: var(--danger); }
 .pick-thumb figcaption { font-size: 12px; }
 .pick-sends { flex-basis: 100%; margin: 4px 0 0; }
 #charHeight, .char-info input + input { margin-top: 8px; }
+.manual-card { display: grid; gap: 10px; }
+.manual-step { display: grid; gap: 6px; border-top: 1px solid rgba(255,255,255,.15); padding-top: 10px; }
+.manual-prompt { font-size: 12px; font-family: ui-monospace, monospace; }

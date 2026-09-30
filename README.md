@@ -112,6 +112,7 @@ Every AI tool has:
 - **Hidden prompt**: the prompt sent with your images. All of them are in **Settings → Hidden prompts**: tap one, edit it, and tap **Save prompt**. **Reset to default** brings back the original.
 - **Clear & start fresh** empties the uploads, text and results, and resets dropdowns and the chosen tile (your model and options stay).
 - **Leaving a page** (or reloading) resets it completely: uploads, typed text, results, picked characters, places, outfits, poses, dropdowns and tiles. Only the model and its settings are kept. Download or save anything you want to keep before leaving.
+- **Do it in AI Studio (copy prompt)** builds the exact same request without using the API: numbered pictures to download (**Download the N pictures**) and a ready-to-paste prompt for each output with a **Copy prompt** button. In Google AI Studio, start a new chat with the image model, attach the pictures in number order, set the aspect ratio it tells you, paste and run. The prompt starts with a list saying what Image 1, Image 2… are, so the order matters.
 - **Edit this picture** on each result opens it in the Edit tool, ready for the next change. On the Edit page this chains edits: each result can be edited again.
 - **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter). It replaces whatever was in that box.
 
