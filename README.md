@@ -1,4 +1,4 @@
-# AI Image Studio
+# AI Character Studio
 
 A web app for creating consistent characters, places and scenes with Google's Nano Banana image models. Everything runs in your browser, so there's nothing to install.
 
