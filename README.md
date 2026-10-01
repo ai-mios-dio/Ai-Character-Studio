@@ -123,6 +123,16 @@ Every AI tool has:
 - **Edit this picture** on each result opens it in the Edit tool, ready for the next change. On the Edit page this chains edits: each result can be edited again.
 - **Send to…** on each result, to pass the image straight into another tool (e.g. Character Sheet → Character Scene or Pose Cutter). It replaces whatever was in that box.
 
+## Backup & restore (moving to a new address or phone)
+
+Your saved characters, places and settings live in this browser, tied to the website address. To move them, open **Settings → Backup & restore**:
+
+1. On the old address, tap **Back up to a file**. You get one file (`ai-character-studio-backup-DATE.json`) with all characters (sheets, outfits, heights), places (with room descriptions), Outfit Gallery pictures and edited prompts.
+2. On the new address (or phone), tap **Restore from a file** and pick that file. The app reloads with everything in place.
+3. Paste your API key again in Settings (it is never put in the backup file).
+
+Restoring adds to what is already there; items with the same id are replaced.
+
 ## When a picture is blocked
 
 The error message says which filter stopped it:

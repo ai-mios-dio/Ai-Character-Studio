@@ -624,3 +624,6 @@ body.loading { overflow: hidden; }
 .wiz-buttons .wiz-next.secondary { background: rgba(255, 255, 255, .08); border: 1px solid var(--border); box-shadow: none; }
 .wiz-buttons:has(.wiz-done:not([hidden])) .wiz-back { flex: 0 0 auto; padding: 0 14px; }
 .wiz-buttons:has(.wiz-done:not([hidden])) button { font-size: 16px; }
+/* A file picker that looks like a button (Backup → Restore) */
+.file-btn { position: relative; display: inline-flex; align-items: center; margin-top: 12px; padding: 10px 18px; border-radius: 999px; background: var(--field); border: 1px solid var(--border); cursor: pointer; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
