@@ -5,27 +5,42 @@
 {% block content %}
 <a class="back" href="{{ url_for('home') }}">← All tools</a>
 <h1>Downloader</h1>
-<p class="sub">Paste a link to a video, picture, or post from YouTube, Instagram, TikTok, X, Reddit and more.</p>
+<p class="sub">Paste a link to a video, a post, or a whole profile from YouTube, Instagram, TikTok, X, Reddit and more.</p>
 
 <form id="form">
   <label class="field" for="url">Link</label>
   <div class="row">
-    <input id="url" type="url" placeholder="https://www.instagram.com/p/..." required>
+    <input id="url" type="url" placeholder="https://www.instagram.com/p/... or a profile link" required>
     <button id="find" type="submit">Find media</button>
   </div>
 
-  <details class="logins">
-    <summary>Use my logins (for private or login-only posts)</summary>
-    <p class="hint">Uses the browser you're logged in with, like being logged in to Instagram. Firefox works most reliably. Close that browser first if it gives an error.</p>
-    <select id="browser">
+  <details class="logins" id="logins">
+    <summary>Use my logins (for private or login-only posts and profiles)</summary>
+    <select id="login">
       <option value="">Don't use my logins</option>
+      <option value="file">My cookies.txt file (works with Chrome)</option>
       <option value="firefox">Firefox</option>
-      <option value="chrome">Chrome</option>
-      <option value="edge">Edge</option>
+      <option value="chrome">Chrome (usually blocked on Windows)</option>
+      <option value="edge">Edge (usually blocked on Windows)</option>
       <option value="safari">Safari</option>
       <option value="brave">Brave</option>
       <option value="opera">Opera</option>
     </select>
+
+    <div id="cookies-box" class="cookies-box" hidden>
+      <p id="cookies-state" class="hint"></p>
+      <ol class="hint">
+        <li>In Chrome, add the free extension <strong>“Get cookies.txt LOCALLY”</strong>.</li>
+        <li>Open the website (for example instagram.com) and make sure you're logged in.</li>
+        <li>Click the extension, then <strong>Export</strong>. A cookies.txt file is saved.</li>
+        <li>Choose that file below. Do this again if a website logs you out.</li>
+      </ol>
+      <div class="row">
+        <input id="cookies-file" type="file" accept=".txt,text/plain">
+        <button id="cookies-remove" class="secondary" type="button">Remove</button>
+      </div>
+      <p class="hint">This file works like a key to your accounts. It stays in the my-tools folder on your computer. Never share it.</p>
+    </div>
   </details>
 </form>
 
@@ -37,6 +52,7 @@
     <button id="all" type="button" hidden>Download all (ZIP)</button>
   </div>
   <div id="items" class="items"></div>
+  <button id="more" class="secondary wide" type="button" hidden>Load more</button>
 </section>
 
 <p class="note">Only download things you have the right to save, like your own posts or ones shared with permission.</p>
@@ -46,72 +62,169 @@
 <script>
   const $ = (id) => document.getElementById(id);
   const status = $("status");
-  let lookup = null;
+  let lookup = null;      // { id, posts: [...] } for the current link
+  let hasMore = false;
+  let skipped = 0;
   let busy = false;
+  let hasCookies = {{ "true" if has_cookies else "false" }};
 
-  // Remember the "Use my logins" choice on this computer.
-  try { $("browser").value = localStorage.getItem("downloader-browser") || ""; } catch (e) {}
-  $("browser").addEventListener("change", () => {
-    try { localStorage.setItem("downloader-browser", $("browser").value); } catch (e) {}
+  // ----- Logins -----
+
+  function loginChanged() {
+    $("cookies-box").hidden = $("login").value !== "file";
+    $("cookies-state").textContent = hasCookies
+      ? "✓ A cookies.txt file is saved. You can replace it below."
+      : "No cookies.txt file saved yet. Here's how to get one:";
+    $("cookies-remove").hidden = !hasCookies;
+    try { localStorage.setItem("downloader-login", $("login").value); } catch (e) {}
+  }
+  try { $("login").value = localStorage.getItem("downloader-login") || ""; } catch (e) {}
+  if ($("login").value) $("logins").open = true;
+  $("login").addEventListener("change", loginChanged);
+  loginChanged();
+
+  $("cookies-file").addEventListener("change", async () => {
+    const file = $("cookies-file").files[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append("file", file);
+    try {
+      const response = await fetch("{{ url_for('downloader.save_cookies') }}", {
+        method: "POST", headers: { "X-My-Tools": "1" }, body: form,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Couldn't save that file.");
+      hasCookies = true;
+      show(status, "Cookies file saved. Click “Find media” to try again.", "ok");
+    } catch (error) {
+      show(status, error.message, "error");
+    }
+    $("cookies-file").value = "";
+    loginChanged();
   });
 
-  // Reads the file name the server sends back (e.g. "My Video.mp4").
-  function fileNameFrom(response) {
-    const header = response.headers.get("Content-Disposition") || "";
-    const utf8 = header.match(/filename\*=UTF-8''([^;]+)/i);
-    return utf8 ? decodeURIComponent(utf8[1]) : "download";
-  }
+  $("cookies-remove").onclick = async () => {
+    await fetch("{{ url_for('downloader.remove_cookies') }}", { method: "POST", headers: { "X-My-Tools": "1" } });
+    hasCookies = false;
+    show(status, "Cookies file removed.");
+    loginChanged();
+  };
+
+  // ----- Step 1: find out what's in the link -----
 
   function plural(count, word) {
     return `${count} ${word}${count === 1 ? "" : "s"}`;
   }
 
-  // Step 1: find out what's in the link.
+  function setBusy(value) {
+    busy = value;
+    $("find").disabled = value;
+    document.querySelectorAll("#results button").forEach((b) => (b.disabled = value));
+  }
+
   $("form").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (busy) return;
-    busy = true;
-    $("find").disabled = true;
+    setBusy(true);
     $("results").hidden = true;
-    show(status, "Looking at the link…");
+    show(status, "Looking at the link… profiles can take a little while.");
     try {
-      lookup = await post("{{ url_for('downloader.analyze') }}", {
-        url: $("url").value, browser: $("browser").value,
+      const answer = await post("{{ url_for('downloader.analyze') }}", {
+        url: $("url").value, login: $("login").value,
       });
-      showResults();
+      lookup = { id: answer.id, posts: [] };
+      $("items").innerHTML = "";
+      addPosts(answer);
       show(status, "");
     } catch (error) {
       show(status, error.message, "error");
     } finally {
-      busy = false;
-      $("find").disabled = false;
+      setBusy(false);
     }
   });
 
-  function showResults() {
-    const items = lookup.items;
+  $("more").onclick = async () => {
+    if (busy) return;
+    setBusy(true);
+    show(status, "Loading more…");
+    try {
+      addPosts(await post("{{ url_for('downloader.more') }}", { id: lookup.id }));
+      show(status, "");
+    } catch (error) {
+      show(status, error.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  function addPosts(answer) {
+    const firstBatch = lookup.posts.length === 0;
+    lookup.posts.push(...answer.posts);
+    hasMore = answer.more;
+    skipped = answer.skipped;
+
+    // One post: show its items side by side. Several posts (a profile): group by post.
+    const single = firstBatch && answer.posts.length === 1 && !hasMore;
+    for (const p of answer.posts) {
+      if (single || p.items.length === 1) {
+        p.items.forEach((item) => $("items").append(itemCard(item)));
+      } else {
+        $("items").append(postCard(p));
+      }
+    }
+    updateSummary(single);
+    $("results").hidden = false;
+  }
+
+  function updateSummary(single) {
     const counts = { video: 0, image: 0, audio: 0 };
-    items.forEach((item) => counts[item.kind]++);
+    lookup.posts.forEach((p) => p.items.forEach((item) => counts[item.kind]++));
+    const total = counts.video + counts.image + counts.audio;
     const parts = [];
     if (counts.video) parts.push(plural(counts.video, "video"));
     if (counts.image) parts.push(plural(counts.image, "picture"));
     if (counts.audio) parts.push(plural(counts.audio, "audio file"));
 
     $("summary").innerHTML = "";
-    if (lookup.title) {
+    const title = single ? lookup.posts[0].title : "";
+    if (title) {
       const strong = document.createElement("strong");
-      strong.textContent = lookup.title;
+      strong.textContent = title;
       $("summary").append(strong, document.createElement("br"));
     }
-    $("summary").append("Found " + parts.join(", ") + (lookup.limited ? " (showing the first 100)" : "") + ".");
-    $("all").hidden = items.length < 2;
+    let text = "Found " + parts.join(", ");
+    if (!single && lookup.posts.length > 1) text += ` in ${plural(lookup.posts.length, "post")}`;
+    text += hasMore ? " so far." : ".";
+    if (skipped) text += ` (${skipped} couldn't be opened.)`;
+    $("summary").append(text);
 
-    $("items").innerHTML = "";
-    items.forEach((item, index) => $("items").append(itemCard(item, index + 1)));
-    $("results").hidden = false;
+    $("all").hidden = total < 2;
+    $("all").textContent = hasMore ? "Download all loaded (ZIP)" : "Download all (ZIP)";
+    $("more").hidden = !hasMore;
   }
 
-  function itemCard(item, number) {
+  function postCard(p) {
+    const card = document.createElement("div");
+    card.className = "post";
+    const head = document.createElement("div");
+    head.className = "results-head";
+    const caption = document.createElement("p");
+    caption.className = "post-title";
+    caption.textContent = p.title || "Post";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "secondary";
+    button.textContent = `Download post (${p.items.length})`;
+    button.onclick = () => download(p.items.map((item) => item.id), "mp4");
+    head.append(caption, button);
+    const grid = document.createElement("div");
+    grid.className = "items";
+    p.items.forEach((item) => grid.append(itemCard(item)));
+    card.append(head, grid);
+    return card;
+  }
+
+  function itemCard(item) {
     const card = document.createElement("div");
     card.className = "item";
 
@@ -139,7 +252,7 @@
       button.type = "button";
       button.className = "secondary";
       button.textContent = label;
-      button.onclick = () => download([number], format, label);
+      button.onclick = () => download([item.id], format);
       buttons.append(button);
     };
     if (item.kind === "video") { add("MP4", "mp4"); add("MP3", "mp3"); }
@@ -149,39 +262,32 @@
     return card;
   }
 
-  // Step 2: download what you picked.
-  async function download(items, format, label) {
+  // ----- Step 2: download what you picked -----
+
+  async function download(items, format) {
     if (busy) return;
-    busy = true;
-    document.querySelectorAll("#results button").forEach((b) => (b.disabled = true));
-    show(status, items === "all"
-      ? "Downloading everything… this can take a while for big albums."
-      : "Downloading… longer videos can take a minute or two.");
-
+    setBusy(true);
+    const total = items === "all" ? lookup.posts.reduce((n, p) => n + p.items.length, 0) : items.length;
+    show(status, total > 1 ? `Downloading ${total} items…` : "Downloading… longer videos can take a minute or two.");
     try {
-      const response = await fetch("{{ url_for('downloader.download') }}", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: lookup.id, items, format, browser: $("browser").value }),
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Something went wrong.");
+      const { job } = await post("{{ url_for('downloader.download') }}", { id: lookup.id, items, format });
+      while (true) {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        const response = await fetch("{{ url_for('downloader.status', job_id='JOB') }}".replace("JOB", job));
+        const state = await response.json();
+        if (state.state === "error") throw new Error(state.error);
+        if (state.state === "done") break;
+        if (total > 1) show(status, `Downloading… ${state.count} of about ${total} files done.`);
       }
-
-      // Hand the file to the browser so it lands in your Downloads folder.
-      const blob = await response.blob();
+      // The browser saves the finished file straight into your Downloads folder.
       const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = fileNameFrom(response);
+      link.href = "{{ url_for('downloader.file', job_id='JOB') }}".replace("JOB", job);
       link.click();
-      setTimeout(() => URL.revokeObjectURL(link.href), 10000);
-      show(status, `Done! Saved “${link.download}” to your Downloads folder.`, "ok");
+      show(status, "Done! Check your Downloads folder.", "ok");
     } catch (error) {
       show(status, error.message, "error");
     } finally {
-      busy = false;
-      document.querySelectorAll("#results button").forEach((b) => (b.disabled = false));
+      setBusy(false);
     }
   }
 

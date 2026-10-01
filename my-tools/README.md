@@ -4,7 +4,7 @@ A small set of tools that runs on your own computer, in your browser. Only your 
 
 | Tool | What it does |
 |---|---|
-| **Downloader** | Paste a link from YouTube (including Shorts), Instagram, TikTok, X/Twitter, Reddit, Pinterest and [many](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) [more](https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md). Click **Find media** to see what's in it, then save videos as **MP4** or **MP3**, pictures as-is, or a whole album as one **ZIP**. |
+| **Downloader** | Paste a link to a video, post or **whole profile** from YouTube (including Shorts), Instagram, TikTok, X/Twitter, Reddit, Pinterest and [many](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) [more](https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md). Click **Find media** to see what's in it, then save videos as **MP4** or **MP3**, pictures as-is, or posts and albums as one **ZIP**. |
 | **Video Clipper** | Pick a video on your computer and save a full-quality screenshot every few seconds (you choose how many) into a folder you choose. |
 
 Only download things you have the right to save, like your own posts or ones shared with permission.
@@ -40,14 +40,33 @@ A window full of text opens (the "command window"). The first time, it spends a 
 
 ## Using the Downloader
 
-1. Paste a link and click **Find media**.
-2. You'll see everything in that link:
+1. Paste a link and click **Find media**. The link can be:
+   - **one video or post**, or
+   - **a whole profile, channel or playlist**, like `instagram.com/username`, `x.com/username`, `tiktok.com/@username` or `youtube.com/@channel`.
+2. You'll see everything in it. For a profile, it's grouped post by post:
    - **Video:** choose **MP4** (video) or **MP3** (just the audio).
    - **Picture:** click **Download picture**. You get the original file, at full quality.
-   - **Album or post with several items:** download items one by one, or click **Download all (ZIP)**.
-3. The file lands in your browser's normal **Downloads** folder.
+   - **Post with several items:** download items one by one, or click **Download post**.
+   - **Everything shown:** click **Download all (ZIP)**.
+3. Profiles load about 60 items at a time. Click **Load more** at the bottom for the next batch.
+4. Bigger downloads show progress ("12 of about 60 files done"). The file lands in your browser's normal **Downloads** folder.
 
-**Private or login-only posts** (very common on Instagram): open **Use my logins**, pick the browser you're logged in with, and click **Find media** again. It borrows that browser's login, so you never type a password here. Firefox works most reliably. If you get an error, close that browser fully and try again.
+Profiles work for Instagram, X/Twitter, TikTok, Reddit, Pinterest, Bluesky, Facebook, YouTube and [many more](https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md). Threads isn't supported yet. Some sites slow down or briefly block you if you load a lot very fast. If that happens, wait a while and try again.
+
+### Private posts and profiles: "Use my logins"
+
+Many sites, especially **Instagram profiles**, only show posts when you're logged in. Open **Use my logins** and pick one option:
+
+- **My cookies.txt file (works with Chrome):** this is the most reliable option.
+  1. In Chrome, add the free extension **"Get cookies.txt LOCALLY"** from the Chrome Web Store.
+  2. Go to the website (for example instagram.com) and make sure you're logged in.
+  3. Click the extension, then **Export**. This saves a `cookies.txt` file.
+  4. In the Downloader, choose that file. Do this again whenever a site logs you out.
+- **Firefox:** if you use Firefox, pick it, and its logins are borrowed directly.
+
+Chrome and Edge on Windows lock and encrypt their logins so other programs can't read them. That's why picking "Chrome" directly usually fails, and why the cookies.txt file is the way around it.
+
+**Keep cookies.txt private.** It works like a key to your accounts. It's saved only in the `my-tools` folder on your computer, and it's never uploaded to GitHub. Click **Remove** when you don't need it anymore.
 
 ## Using the Video Clipper
 
@@ -67,6 +86,7 @@ The "Choose…" windows sometimes open **behind** your browser. If nothing seems
 |---|---|
 | "Python isn't installed" | Do the setup step above. On Windows, reinstall and tick **Add python.exe to PATH**. |
 | A link fails | The post may be private or login-only. Try **Use my logins**. Try another link to check the tool itself works. |
+| "Couldn't borrow the logins from that browser" | Use the **cookies.txt file** option (see above) or Firefox. |
 | Downloads suddenly stop working for a site | Close the command window and start the tools again. They update themselves on each start. |
 | The page doesn't open | Open your browser yourself and go to `http://localhost:5050`. |
 

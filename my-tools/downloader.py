@@ -1,14 +1,16 @@
 """
-Downloader: paste a link, see what's in it, then pick what to download.
+Downloader: paste a link (a video, a post, or a whole profile), see what's in it,
+then pick what to download.
 
 Two free tools do the work:
-  gallery-dl - posts with pictures, albums and videos (Instagram, X/Twitter,
-               Reddit, TikTok photo posts, Pinterest, Tumblr and many more)
-  yt-dlp     - videos and audio (YouTube, and over 1,000 other sites)
+  gallery-dl - posts, pictures, albums and profiles (Instagram, X/Twitter,
+               TikTok, Reddit, Pinterest, Bluesky, Facebook and many more)
+  yt-dlp     - videos and audio (YouTube videos, channels and playlists, and
+               over 1,000 other sites)
 
-Step 1 (/analyze) looks at the link and lists what's inside without downloading.
-Step 2 (/download) downloads the items you picked and sends them to your
-browser's Downloads folder. Several files arrive together as one ZIP.
+Step 1 (/analyze, then /more) lists what's inside, a batch at a time.
+Step 2 (/download) downloads the items you picked in the background, then
+your browser saves the result (several files arrive together as one ZIP).
 """
 
 import io
@@ -35,32 +37,50 @@ downloader = Blueprint("downloader", __name__, url_prefix="/downloader")
 VIDEO_TYPES = {"mp4", "webm", "mov", "m4v", "mkv", "avi", "flv"}
 AUDIO_TYPES = {"mp3", "m4a", "aac", "ogg", "opus", "wav", "flac"}
 BROWSERS = {"firefox", "chrome", "edge", "safari", "brave", "opera", "vivaldi", "chromium"}
-MOST_ITEMS = 100  # don't list more than this many items from one link
+BATCH = 60  # how many items to list at a time; "Load more" gets the next batch
 
-# What each link contained, by id, so step 2 knows what step 1 found.
+# A cookies.txt file you saved from your browser (see the README). It stays on your computer.
+COOKIES_FILE = Path(__file__).with_name("cookies.txt")
+
+# What each link contained, by id, so later steps know what step 1 found.
 lookups = {}
-# gallery-dl keeps its settings in one shared place, so run one job at a time.
+# Downloads running in the background, by id.
+jobs = {}
+# gallery-dl keeps its settings in one shared place, so run one gallery-dl job at a time.
 gallery_lock = threading.Lock()
 
 
-# ---------- Settings for the two tools ----------
+# ---------- Logins and settings for the two tools ----------
 
-def setup_gallery_dl(browser, folder=None, pick=None):
-    """Settings for gallery-dl. `pick` limits which items, e.g. "1,3"."""
+def login_choice(value):
+    """"file" (the saved cookies.txt), a browser name, or None for no login."""
+    if value == "file":
+        return "file" if COOKIES_FILE.is_file() else None
+    return value if value in BROWSERS else None
+
+
+def setup_gallery_dl(login, folder=None, pick=None):
+    """Settings for gallery-dl. `pick` limits which files, e.g. "1-60" or "2,5"."""
     gallery_config.clear()
     gallery_config.set(("output",), "mode", "null")  # keep the command window quiet
-    gallery_config.set(("extractor",), "image-range", pick or f"1-{MOST_ITEMS}")
+    if pick:
+        gallery_config.set(("extractor",), "image-range", pick)
     if folder:
         gallery_config.set(("extractor",), "base-directory", str(folder))
         gallery_config.set(("extractor",), "directory", [])  # no sub-folders
-    if browser:
-        gallery_config.set(("extractor",), "cookies", [browser])
+        # Only download the picked files, not other posts this page links to.
+        gallery_config.set(("extractor",), "child-filter", "False")
+    if login == "file":
+        gallery_config.set(("extractor",), "cookies", str(COOKIES_FILE))
+        gallery_config.set(("extractor",), "cookies-update", False)  # leave your file as it is
+    elif login:
+        gallery_config.set(("extractor",), "cookies", [login])
     # Some posts hand their videos over to yt-dlp; give it ffmpeg to join video + audio.
     gallery_config.set(("downloader", "ytdl"), "raw-options",
                        {"ffmpeg_location": FFMPEG, "merge_output_format": "mp4"})
 
 
-def ytdlp_options(browser, folder=None, choice="mp4", pick=None):
+def ytdlp_options(login, folder=None, choice="mp4", pick=None, start=None, end=None):
     """Settings for yt-dlp."""
     options = {
         "quiet": True,
@@ -70,17 +90,21 @@ def ytdlp_options(browser, folder=None, choice="mp4", pick=None):
         "ffmpeg_location": FFMPEG,
         "windowsfilenames": True,  # avoid characters Windows doesn't allow
     }
-    if browser:
-        options["cookiesfrombrowser"] = (browser,)
+    if login == "file":
+        options["cookiefile"] = str(COOKIES_FILE)
+    elif login:
+        options["cookiesfrombrowser"] = (login,)
     if pick:
         options["playlist_items"] = pick
     if folder is None:
-        # Just looking: list a playlist's videos quickly without opening each one.
+        # Just looking: list a channel's or playlist's videos quickly without opening each one.
         options["extract_flat"] = "in_playlist"
-        options["playlistend"] = MOST_ITEMS
+        if start:
+            options["playliststart"] = start
+            options["playlistend"] = end
         return options
 
-    options["outtmpl"] = str(Path(folder) / "%(playlist_index&{:03d} |)s%(title).100B.%(ext)s")
+    options["outtmpl"] = str(Path(folder) / "%(playlist_index&{:03d} |)s%(title).100B [%(id)s].%(ext)s")
     if choice == "mp3":
         # Grab the best audio, then convert it to MP3.
         options["format"] = "bestaudio/best"
@@ -94,7 +118,22 @@ def ytdlp_options(browser, folder=None, choice="mp4", pick=None):
     return options
 
 
-# ---------- Step 1: look at a link ----------
+def friendly(error):
+    """Turn the tools' error messages into something easier to act on."""
+    text = str(error).replace("ERROR: ", "").split("; please report this issue")[0]
+    lowered = text.lower()
+    if "chrome cookie" in lowered or "dpapi" in lowered or "decrypt" in lowered or (
+        "permission denied" in lowered and "cookies" in lowered
+    ):
+        return ("Couldn't borrow the logins from that browser. Chrome (and Edge) on Windows lock "
+                "and encrypt their logins so other apps can't read them. Use the “cookies.txt file” "
+                "option instead, or Firefox.")
+    if "login" in lowered or "log in" in lowered or "401" in lowered or "403" in lowered:
+        return text + " This probably needs you to be logged in: use “Use my logins”."
+    return text
+
+
+# ---------- Step 1: look at a link, a batch at a time ----------
 
 def kind_of(file_type, url=""):
     if file_type in VIDEO_TYPES or url.startswith("ytdl:"):
@@ -104,103 +143,236 @@ def kind_of(file_type, url=""):
     return "image"
 
 
-def look_with_gallery_dl(url, browser):
-    """Ask gallery-dl what files a post has. Returns (title, items)."""
+def describe(info):
+    """A short caption for a post from whatever text the website gave us."""
+    text = info.get("description") or info.get("content") or info.get("title") or ""
+    return " ".join(str(text).split())[:150]
+
+
+def gallery_batch(url, login, start, count):
+    """
+    List up to `count` files from a post or profile, starting at file number `start`.
+    Returns (posts, links, maybe_more). `links` are other pages to look at next,
+    like the separate posts a profile points to.
+    """
     with gallery_lock:
-        setup_gallery_dl(browser)
+        setup_gallery_dl(login, pick=f"{start}-{start + count - 1}")
         data_job = gallery_job.DataJob(url, file=io.StringIO())
         data_job.run()
 
-    items, title, has_links = [], "", False
+    posts, links, number, post = [], [], start - 1, None
     for message in data_job.data:
         if message[0] == -1:
             # gallery-dl reports a problem as (-1, {"error": ..., "message": ...}).
             raise RuntimeError(message[1].get("message") or message[1].get("error"))
         if message[0] == Message.Directory:
-            info = message[1]
-            title = title or info.get("description") or info.get("title") or info.get("content") or ""
+            # A new post starts; its files follow.
+            post = {"title": describe(message[1]), "items": []}
+            posts.append(post)
         elif message[0] == Message.Url:
+            number += 1
+            if post is None:
+                post = {"title": "", "items": []}
+                posts.append(post)
             file_url, info = message[1], message[2]
-            file_type = (info.get("extension") or "").lower()
-            kind = kind_of(file_type, file_url)
-            items.append({
+            kind = kind_of((info.get("extension") or "").lower(), file_url)
+            post["items"].append({
                 "kind": kind,
-                "name": f"{kind.title()} {len(items) + 1}",
                 "preview": file_url if kind == "image" else None,
+                "number": number,
             })
         elif message[0] == Message.Queue:
-            has_links = True
+            links.append(message[1])
 
-    if not items and has_links:
-        raise RuntimeError("That link is a list of posts. Open one post and paste its link instead.")
-    return " ".join(str(title).split())[:120], items
+    got = number - start + 1
+    return [p for p in posts if p["items"]], links, got >= count
 
 
-def look_with_ytdlp(url, browser):
-    """Ask yt-dlp what videos a link has. Returns (title, items)."""
-    with yt_dlp.YoutubeDL(ytdlp_options(browser)) as ydl:
+def is_list(entry):
+    """In a YouTube channel, some entries are lists themselves (Videos, Shorts, Live tabs)."""
+    kind = (entry.get("ie_key") or "").lower()
+    return entry.get("_type") in ("url", "url_transparent") and ("tab" in kind or "playlist" in kind)
+
+
+def preview_of(entry):
+    if entry.get("thumbnail"):
+        return entry["thumbnail"]
+    thumbnails = entry.get("thumbnails") or []
+    return thumbnails[-1].get("url") if thumbnails else None
+
+
+def ytdlp_batch(url, login, start, count):
+    """List up to `count` videos from a video, playlist or channel. Same answer as gallery_batch."""
+    with yt_dlp.YoutubeDL(ytdlp_options(login, start=start, end=start + count - 1)) as ydl:
         info = ydl.extract_info(url, download=False)
 
-    def preview(entry):
-        if entry.get("thumbnail"):
-            return entry["thumbnail"]
-        thumbnails = entry.get("thumbnails") or []
-        return thumbnails[-1].get("url") if thumbnails else None
-
-    entries = [entry for entry in (info.get("entries") or []) if entry]
-    if not entries:
+    if "entries" not in info:
+        # Just one video (or song).
         kind = "audio" if info.get("vcodec") == "none" else "video"
-        entries, kinds = [info], [kind]
-    else:
-        kinds = ["video"] * len(entries)
+        item = {"kind": kind, "preview": preview_of(info), "number": None, "name": info.get("title")}
+        return [{"title": info.get("title") or "", "items": [item]}], [], False
 
-    items = [
-        {"kind": kind, "name": entry.get("title") or f"Video {number}", "preview": preview(entry)}
-        for number, (entry, kind) in enumerate(zip(entries, kinds), start=1)
+    posts, links, number = [], [], start - 1
+    for entry in info["entries"]:
+        number += 1
+        if not entry:
+            continue
+        if is_list(entry):
+            links.append(entry["url"])
+            continue
+        item = {
+            "kind": "video",
+            "preview": preview_of(entry),
+            "number": entry.get("playlist_index") or number,
+            "name": entry.get("title"),
+        }
+        posts.append({"title": entry.get("title") or "", "items": [item]})
+    return posts, links, number - start + 1 >= count
+
+
+def engine_for(url):
+    """gallery-dl if it knows the website, otherwise yt-dlp."""
+    if url.startswith("ytdl:"):
+        return "yt-dlp", url[5:]
+    return ("gallery-dl" if gallery_extractor.find(url) else "yt-dlp"), url
+
+
+def explore(lookup, count):
+    """Add up to `count` more items to a lookup. Returns the new posts."""
+    new_posts, added = [], 0
+    while added < count:
+        source = next((s for s in lookup["sources"] if s["more"]), None)
+        if source is None:
+            if not lookup["waiting"]:
+                break
+            engine, url = engine_for(lookup["waiting"].pop(0))
+            source = {"url": url, "engine": engine, "next": 1, "more": True}
+            lookup["sources"].append(source)
+
+        batch = gallery_batch if source["engine"] == "gallery-dl" else ytdlp_batch
+        try:
+            posts, links, more = batch(source["url"], lookup["login"], source["next"], count - added)
+        except Exception:
+            source["more"] = False
+            if source is lookup["sources"][0] and not lookup["items"]:
+                raise  # the link itself didn't work
+            lookup["skipped"] += 1  # one post out of many didn't work; carry on
+            continue
+
+        if source["next"] == 1:
+            # Pages this one points to (e.g. a profile's posts): look at them next.
+            lookup["waiting"].extend(link for link in links if link not in lookup["seen"])
+            lookup["seen"].update(links)
+        source["next"] += count - added
+        source["more"] = more
+
+        source_number = lookup["sources"].index(source)
+        for post in posts:
+            post["id"] = len(lookup["posts"])
+            for position, item in enumerate(post["items"], start=1):
+                item["id"] = len(lookup["items"])
+                item["source"] = source_number
+                if not item.get("name"):
+                    many = len(post["items"]) > 1
+                    label = {"video": "Video", "image": "Picture", "audio": "Audio"}[item["kind"]]
+                    item["name"] = f"{label} {position}" if many or not post["title"] else post["title"]
+                lookup["items"].append(item)
+            lookup["posts"].append(post)
+            new_posts.append(post)
+            added += len(post["items"])
+    return new_posts
+
+
+def public(posts):
+    """What the page needs to know about posts (leave out the inner details)."""
+    return [
+        {"id": p["id"], "title": p["title"],
+         "items": [{key: item[key] for key in ("id", "kind", "name", "preview")} for item in p["items"]]}
+        for p in posts
     ]
-    return info.get("title") or "", items
+
+
+def answer(lookup, posts):
+    more = any(s["more"] for s in lookup["sources"]) or bool(lookup["waiting"])
+    return jsonify(id=lookup["id"], posts=public(posts), more=more, skipped=lookup["skipped"])
 
 
 @downloader.route("/")
 def page():
-    return render_template("downloader.html")
+    return render_template("downloader.html", has_cookies=COOKIES_FILE.is_file())
 
 
 @downloader.route("/analyze", methods=["POST"])
 def analyze():
     data = request.get_json()
     url = (data.get("url") or "").strip()
-    browser = data.get("browser") if data.get("browser") in BROWSERS else None
+    login = login_choice(data.get("login"))
     if not url.startswith(("http://", "https://")):
         return jsonify(error="That doesn't look like a link. It should start with https://"), 400
 
+    def new_lookup(engine):
+        return {"id": uuid.uuid4().hex, "url": url, "login": login, "posts": [], "items": [],
+                "sources": [{"url": url, "engine": engine, "next": 1, "more": True}],
+                "waiting": [], "seen": set(), "skipped": 0}
+
     problem = None
-    title, items, engine = "", [], None
-
-    # Posts with pictures/albums: gallery-dl (if it knows this website).
-    if gallery_extractor.find(url):
+    engines = ["gallery-dl", "yt-dlp"] if gallery_extractor.find(url) else ["yt-dlp"]
+    for engine in engines:
+        lookup = new_lookup(engine)
         try:
-            title, items = look_with_gallery_dl(url, browser)
-            engine = "gallery-dl"
+            posts = explore(lookup, BATCH)
         except Exception as error:
-            problem = str(error)
+            problem = problem or friendly(error)
+            continue
+        if posts:
+            lookups[lookup["id"]] = lookup
+            return answer(lookup, posts)
 
-    # Videos: yt-dlp (also a backup if gallery-dl found nothing).
-    if not items:
-        try:
-            title, items = look_with_ytdlp(url, browser)
-            engine = "yt-dlp"
-        except yt_dlp.utils.DownloadError as error:
-            problem = problem or short_error(error)
+    message = problem or "Nothing to download was found at that link."
+    tip = "" if "logins" in message else " If it's private or needs a login, use “Use my logins” and try again."
+    return jsonify(error=f"Couldn't read that link. {message}{tip}"), 400
 
-    if not items:
-        message = problem or "Nothing to download was found at that link."
-        tip = " If it's private or needs a login, choose your browser under “Use my logins” and try again."
-        return jsonify(error=f"Couldn't read that link. {message}{tip}"), 400
 
-    lookup_id = uuid.uuid4().hex
-    lookups[lookup_id] = {"url": url, "engine": engine, "title": title, "items": items}
-    return jsonify(id=lookup_id, title=title, items=items, limited=len(items) >= MOST_ITEMS)
+@downloader.route("/more", methods=["POST"])
+def more():
+    lookup = lookups.get(request.get_json().get("id"))
+    if not lookup:
+        return jsonify(error="Please click “Find media” again."), 400
+    try:
+        posts = explore(lookup, BATCH)
+    except Exception as error:
+        return jsonify(error=friendly(error)), 400
+    return answer(lookup, posts)
+
+
+# ---------- Logins: a saved cookies.txt file ----------
+
+def from_this_page():
+    # Only this app's own page sends this header, so other websites can't change your logins.
+    return request.headers.get("X-My-Tools") == "1"
+
+
+@downloader.route("/cookies", methods=["POST"])
+def save_cookies():
+    if not from_this_page():
+        return jsonify(error="Not allowed."), 403
+    upload = request.files.get("file")
+    text = upload.read().decode("utf-8", errors="replace") if upload else ""
+    looks_right = "Netscape HTTP Cookie File" in text or any(
+        line.count("\t") >= 6 for line in text.splitlines() if not line.startswith("#")
+    )
+    if not looks_right:
+        return jsonify(error="That doesn't look like a cookies.txt file. Export it again with the extension."), 400
+    COOKIES_FILE.write_text(text, encoding="utf-8")
+    return jsonify(ok=True)
+
+
+@downloader.route("/cookies/remove", methods=["POST"])
+def remove_cookies():
+    if not from_this_page():
+        return jsonify(error="Not allowed."), 403
+    COOKIES_FILE.unlink(missing_ok=True)
+    return jsonify(ok=True)
 
 
 # ---------- Step 2: download what you picked ----------
@@ -218,30 +390,57 @@ def to_mp3(folder):
             file.unlink()
 
 
-def send_file_then_clean_up(file, folder, name):
-    """Send a file to the browser in small pieces, then delete the temporary folder."""
-    def pieces():
-        try:
-            with open(file, "rb") as handle:
-                while chunk := handle.read(1024 * 1024):
-                    yield chunk
-        finally:
-            shutil.rmtree(folder, ignore_errors=True)
-
-    response = Response(pieces(), mimetype="application/octet-stream")
-    response.headers["Content-Length"] = str(file.stat().st_size)
-    response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(name)}"
-    return response
-
-
-def short_error(error):
-    """yt-dlp's errors end with a long "please report this issue" note; drop it."""
-    return str(error).replace("ERROR: ", "").split("; please report this issue")[0]
-
-
 def safe_name(text, fallback):
     cleaned = "".join(c for c in text if c not in '<>:"/\\|?*' and ord(c) >= 32).strip(" .")
     return cleaned[:80] or fallback
+
+
+def finished_files(folder):
+    return sorted(
+        file for file in folder.rglob("*")
+        if file.is_file() and not file.name.endswith((".part", ".ytdl", ".temp"))
+    )
+
+
+def run_download(job, lookup, items, choice):
+    folder = Path(job["folder"])
+    files_folder = folder / "files"
+    try:
+        # Group the picked items by where they came from, then download each group.
+        groups = {}
+        for item in items:
+            groups.setdefault(item["source"], []).append(item["number"])
+        for source_number, numbers in groups.items():
+            source = lookup["sources"][source_number]
+            pick = ",".join(str(n) for n in sorted(n for n in numbers if n))
+            if source["engine"] == "gallery-dl":
+                with gallery_lock:
+                    setup_gallery_dl(lookup["login"], files_folder, pick)
+                    gallery_job.DownloadJob(source["url"]).run()
+            else:
+                options = ytdlp_options(lookup["login"], files_folder, choice, pick or None)
+                with yt_dlp.YoutubeDL(options) as ydl:
+                    ydl.download([source["url"]])
+        if choice == "mp3":
+            to_mp3(files_folder)
+
+        files = finished_files(files_folder)
+        if not files:
+            raise RuntimeError("Nothing could be downloaded. It may need a login: use “Use my logins”.")
+        if len(files) == 1:
+            job["file"], job["name"] = str(files[0]), files[0].name
+        else:
+            # Several files: pack them into one ZIP (no extra squeezing; media is already compressed).
+            zip_path = folder / "download.zip"
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_STORED) as archive:
+                for file in files:
+                    archive.write(file, file.relative_to(files_folder))
+            job["file"], job["name"] = str(zip_path), job["zip_name"]
+        job["state"] = "done"
+    except Exception as error:
+        job["state"] = "error"
+        job["error"] = f"Couldn't download that. {friendly(error)}"
+        shutil.rmtree(folder, ignore_errors=True)
 
 
 @downloader.route("/download", methods=["POST"])
@@ -250,44 +449,51 @@ def download():
     lookup = lookups.get(data.get("id"))
     if not lookup:
         return jsonify(error="Please click “Find media” again."), 400
-    browser = data.get("browser") if data.get("browser") in BROWSERS else None
     choice = "mp3" if data.get("format") == "mp3" else "mp4"
-    numbers = data.get("items")  # e.g. [2] for one item, or "all"
-    if numbers == "all":
-        numbers = list(range(1, len(lookup["items"]) + 1))
-    pick = ",".join(str(int(n)) for n in numbers)
+    wanted = data.get("items")  # a list of item ids, or "all"
+    items = lookup["items"] if wanted == "all" else [lookup["items"][int(i)] for i in wanted]
 
+    picked = {item["id"] for item in items}
+    post_titles = {p["title"] for p in lookup["posts"] if any(i["id"] in picked for i in p["items"])}
+    zip_name = next(iter(post_titles)) if len(post_titles) == 1 else lookup["url"].rstrip("/").split("/")[-1]
     folder = Path(tempfile.mkdtemp(prefix="my-tools-"))
-    files_folder = folder / "files"
-    files_folder.mkdir()
-    try:
-        if lookup["engine"] == "gallery-dl":
-            with gallery_lock:
-                setup_gallery_dl(browser, files_folder, pick)
-                status = gallery_job.DownloadJob(lookup["url"]).run()
-            if status and not any(files_folder.iterdir()):
-                raise RuntimeError("gallery-dl couldn't download the files.")
-            if choice == "mp3":
-                to_mp3(files_folder)
-        else:
-            many = len(lookup["items"]) > 1
-            with yt_dlp.YoutubeDL(ytdlp_options(browser, files_folder, choice, pick if many else None)) as ydl:
-                ydl.download([lookup["url"]])
-    except Exception as error:
-        shutil.rmtree(folder, ignore_errors=True)
-        return jsonify(error=f"Couldn't download that. {short_error(error)}"), 400
+    (folder / "files").mkdir()
 
-    files = sorted(file for file in files_folder.rglob("*") if file.is_file() and not file.name.endswith(".part"))
-    if not files:
-        shutil.rmtree(folder, ignore_errors=True)
-        return jsonify(error="The download finished but no file was created."), 500
+    job_id = uuid.uuid4().hex
+    jobs[job_id] = {"state": "running", "folder": str(folder), "total": len(items),
+                    "zip_name": safe_name(zip_name, "download") + ".zip"}
+    threading.Thread(target=run_download, args=(jobs[job_id], lookup, items, choice), daemon=True).start()
+    return jsonify(job=job_id)
 
-    if len(files) == 1:
-        return send_file_then_clean_up(files[0], folder, files[0].name)
 
-    # Several files: pack them into one ZIP (no extra compression; media is already compressed).
-    zip_path = folder / "download.zip"
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_STORED) as archive:
-        for file in files:
-            archive.write(file, file.name)
-    return send_file_then_clean_up(zip_path, folder, safe_name(lookup["title"], "download") + ".zip")
+@downloader.route("/status/<job_id>")
+def status(job_id):
+    job = jobs.get(job_id)
+    if not job:
+        return jsonify(error="Unknown download."), 404
+    count = 0
+    if job["state"] == "running":
+        count = len(finished_files(Path(job["folder"]) / "files"))
+    return jsonify(state=job["state"], count=count, total=job["total"], error=job.get("error"))
+
+
+@downloader.route("/file/<job_id>")
+def file(job_id):
+    """Your browser fetches the finished file from here, then the temporary copy is deleted."""
+    job = jobs.pop(job_id, None)
+    if not job or job["state"] != "done":
+        return "This download has expired. Please download it again.", 404
+    path, folder = Path(job["file"]), job["folder"]
+
+    def pieces():
+        try:
+            with open(path, "rb") as handle:
+                while chunk := handle.read(1024 * 1024):
+                    yield chunk
+        finally:
+            shutil.rmtree(folder, ignore_errors=True)
+
+    response = Response(pieces(), mimetype="application/octet-stream")
+    response.headers["Content-Length"] = str(path.stat().st_size)
+    response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(job['name'])}"
+    return response
