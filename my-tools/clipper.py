@@ -1,9 +1,12 @@
 """
-Video Clipper: save a full-quality screenshot every few seconds of a video.
+Video Clipper: two ways to work with a video on your computer.
 
-You pick a video on your computer, how often to take a screenshot, and a
-folder to save into. ffmpeg then grabs one frame every N seconds at the
-video's full resolution and saves each one as an image.
+  Split into clips   - split the video at its cuts (long shots are split
+                       evenly), plus a clear screenshot of each clip's start.
+                       The details are in splitter.py.
+  Screenshots        - save a full-quality screenshot every few seconds.
+
+You pick a video, the settings, and a folder to save into.
 """
 
 import subprocess
@@ -14,6 +17,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, render_template, request
 
 from shared import FFMPEG, open_folder, pick_path, video_info
+from splitter import run_split_job
 
 clipper = Blueprint("clipper", __name__, url_prefix="/clipper")
 
@@ -35,9 +39,9 @@ def timestamp_label(seconds, show_fraction):
     return label
 
 
-def new_output_folder(parent, video, interval):
-    """Make a fresh folder like "My Video - every 5s" so nothing is overwritten."""
-    base = f"{video.stem} - every {interval:g}s"
+def new_output_folder(parent, video, label):
+    """Make a fresh folder like "My Video - clips" so nothing is overwritten."""
+    base = f"{video.stem} - {label}"
     folder = parent / base
     number = 2
     while folder.exists():
@@ -126,16 +130,20 @@ def info():
 @clipper.route("/start", methods=["POST"])
 def start():
     data = request.get_json()
+    mode = "split" if data.get("mode") == "split" else "screenshots"
     video = Path(data.get("video", "").strip().strip('"'))
     output = Path(data.get("output", "").strip().strip('"')).expanduser()
     image_format = "jpg" if data.get("format") == "jpg" else "png"
 
+    # "interval" is the seconds between screenshots, or the longest clip when splitting.
     try:
         interval = round(float(data.get("interval", 0)), 3)
     except (TypeError, ValueError):
         interval = 0
     if interval <= 0:
-        return jsonify(error="The interval must be a number above 0, like 5."), 400
+        return jsonify(error="The seconds must be a number above 0, like 5."), 400
+    if mode == "split" and interval < 0.5:
+        return jsonify(error="The longest clip must be at least 0.5 seconds."), 400
     if not video.is_file():
         return jsonify(error="Can't find that video. Check the path."), 400
     if not output.is_dir():
@@ -146,14 +154,19 @@ def start():
     except ValueError as error:
         return jsonify(error=str(error)), 400
 
-    folder = new_output_folder(output, video, interval)
     job_id = uuid.uuid4().hex
-    jobs[job_id] = {"state": "running", "progress": 0.0, "count": 0, "folder": str(folder)}
-    threading.Thread(
-        target=run_job,
-        args=(job_id, video, interval, image_format, folder, duration),
-        daemon=True,
-    ).start()
+    if mode == "split":
+        folder = new_output_folder(output, video, "clips")
+        jobs[job_id] = {"state": "running", "mode": mode, "progress": 0.0, "count": 0,
+                        "folder": str(folder), "phase": "Starting…"}
+        work = run_split_job
+        arguments = (jobs[job_id], video, interval, data.get("sensitivity"), image_format, folder, duration)
+    else:
+        folder = new_output_folder(output, video, f"every {interval:g}s")
+        jobs[job_id] = {"state": "running", "mode": mode, "progress": 0.0, "count": 0, "folder": str(folder)}
+        work = run_job
+        arguments = (job_id, video, interval, image_format, folder, duration)
+    threading.Thread(target=work, args=arguments, daemon=True).start()
     return jsonify(job=job_id, folder=str(folder))
 
 
@@ -163,22 +176,27 @@ def status(job_id):
     if not job:
         return jsonify(error="Unknown job."), 404
     count = job["count"]
-    if job["state"] in ("running", "cancelling"):
+    if job["mode"] == "screenshots" and job["state"] in ("running", "cancelling"):
         # While running, count the images saved so far.
         count = sum(1 for _ in Path(job["folder"]).glob("frame_*"))
     return jsonify(
-        state=job["state"], progress=job["progress"], count=count,
-        folder=job["folder"], error=job.get("error"),
+        state=job["state"], mode=job["mode"], progress=job["progress"], count=count,
+        total=job.get("total"), phase=job.get("phase"), folder=job["folder"], error=job.get("error"),
     )
 
 
 @clipper.route("/cancel/<job_id>", methods=["POST"])
 def cancel(job_id):
     job = jobs.get(job_id)
-    # Only stop ffmpeg if it's still working (poll() is None until it finishes).
-    if job and job["state"] == "running" and "process" in job and job["process"].poll() is None:
+    if not job or job["state"] != "running":
+        return jsonify(ok=True)
+    process = job.get("process")
+    still_working = process is not None and process.poll() is None  # poll() is None until it finishes
+    # Splitting has several steps, so it can stop between them too.
+    if still_working or job["mode"] == "split":
         job["state"] = "cancelling"
-        job["process"].terminate()
+        if still_working:
+            process.terminate()
     return jsonify(ok=True)
 
 

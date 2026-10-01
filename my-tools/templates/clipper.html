@@ -5,9 +5,17 @@
 {% block content %}
 <a class="back" href="{{ url_for('home') }}">← All tools</a>
 <h1>Video Clipper</h1>
-<p class="sub">Save a full-quality screenshot every few seconds of a video.</p>
+<p class="sub">Split a video into clips at its cuts, or save screenshots every few seconds.</p>
 
 <form id="form">
+  <label class="field">What do you want to make?</label>
+  <div class="choices">
+    <label><input type="radio" name="mode" value="split" checked>
+      <span>Split into clips<small>A clip at every cut, plus a clear screenshot of each clip's start</small></span></label>
+    <label><input type="radio" name="mode" value="screenshots">
+      <span>Screenshots<small>One screenshot every few seconds</small></span></label>
+  </div>
+
   <label class="field" for="video">1. Video</label>
   <div class="row">
     <input id="video" type="text" placeholder="Choose a video on your computer" required>
@@ -15,14 +23,26 @@
   </div>
   <p id="video-info" class="hint"></p>
 
-  <label class="field" for="interval">2. Take a screenshot every</label>
+  <label class="field" for="interval" id="interval-label">2. Longest clip</label>
   <div class="row">
     <input id="interval" type="number" min="0.1" step="any" value="5" required style="max-width: 120px">
     <span>seconds</span>
   </div>
   <p id="estimate" class="hint"></p>
 
-  <label class="field">3. Image type</label>
+  <div id="split-only">
+    <label class="field">Cut detection</label>
+    <div class="choices">
+      <label><input type="radio" name="sensitivity" value="low">
+        <span>Fewer cuts<small>Only big, obvious changes</small></span></label>
+      <label><input type="radio" name="sensitivity" value="normal" checked>
+        <span>Normal<small>Good for most videos</small></span></label>
+      <label><input type="radio" name="sensitivity" value="high">
+        <span>More cuts<small>Also catches subtle ones</small></span></label>
+    </div>
+  </div>
+
+  <label class="field">3. Screenshot type</label>
   <div class="choices">
     <label><input type="radio" name="format" value="png" checked>
       <span>PNG<small>Best quality (no loss), bigger files</small></span></label>
@@ -35,7 +55,7 @@
     <input id="output" type="text" value="{{ default_output }}" required>
     <button id="pick-output" class="secondary" type="button">Choose folder…</button>
   </div>
-  <p class="hint">A new folder named after the video is made inside, so nothing gets overwritten.</p>
+  <p id="output-hint" class="hint"></p>
 
   <button id="start" class="wide" type="submit">Run</button>
 </form>
@@ -56,11 +76,26 @@
   const form = $("form"), status = $("status");
   let videoSeconds = 0, jobId = null, outputFolder = null;
 
-  // Remember the last folder you saved to (only on this computer's browser).
-  try {
-    const saved = localStorage.getItem("clipper-output");
-    if (saved) $("output").value = saved;
-  } catch (e) {}
+  // Remember your last choices (only in this computer's browser).
+  function remember(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+  function recall(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+  if (recall("clipper-output")) $("output").value = recall("clipper-output");
+  if (recall("clipper-mode")) form.mode.value = recall("clipper-mode");
+
+  const mode = () => form.mode.value;
+
+  function updateMode() {
+    const split = mode() === "split";
+    $("split-only").hidden = !split;
+    $("interval-label").textContent = split ? "2. Longest clip" : "2. Take a screenshot every";
+    $("interval").min = split ? "0.5" : "0.1";
+    $("output-hint").textContent = split
+      ? "A new folder like “My Video - clips” is made inside. It holds every clip with its screenshot: My Video_C01.mp4 + My Video_C01.png, and so on."
+      : "A new folder named after the video is made inside, so nothing gets overwritten.";
+    remember("clipper-mode", mode());
+    updateEstimate();
+  }
+  form.querySelectorAll("input[name=mode]").forEach((input) => input.addEventListener("change", updateMode));
 
   function formatTime(seconds) {
     const h = Math.floor(seconds / 3600), m = Math.floor(seconds % 3600 / 60), s = Math.round(seconds % 60);
@@ -68,9 +103,13 @@
   }
 
   function updateEstimate() {
-    const interval = parseFloat($("interval").value);
-    $("estimate").textContent = videoSeconds && interval > 0
-      ? `That's about ${Math.max(1, Math.ceil(videoSeconds / interval))} screenshots.` : "";
+    const seconds = parseFloat($("interval").value);
+    if (mode() === "split") {
+      $("estimate").textContent = "A shot longer than this is split into equal parts (6s with a 5s limit = two 3s clips).";
+    } else {
+      $("estimate").textContent = videoSeconds && seconds > 0
+        ? `That's about ${Math.max(1, Math.ceil(videoSeconds / seconds))} screenshots.` : "";
+    }
   }
 
   async function loadInfo() {
@@ -105,6 +144,7 @@
   $("pick-output").onclick = () => pick("folder", $("output"));
   $("video").addEventListener("change", loadInfo);
   $("interval").addEventListener("input", updateEstimate);
+  updateMode();
 
   function setRunning(running) {
     $("start").disabled = running;
@@ -116,18 +156,24 @@
     const response = await fetch("{{ url_for('clipper.status', job_id='JOB') }}".replace("JOB", jobId));
     const job = await response.json();
     $("bar").style.width = Math.round(job.progress * 100) + "%";
+    const split = job.mode === "split";
 
     if (job.state === "running" || job.state === "cancelling") {
-      show(status, `Working… ${Math.round(job.progress * 100)}% (${job.count} screenshots saved)`);
+      const percent = Math.round(job.progress * 100);
+      show(status, split ? `${job.phase} ${percent}%` : `Working… ${percent}% (${job.count} screenshots saved)`);
       setTimeout(checkProgress, 700);
       return;
     }
     setRunning(false);
-    $("open").hidden = job.count === 0;
+    $("open").hidden = false;
     if (job.state === "done") {
-      show(status, `Done! ${job.count} screenshots saved to ${job.folder}`, "ok");
+      show(status, split
+        ? `Done! ${job.total} clips, each with its screenshot, saved to ${job.folder}`
+        : `Done! ${job.count} screenshots saved to ${job.folder}`, "ok");
     } else if (job.state === "cancelled") {
-      show(status, `Cancelled. ${job.count} screenshots were saved before stopping.`);
+      show(status, split
+        ? "Cancelled. Anything made before stopping is in the folder."
+        : `Cancelled. ${job.count} screenshots were saved before stopping.`);
     } else {
       show(status, "Something went wrong: " + job.error, "error");
     }
@@ -138,12 +184,14 @@
     $("open").hidden = true;
     try {
       const answer = await post("{{ url_for('clipper.start') }}", {
+        mode: mode(),
         video: $("video").value,
         interval: $("interval").value,
+        sensitivity: form.sensitivity.value,
         format: form.format.value,
         output: $("output").value,
       });
-      try { localStorage.setItem("clipper-output", $("output").value); } catch (e) {}
+      remember("clipper-output", $("output").value);
       jobId = answer.job;
       outputFolder = answer.folder;
       $("bar").style.width = "0";

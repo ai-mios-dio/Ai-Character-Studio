@@ -5,7 +5,7 @@ A small set of tools that runs on your own computer, in your browser. Only your 
 | Tool | What it does |
 |---|---|
 | **Downloader** | Paste a link to a video, post or **whole profile** from YouTube (including Shorts), Instagram, TikTok, X/Twitter, Reddit, Pinterest and [many](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) [more](https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md). Click **Find media** to see what's in it, then save videos as **MP4** or **MP3**, pictures as-is, or posts and albums as one **ZIP**. |
-| **Video Clipper** | Pick a video on your computer and save a full-quality screenshot every few seconds (you choose how many) into a folder you choose. |
+| **Video Clipper** | Pick a video on your computer and either **split it into clips** at its cuts (each with a clear screenshot of its start), or save a full-quality **screenshot every few seconds**. |
 
 Only download things you have the right to save, like your own posts or ones shared with permission.
 
@@ -70,9 +70,34 @@ Chrome and Edge on Windows lock and encrypt their logins so other programs can't
 
 ## Using the Video Clipper
 
+First, choose what to make: **Split into clips** or **Screenshots**.
+
+### Split into clips
+
+This splits a video at its cuts (every change of shot) and takes a screenshot of the start of each clip.
+
+1. **Video:** click **Choose video…** and pick a video file.
+2. **Longest clip:** for example `5` seconds. A shot longer than that is split into equal parts. A 6-second shot becomes two 3-second clips, and a 12-second shot becomes three 4-second clips.
+3. **Cut detection:** **Normal** works for most videos. Pick **Fewer cuts** if it splits too often, or **More cuts** if it misses some.
+4. **Screenshot type** and **Save to**, the same as below. Then click **Run**.
+
+You get a folder like `My Video - clips` with matching pairs:
+
+```
+My Video_C01.mp4   My Video_C01.png
+My Video_C02.mp4   My Video_C02.png
+...
+```
+
+- **Screenshots:** each one shows the first frame of its clip. If that frame is blurry (like during a fade or fast motion), it uses the next clear frame instead, looking up to 3 seconds in.
+- **Exact cuts:** clips start on the exact frame of the cut. To do that, the video is re-saved at high quality, which takes a little while for long videos.
+- **Flashes:** very short flashes (under half a second) stay at the end of the clip before them, so they don't become their own clip.
+
+### Screenshots every few seconds
+
 1. **Video:** click **Choose video…** and pick a video file. It shows the video's size and length.
 2. **Take a screenshot every:** type a number of seconds, like `5`. Decimals like `0.5` work too.
-3. **Image type:** **PNG** keeps every detail (no quality loss, bigger files). **JPG** is the highest JPG quality, with smaller files.
+3. **Screenshot type:** **PNG** keeps every detail (no quality loss, bigger files). **JPG** is the highest JPG quality, with smaller files.
 4. **Save to:** click **Choose folder…**. It remembers your choice for next time.
 5. Click **Run**. You'll see a progress bar, and you can **Cancel** at any time.
 
@@ -96,8 +121,9 @@ The "Choose…" windows sometimes open **behind** your browser. If nothing seems
 |---|---|
 | `app.py` | Starts the small web server and shows the home page. |
 | `downloader.py` | The Downloader. **gallery-dl** handles posts, pictures and albums, and **yt-dlp** handles videos. |
-| `clipper.py` | The Video Clipper. It asks **ffmpeg** to save one frame every few seconds. |
+| `clipper.py` | The Video Clipper page, plus the "screenshot every few seconds" mode. |
+| `splitter.py` | "Split into clips": finds the cuts, cuts the clips, and picks a clear screenshot for each. |
 | `shared.py` | Helpers both tools use: ffmpeg, the "Choose…" windows, and reading a video's length. |
 | `templates/` | The pages you see in your browser. `static/style.css` is how they look. |
-| `requirements.txt` | The tools Python installs for you: **Flask** (web server), **yt-dlp**, **gallery-dl**, and **imageio-ffmpeg** (a built-in copy of ffmpeg). |
+| `requirements.txt` | The tools Python installs for you: **Flask** (web server), **yt-dlp**, **gallery-dl**, **imageio-ffmpeg** (a built-in copy of ffmpeg) and **numpy** (math, used to spot blurry frames). |
 | `start-windows.bat` / `start-mac.command` | Double-click launchers that set everything up and start the tools. |

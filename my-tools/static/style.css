@@ -48,7 +48,7 @@ a.back:hover { color: var(--accent); }
 h1 { margin: 0 0 4px; font-size: 1.5rem; }
 p.sub { margin: 0 0 24px; color: var(--muted); }
 label.field { display: block; font-weight: 600; margin: 18px 0 6px; }
-label.field:first-child { margin-top: 0; }
+form > label.field:first-child { margin-top: 0; }
 input[type="url"], input[type="text"], input[type="number"] {
   width: 100%;
   padding: 12px;
