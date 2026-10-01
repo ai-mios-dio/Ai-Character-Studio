@@ -1,5 +1,5 @@
 #!/bin/bash
-# Double-click this file to start the Video Downloader on a Mac.
+# Double-click this file to start My Tools on a Mac.
 cd "$(dirname "$0")"
 
 if ! command -v python3 >/dev/null 2>&1; then

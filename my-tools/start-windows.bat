@@ -1,5 +1,5 @@
 @echo off
-rem Double-click this file to start the Video Downloader on Windows.
+rem Double-click this file to start My Tools on Windows.
 cd /d "%~dp0"
 
 set PY=python

@@ -111,4 +111,4 @@ Works best when figures sit on a plain background with a little space between th
 
 ## Also in this repository
 
-**[Video Downloader](video-downloader/)** is a separate little app that downloads videos or MP3s from YouTube, Instagram, TikTok and more. Unlike Character Studio, it runs on your own computer. See its [README](video-downloader/README.md) for setup.
+**[My Tools](my-tools/)** is a separate little app with a **Downloader** (videos, MP3s, pictures and whole albums from YouTube, Instagram, TikTok, X and more) and a **Video Clipper** (a full-quality screenshot every few seconds of a video). Unlike Character Studio, it runs on your own computer. See its [README](my-tools/README.md) for setup.

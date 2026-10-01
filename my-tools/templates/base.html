@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}My Tools{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+    // Sends data to the app as JSON and returns its answer (or throws its error message).
+    async function post(url, data) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data || {}),
+      });
+      const answer = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(answer.error || "Something went wrong.");
+      return answer;
+    }
+
+    function show(element, message, kind) {
+      element.textContent = message;
+      element.className = "status " + (kind || "");
+    }
+  </script>
+  {% block script %}{% endblock %}
+</body>
+</html>

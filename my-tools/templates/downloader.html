@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Downloader{% endblock %}
+
+{% block content %}
+<a class="back" href="{{ url_for('home') }}">← All tools</a>
+<h1>Downloader</h1>
+<p class="sub">Paste a link to a video, picture, or post from YouTube, Instagram, TikTok, X, Reddit and more.</p>
+
+<form id="form">
+  <label class="field" for="url">Link</label>
+  <div class="row">
+    <input id="url" type="url" placeholder="https://www.instagram.com/p/..." required>
+    <button id="find" type="submit">Find media</button>
+  </div>
+
+  <details class="logins">
+    <summary>Use my logins (for private or login-only posts)</summary>
+    <p class="hint">Uses the browser you're logged in with, like being logged in to Instagram. Firefox works most reliably. Close that browser first if it gives an error.</p>
+    <select id="browser">
+      <option value="">Don't use my logins</option>
+      <option value="firefox">Firefox</option>
+      <option value="chrome">Chrome</option>
+      <option value="edge">Edge</option>
+      <option value="safari">Safari</option>
+      <option value="brave">Brave</option>
+      <option value="opera">Opera</option>
+    </select>
+  </details>
+</form>
+
+<p id="status" class="status" role="status"></p>
+
+<section id="results" hidden>
+  <div class="results-head">
+    <p id="summary"></p>
+    <button id="all" type="button" hidden>Download all (ZIP)</button>
+  </div>
+  <div id="items" class="items"></div>
+</section>
+
+<p class="note">Only download things you have the right to save, like your own posts or ones shared with permission.</p>
+{% endblock %}
+
+{% block script %}
+<script>
+  const $ = (id) => document.getElementById(id);
+  const status = $("status");
+  let lookup = null;
+  let busy = false;
+
+  // Remember the "Use my logins" choice on this computer.
+  try { $("browser").value = localStorage.getItem("downloader-browser") || ""; } catch (e) {}
+  $("browser").addEventListener("change", () => {
+    try { localStorage.setItem("downloader-browser", $("browser").value); } catch (e) {}
+  });
+
+  // Reads the file name the server sends back (e.g. "My Video.mp4").
+  function fileNameFrom(response) {
+    const header = response.headers.get("Content-Disposition") || "";
+    const utf8 = header.match(/filename\*=UTF-8''([^;]+)/i);
+    return utf8 ? decodeURIComponent(utf8[1]) : "download";
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  // Step 1: find out what's in the link.
+  $("form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (busy) return;
+    busy = true;
+    $("find").disabled = true;
+    $("results").hidden = true;
+    show(status, "Looking at the link…");
+    try {
+      lookup = await post("{{ url_for('downloader.analyze') }}", {
+        url: $("url").value, browser: $("browser").value,
+      });
+      showResults();
+      show(status, "");
+    } catch (error) {
+      show(status, error.message, "error");
+    } finally {
+      busy = false;
+      $("find").disabled = false;
+    }
+  });
+
+  function showResults() {
+    const items = lookup.items;
+    const counts = { video: 0, image: 0, audio: 0 };
+    items.forEach((item) => counts[item.kind]++);
+    const parts = [];
+    if (counts.video) parts.push(plural(counts.video, "video"));
+    if (counts.image) parts.push(plural(counts.image, "picture"));
+    if (counts.audio) parts.push(plural(counts.audio, "audio file"));
+
+    $("summary").innerHTML = "";
+    if (lookup.title) {
+      const strong = document.createElement("strong");
+      strong.textContent = lookup.title;
+      $("summary").append(strong, document.createElement("br"));
+    }
+    $("summary").append("Found " + parts.join(", ") + (lookup.limited ? " (showing the first 100)" : "") + ".");
+    $("all").hidden = items.length < 2;
+
+    $("items").innerHTML = "";
+    items.forEach((item, index) => $("items").append(itemCard(item, index + 1)));
+    $("results").hidden = false;
+  }
+
+  function itemCard(item, number) {
+    const card = document.createElement("div");
+    card.className = "item";
+
+    const preview = document.createElement("div");
+    preview.className = "preview";
+    preview.textContent = { video: "▶", image: "🖼", audio: "♪" }[item.kind];
+    if (item.preview) {
+      const img = document.createElement("img");
+      img.src = item.preview;
+      img.alt = "";
+      img.referrerPolicy = "no-referrer";
+      img.onload = () => { preview.textContent = ""; preview.append(img); };
+    }
+    card.append(preview);
+
+    const name = document.createElement("p");
+    name.className = "item-name";
+    name.textContent = item.name;
+    card.append(name);
+
+    const buttons = document.createElement("div");
+    buttons.className = "actions";
+    const add = (label, format) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "secondary";
+      button.textContent = label;
+      button.onclick = () => download([number], format, label);
+      buttons.append(button);
+    };
+    if (item.kind === "video") { add("MP4", "mp4"); add("MP3", "mp3"); }
+    else if (item.kind === "audio") { add("MP3", "mp3"); }
+    else { add("Download picture", "original"); }
+    card.append(buttons);
+    return card;
+  }
+
+  // Step 2: download what you picked.
+  async function download(items, format, label) {
+    if (busy) return;
+    busy = true;
+    document.querySelectorAll("#results button").forEach((b) => (b.disabled = true));
+    show(status, items === "all"
+      ? "Downloading everything… this can take a while for big albums."
+      : "Downloading… longer videos can take a minute or two.");
+
+    try {
+      const response = await fetch("{{ url_for('downloader.download') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: lookup.id, items, format, browser: $("browser").value }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Something went wrong.");
+      }
+
+      // Hand the file to the browser so it lands in your Downloads folder.
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = fileNameFrom(response);
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+      show(status, `Done! Saved “${link.download}” to your Downloads folder.`, "ok");
+    } catch (error) {
+      show(status, error.message, "error");
+    } finally {
+      busy = false;
+      document.querySelectorAll("#results button").forEach((b) => (b.disabled = false));
+    }
+  }
+
+  $("all").onclick = () => download("all", "mp4");
+</script>
+{% endblock %}

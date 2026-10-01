@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Video Clipper{% endblock %}
+
+{% block content %}
+<a class="back" href="{{ url_for('home') }}">← All tools</a>
+<h1>Video Clipper</h1>
+<p class="sub">Save a full-quality screenshot every few seconds of a video.</p>
+
+<form id="form">
+  <label class="field" for="video">1. Video</label>
+  <div class="row">
+    <input id="video" type="text" placeholder="Choose a video on your computer" required>
+    <button id="pick-video" class="secondary" type="button">Choose video…</button>
+  </div>
+  <p id="video-info" class="hint"></p>
+
+  <label class="field" for="interval">2. Take a screenshot every</label>
+  <div class="row">
+    <input id="interval" type="number" min="0.1" step="any" value="5" required style="max-width: 120px">
+    <span>seconds</span>
+  </div>
+  <p id="estimate" class="hint"></p>
+
+  <label class="field">3. Image type</label>
+  <div class="choices">
+    <label><input type="radio" name="format" value="png" checked>
+      <span>PNG<small>Best quality (no loss), bigger files</small></span></label>
+    <label><input type="radio" name="format" value="jpg">
+      <span>JPG<small>Highest JPG quality, smaller files</small></span></label>
+  </div>
+
+  <label class="field" for="output">4. Save to</label>
+  <div class="row">
+    <input id="output" type="text" value="{{ default_output }}" required>
+    <button id="pick-output" class="secondary" type="button">Choose folder…</button>
+  </div>
+  <p class="hint">A new folder named after the video is made inside, so nothing gets overwritten.</p>
+
+  <button id="start" class="wide" type="submit">Run</button>
+</form>
+
+<div id="running" hidden>
+  <div class="progress"><div id="bar"></div></div>
+</div>
+<p id="status" class="status" role="status"></p>
+<div class="actions">
+  <button id="cancel" class="secondary" type="button" hidden>Cancel</button>
+  <button id="open" class="secondary" type="button" hidden>Open folder</button>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+  const $ = (id) => document.getElementById(id);
+  const form = $("form"), status = $("status");
+  let videoSeconds = 0, jobId = null, outputFolder = null;
+
+  // Remember the last folder you saved to (only on this computer's browser).
+  try {
+    const saved = localStorage.getItem("clipper-output");
+    if (saved) $("output").value = saved;
+  } catch (e) {}
+
+  function formatTime(seconds) {
+    const h = Math.floor(seconds / 3600), m = Math.floor(seconds % 3600 / 60), s = Math.round(seconds % 60);
+    return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(s).padStart(2, "0");
+  }
+
+  function updateEstimate() {
+    const interval = parseFloat($("interval").value);
+    $("estimate").textContent = videoSeconds && interval > 0
+      ? `That's about ${Math.max(1, Math.ceil(videoSeconds / interval))} screenshots.` : "";
+  }
+
+  async function loadInfo() {
+    videoSeconds = 0;
+    $("video-info").textContent = "";
+    updateEstimate();
+    if (!$("video").value.trim()) return;
+    try {
+      const info = await post("{{ url_for('clipper.info') }}", { video: $("video").value });
+      videoSeconds = info.seconds;
+      $("video-info").textContent = `${info.width}×${info.height}, ${formatTime(info.seconds)} long`;
+    } catch (error) {
+      $("video-info").textContent = error.message;
+    }
+    updateEstimate();
+  }
+
+  async function pick(kind, input) {
+    show(status, kind === "folder" ? "A folder chooser opened. It may be behind this window."
+                                   : "A file chooser opened. It may be behind this window.");
+    try {
+      const { path } = await post("{{ url_for('clipper.pick') }}", { kind });
+      if (path) input.value = path;
+      show(status, "");
+      if (kind === "video") loadInfo();
+    } catch (error) {
+      show(status, error.message, "error");
+    }
+  }
+
+  $("pick-video").onclick = () => pick("video", $("video"));
+  $("pick-output").onclick = () => pick("folder", $("output"));
+  $("video").addEventListener("change", loadInfo);
+  $("interval").addEventListener("input", updateEstimate);
+
+  function setRunning(running) {
+    $("start").disabled = running;
+    $("running").hidden = !running;
+    $("cancel").hidden = !running;
+  }
+
+  async function checkProgress() {
+    const response = await fetch("{{ url_for('clipper.status', job_id='JOB') }}".replace("JOB", jobId));
+    const job = await response.json();
+    $("bar").style.width = Math.round(job.progress * 100) + "%";
+
+    if (job.state === "running" || job.state === "cancelling") {
+      show(status, `Working… ${Math.round(job.progress * 100)}% (${job.count} screenshots saved)`);
+      setTimeout(checkProgress, 700);
+      return;
+    }
+    setRunning(false);
+    $("open").hidden = job.count === 0;
+    if (job.state === "done") {
+      show(status, `Done! ${job.count} screenshots saved to ${job.folder}`, "ok");
+    } else if (job.state === "cancelled") {
+      show(status, `Cancelled. ${job.count} screenshots were saved before stopping.`);
+    } else {
+      show(status, "Something went wrong: " + job.error, "error");
+    }
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    $("open").hidden = true;
+    try {
+      const answer = await post("{{ url_for('clipper.start') }}", {
+        video: $("video").value,
+        interval: $("interval").value,
+        format: form.format.value,
+        output: $("output").value,
+      });
+      try { localStorage.setItem("clipper-output", $("output").value); } catch (e) {}
+      jobId = answer.job;
+      outputFolder = answer.folder;
+      $("bar").style.width = "0";
+      setRunning(true);
+      show(status, "Starting…");
+      checkProgress();
+    } catch (error) {
+      show(status, error.message, "error");
+    }
+  });
+
+  $("cancel").onclick = () => post("{{ url_for('clipper.cancel', job_id='JOB') }}".replace("JOB", jobId));
+  $("open").onclick = () => post("{{ url_for('clipper.open_output') }}", { folder: outputFolder })
+    .catch((error) => show(status, error.message, "error"));
+</script>
+{% endblock %}
